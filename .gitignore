@@ -119,3 +119,6 @@ htmlcov/
 
 # Claude Code autoharness runtime files
 .claude/autoharness/
+.claude/
+.remember/
+.kilo/
