@@ -116,3 +116,6 @@ coverage/
 htmlcov/
 .coverage
 *.cover
+
+# Claude Code autoharness runtime files
+.claude/autoharness/
