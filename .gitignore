@@ -26,11 +26,18 @@ buildNumber.properties
 
 # Spring Boot
 HELP.md
-application*.yml
-application*.yaml
-application*.properties
-!application-example.properties
-!application-example.yml
+# Machine-specific/local config and secrets stay ignored.
+# The shared application.properties and application-{profile}.yml/properties
+# are version-controlled; only local override files with real secrets are excluded.
+application-local.properties
+application-secret.properties
+application-local.yml
+application-secret.yml
+application-local.yaml
+application-secret.yaml
+*.secret.properties
+*.secret.yml
+*.secret.yaml
 
 # Node.js / npm
 node_modules/
