@@ -1,307 +1,67 @@
-import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
-import { Button } from './components/ui/Button';
 import { Card } from './components/ui/Card';
-import { Input } from './components/ui/Input';
-import { AlertCircle, Calendar, Clock, User } from 'lucide-react';
+import { Button } from './components/ui/Button';
+import { ShieldAlert } from 'lucide-react';
+import { HomePage } from './pages/HomePage';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { DashboardPage } from './pages/DashboardPage';
 import { BookAppointmentPage } from './pages/BookAppointmentPage';
 import { AppointmentDetailPage } from './pages/AppointmentDetailPage';
 import { MyAppointmentsPage } from './pages/MyAppointmentsPage';
-import * as React from 'react';
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+import { SpecialtiesAdminPage } from './pages/admin/SpecialtiesAdminPage';
+import { DoctorsAdminPage } from './pages/admin/DoctorsAdminPage';
+import { AvailabilityAdminPage } from './pages/admin/AvailabilityAdminPage';
+import type { ReactNode } from 'react';
 
 // ------------------------------------------------------------------
-// Pages
+// Route guards
 // ------------------------------------------------------------------
 
-function LoginPage() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [error, setError] = React.useState<string | null>(null);
-  const [isLoading, setIsLoading] = React.useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      await login({ email, password });
-      navigate('/dashboard');
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Login failed');
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-      <Card className="w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">MedBook</h1>
-          <p className="text-gray-600 mt-2">Sign in to your account</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            placeholder="you@example.com"
-          />
-          <Input
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            placeholder="Enter password"
-          />
-
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              {error}
-            </div>
-          )}
-
-          <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading}>
-            {isLoading ? 'Signing in...' : 'Sign In'}
-          </Button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Do not have an account?{' '}
-          <Link to="/register" className="text-blue-600 hover:underline">
-            Register
-          </Link>
-        </p>
-      </Card>
-    </div>
-  );
-}
-
-function RegisterPage() {
-  const { register } = useAuth();
-  const navigate = useNavigate();
-  const [formData, setFormData] = React.useState({
-    email: '',
-    password: '',
-    firstName: '',
-    lastName: '',
-    phoneNumber: '',
-    dateOfBirth: '',
-  });
-  const [error, setError] = React.useState<string | null>(null);
-  const [isLoading, setIsLoading] = React.useState(false);
-
-  function handleChange(field: string, value: string) {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      await register({
-        email: formData.email,
-        password: formData.password,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phoneNumber: formData.phoneNumber,
-        dateOfBirth: formData.dateOfBirth,
-      });
-      navigate('/dashboard');
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Registration failed');
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-      <Card className="w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
-          <p className="text-gray-600 mt-2">Register as a patient</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="First Name"
-              value={formData.firstName}
-              onChange={(e) => handleChange('firstName', e.target.value)}
-              required
-            />
-            <Input
-              label="Last Name"
-              value={formData.lastName}
-              onChange={(e) => handleChange('lastName', e.target.value)}
-              required
-            />
-          </div>
-          <Input
-            label="Email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => handleChange('email', e.target.value)}
-            required
-            placeholder="you@example.com"
-          />
-          <Input
-            label="Phone Number"
-            type="tel"
-            value={formData.phoneNumber}
-            onChange={(e) => handleChange('phoneNumber', e.target.value)}
-            required
-            placeholder="+91XXXXXXXXXX"
-          />
-          <Input
-            label="Date of Birth"
-            type="date"
-            value={formData.dateOfBirth}
-            onChange={(e) => handleChange('dateOfBirth', e.target.value)}
-            required
-          />
-          <Input
-            label="Password"
-            type="password"
-            value={formData.password}
-            onChange={(e) => handleChange('password', e.target.value)}
-            required
-            placeholder="Create a password"
-          />
-
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              {error}
-            </div>
-          )}
-
-          <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading}>
-            {isLoading ? 'Creating account...' : 'Create Account'}
-          </Button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link to="/login" className="text-blue-600 hover:underline">
-            Sign In
-          </Link>
-        </p>
-      </Card>
-    </div>
-  );
-}
-
-function DashboardPage() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">MedBook</h1>
-        <div className="flex items-center gap-4">
-          <div className="text-sm text-gray-700">
-            <span className="font-medium">{user?.firstName} {user?.lastName}</span>
-            <span className="ml-2 text-gray-500">({user?.roles?.[0]?.replace('ROLE_', '') || 'Patient'})</span>
-          </div>
-          <Button
-            onClick={() => {
-              logout();
-              navigate('/login');
-            }}
-            variant="outline"
-            className="text-gray-700 hover:bg-gray-100"
-          >
-            Sign Out
-          </Button>
-        </div>
-      </nav>
-
-      <main className="max-w-3xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">Welcome back!</h2>
-          <p className="text-gray-600 mt-2">You are logged in as {user?.email}</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Link to="/appointments/new" className="block">
-            <Card className="p-6 flex flex-col items-center text-center space-y-3 hover:shadow-md transition-shadow cursor-pointer">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                <Calendar className="w-6 h-6" />
-              </div>
-              <h3 className="font-medium text-gray-900">Book Appointment</h3>
-              <p className="text-sm text-gray-600">Schedule a visit with a doctor</p>
-            </Card>
-          </Link>
-          <Link to="/appointments/me" className="block">
-            <Card className="p-6 flex flex-col items-center text-center space-y-3 hover:shadow-md transition-shadow cursor-pointer">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600">
-                <Clock className="w-6 h-6" />
-              </div>
-              <h3 className="font-medium text-gray-900">My Appointments</h3>
-              <p className="text-sm text-gray-600">View your upcoming visits</p>
-            </Card>
-          </Link>
-          <Card className="p-6 flex flex-col items-center text-center space-y-3">
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
-              <User className="w-6 h-6" />
-            </div>
-            <h3 className="font-medium text-gray-900">My Profile</h3>
-            <p className="text-sm text-gray-600">Manage your details</p>
-          </Card>
-        </div>
-
-        <Card className="p-6">
-          <h3 className="font-medium text-gray-900 mb-4">Account Details</h3>
-          <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <dt className="text-sm text-gray-500">First Name</dt>
-              <dd className="text-gray-900 font-medium">{user?.firstName}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-gray-500">Last Name</dt>
-              <dd className="text-gray-900 font-medium">{user?.lastName}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-gray-500">Email</dt>
-              <dd className="text-gray-900 font-medium">{user?.email}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-gray-500">Role</dt>
-              <dd className="text-gray-900 font-medium">{user?.roles?.[0]?.replace('ROLE_', '') || 'Patient'}</dd>
-            </div>
-          </dl>
-        </Card>
-      </main>
-    </div>
-  );
-}
-
-// ------------------------------------------------------------------
-// Protected Route
-// ------------------------------------------------------------------
-
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
+/**
+ * Admin area guard — UX only, not security. It reads the roles the backend
+ * returned at login (already stored by AuthContext) and shows a forbidden card
+ * to non-admins. The real boundary is the backend's /api/v1/admin/** → ADMIN
+ * role check: every admin API call from these pages would return 403 anyway.
+ */
+function AdminRoute({ children }: { children: ReactNode }) {
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  const isAdmin = user?.roles?.includes('ROLE_ADMIN') ?? false;
+  if (!isAdmin) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-ink-50 px-4">
+        <Card className="max-w-md p-8 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-danger-100">
+            <ShieldAlert className="h-8 w-8 text-danger-600" aria-hidden="true" />
+          </div>
+          <h2 className="font-display text-2xl font-semibold text-ink-900">Access denied</h2>
+          <p className="mt-2 text-ink-600">
+            This area is for clinic administrators. Your account does not have admin rights.
+          </p>
+          <Button variant="outline" className="mt-6" onClick={() => window.history.back()}>
+            Go Back
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
+
 // ------------------------------------------------------------------
-// Query Client
+// Query client
 // ------------------------------------------------------------------
 
 const queryClient = new QueryClient({
@@ -313,7 +73,7 @@ const queryClient = new QueryClient({
 });
 
 // ------------------------------------------------------------------
-// App Entry Point
+// App
 // ------------------------------------------------------------------
 
 export default function App() {
@@ -322,8 +82,12 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            {/* Public */}
+            <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+
+            {/* Patient / shared */}
             <Route
               path="/dashboard"
               element={
@@ -356,7 +120,14 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/" element={<Navigate to="/dashboard" />} />
+
+            {/* Admin */}
+            <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
+            <Route path="/admin/specialties" element={<AdminRoute><SpecialtiesAdminPage /></AdminRoute>} />
+            <Route path="/admin/doctors" element={<AdminRoute><DoctorsAdminPage /></AdminRoute>} />
+            <Route path="/admin/availability" element={<AdminRoute><AvailabilityAdminPage /></AdminRoute>} />
+
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
