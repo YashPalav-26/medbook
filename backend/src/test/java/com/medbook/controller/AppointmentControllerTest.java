@@ -205,8 +205,13 @@ class AppointmentControllerTest {
                 """.formatted(patientId, doctorId, date, start, end);
     }
 
+    /**
+     * Fixture booking helper: books through the ADMIN support path
+     * ({@code POST /api/v1/appointments/admin}) because the default caller in this
+     * test class is the ADMIN fixture. Patient self-booking has its own tests below.
+     */
     private long postBookingAndReadId(String json) throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/v1/appointments")
+        MvcResult result = mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isCreated())
@@ -225,7 +230,7 @@ class AppointmentControllerTest {
         LocalDate date = futureDate();
         createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
 
-        MvcResult result = mockMvc.perform(post("/api/v1/appointments")
+        MvcResult result = mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bookingJson(patient.getId(), doctor.getId(), date, "10:00", "11:00")))
                 .andExpect(status().isCreated())
@@ -274,14 +279,14 @@ class AppointmentControllerTest {
                 }
                 """.formatted(futureDate());
 
-        mockMvc.perform(post("/api/v1/appointments")
+        mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value("Request validation failed"))
-                .andExpect(jsonPath("$.path").value("/api/v1/appointments"))
+                .andExpect(jsonPath("$.path").value("/api/v1/appointments/admin"))
                 .andExpect(jsonPath("$.timestamp").isNotEmpty())
                 .andExpect(jsonPath("$.fieldErrors[0].field").value("patientId"))
                 .andExpect(jsonPath("$.fieldErrors[0].message").value("patientId is required"));
@@ -289,7 +294,7 @@ class AppointmentControllerTest {
 
     @Test
     void createAppointmentReturns400WhenPatientIdIsNotPositive() throws Exception {
-        mockMvc.perform(post("/api/v1/appointments")
+        mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bookingJson(0L, 1L, futureDate(), "10:00", "11:00")))
                 .andExpect(status().isBadRequest())
@@ -300,7 +305,7 @@ class AppointmentControllerTest {
 
     @Test
     void createAppointmentReturns400WhenAppointmentDateIsInThePast() throws Exception {
-        mockMvc.perform(post("/api/v1/appointments")
+        mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bookingJson(1L, 1L, LocalDate.now().minusDays(1), "10:00", "11:00")))
                 .andExpect(status().isBadRequest())
@@ -315,7 +320,7 @@ class AppointmentControllerTest {
         Patient patient = createTestPatient("rest-400-pat@medbook.test");
 
         // Structurally valid for Bean Validation, so the service rule reports the problem.
-        mockMvc.perform(post("/api/v1/appointments")
+        mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bookingJson(patient.getId(), doctor.getId(), futureDate(), "11:00", "10:00")))
                 .andExpect(status().isBadRequest())
@@ -326,7 +331,7 @@ class AppointmentControllerTest {
 
     @Test
     void createAppointmentReturns400WhenBodyIsMalformed() throws Exception {
-        mockMvc.perform(post("/api/v1/appointments")
+        mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ \"patientId\": 1, \"doctorId\": 1, \"appointmentDate\": \"not-a-date\","
                                 + " \"startTime\": \"10:00\", \"endTime\": \"11:00\" }"))
@@ -342,14 +347,14 @@ class AppointmentControllerTest {
 
     @Test
     void createAppointmentReturns404WhenDoctorDoesNotExist() throws Exception {
-        mockMvc.perform(post("/api/v1/appointments")
+        mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bookingJson(1L, 999_999L, futureDate(), "10:00", "11:00")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.error").value("Not Found"))
                 .andExpect(jsonPath("$.message").value("Doctor not found with id: 999999"))
-                .andExpect(jsonPath("$.path").value("/api/v1/appointments"))
+                .andExpect(jsonPath("$.path").value("/api/v1/appointments/admin"))
                 .andExpect(jsonPath("$.fieldErrors").isEmpty());
     }
 
@@ -359,7 +364,7 @@ class AppointmentControllerTest {
         LocalDate date = futureDate();
         createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
 
-        mockMvc.perform(post("/api/v1/appointments")
+        mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bookingJson(999_999L, doctor.getId(), date, "10:00", "11:00")))
                 .andExpect(status().isNotFound())
@@ -408,7 +413,7 @@ class AppointmentControllerTest {
         doctor.setActive(false);
         doctorRepository.save(doctor);
 
-        mockMvc.perform(post("/api/v1/appointments")
+        mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bookingJson(patient.getId(), doctor.getId(), date, "10:00", "11:00")))
                 .andExpect(status().isConflict())
@@ -416,7 +421,7 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.error").value("Conflict"))
                 .andExpect(jsonPath("$.message").value("Doctor is inactive and cannot accept appointments: "
                         + doctor.getId()))
-                .andExpect(jsonPath("$.path").value("/api/v1/appointments"));
+                .andExpect(jsonPath("$.path").value("/api/v1/appointments/admin"));
     }
 
     @Test
@@ -429,7 +434,7 @@ class AppointmentControllerTest {
         patient.setActive(false);
         patientRepository.save(patient);
 
-        mockMvc.perform(post("/api/v1/appointments")
+        mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bookingJson(patient.getId(), doctor.getId(), date, "10:00", "11:00")))
                 .andExpect(status().isConflict())
@@ -444,7 +449,7 @@ class AppointmentControllerTest {
         LocalDate date = futureDate();
         createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(12, 0));
 
-        mockMvc.perform(post("/api/v1/appointments")
+        mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bookingJson(patient.getId(), doctor.getId(), date, "13:00", "14:00")))
                 .andExpect(status().isConflict())
@@ -463,7 +468,7 @@ class AppointmentControllerTest {
         // First booking wins.
         postBookingAndReadId(bookingJson(first.getId(), doctor.getId(), date, "10:00", "11:00"));
 
-        mockMvc.perform(post("/api/v1/appointments")
+        mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bookingJson(second.getId(), doctor.getId(), date, "10:30", "11:30")))
                 .andExpect(status().isConflict())
@@ -620,6 +625,174 @@ class AppointmentControllerTest {
         anonymous.perform(get("/api/v1/appointments/me"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401));
+    }
+
+    // ------------------------------------------------------------------
+    // 7. Patient self-booking (POST /appointments — identity from the JWT)
+    // ------------------------------------------------------------------
+
+    /** Patient self-booking body: deliberately contains no patientId field. */
+    private static String selfBookingJson(Long doctorId, LocalDate date, String start, String end) {
+        return """
+                {
+                  "doctorId": %s,
+                  "appointmentDate": "%s",
+                  "startTime": "%s",
+                  "endTime": "%s"
+                }
+                """.formatted(doctorId, date, start, end);
+    }
+
+    private String tokenFor(User user, String role) {
+        return createTestToken(String.valueOf(user.getId()), role);
+    }
+
+    @Test
+    void patientSelfBookingCreatesAppointmentForTheAuthenticatedPatient() throws Exception {
+        Doctor doctor = createTestDoctor("rest-self-doc@medbook.test", "Rest Self Cardiology");
+        Patient patient = createTestPatient("rest-self-pat@medbook.test");
+        LocalDate date = futureDate();
+        createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
+
+        Patient otherPatient = createTestPatient("rest-self-other@medbook.test");
+
+        mockMvc.perform(post("/api/v1/appointments")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(patient.getUser(), "ROLE_PATIENT"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(selfBookingJson(doctor.getId(), date, "15:00", "16:00")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.patientId").value(patient.getId().intValue()))
+                .andExpect(jsonPath("$.doctorId").value(doctor.getId().intValue()))
+                .andExpect(jsonPath("$.status").value("SCHEDULED"));
+
+        // The booking landed on the JWT caller's patient profile — not on any other row.
+        List<Appointment> doctorsAppointments = appointmentRepository.findByDoctorId(doctor.getId());
+        assertThat(doctorsAppointments).hasSize(1);
+        assertThat(doctorsAppointments.get(0).getPatient().getId()).isEqualTo(patient.getId());
+        assertThat(doctorsAppointments.get(0).getPatient().getId()).isNotEqualTo(otherPatient.getId());
+    }
+
+    @Test
+    void patientSelfBookingIgnoresAClientSuppliedPatientId() throws Exception {
+        Doctor doctor = createTestDoctor("rest-ignore-doc@medbook.test", "Rest Ignore Cardiology");
+        Patient caller = createTestPatient("rest-ignore-caller@medbook.test");
+        Patient victim = createTestPatient("rest-ignore-victim@medbook.test");
+        LocalDate date = futureDate();
+        createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
+
+        // The body tries to smuggle someone else's patientId in. It must be ignored:
+        // the appointment belongs to the JWT caller, never to the referenced victim.
+        String smuggled = """
+                {
+                  "patientId": %s,
+                  "doctorId": %s,
+                  "appointmentDate": "%s",
+                  "startTime": "13:00",
+                  "endTime": "14:00"
+                }
+                """.formatted(victim.getId(), doctor.getId(), date);
+
+        mockMvc.perform(post("/api/v1/appointments")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(caller.getUser(), "ROLE_PATIENT"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(smuggled))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.patientId").value(caller.getId().intValue()))
+                .andExpect(jsonPath("$.patientId").value(org.hamcrest.Matchers.not(victim.getId().intValue())));
+
+        assertThat(appointmentRepository.findByDoctorId(doctor.getId())).allSatisfy(a ->
+                assertThat(a.getPatient().getId()).isEqualTo(caller.getId()));
+    }
+
+    @Test
+    void patientSelfBookingValidationFailuresReturn400() throws Exception {
+        Patient patient = createTestPatient("rest-self-400-pat@medbook.test");
+
+        // Missing doctorId.
+        mockMvc.perform(post("/api/v1/appointments")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(patient.getUser(), "ROLE_PATIENT"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ \"appointmentDate\": \"%s\", \"startTime\": \"10:00\", \"endTime\": \"11:00\" }"
+                                .formatted(futureDate())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("doctorId"));
+
+        // Past date.
+        mockMvc.perform(post("/api/v1/appointments")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(patient.getUser(), "ROLE_PATIENT"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(selfBookingJson(1L, LocalDate.now().minusDays(1), "10:00", "11:00")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("appointmentDate"));
+    }
+
+    @Test
+    void patientSelfBookingIsRejectedForDoctorAndAdminCallers() throws Exception {
+        Doctor doctor = createTestDoctor("rest-self-roles-doc@medbook.test", "Rest Self Gastro");
+        LocalDate date = futureDate();
+        createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
+
+        // A doctor has no patient profile to book for — self-booking is not a doctor capability.
+        mockMvc.perform(post("/api/v1/appointments")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(doctor.getUser(), "ROLE_DOCTOR"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(selfBookingJson(doctor.getId(), date, "10:00", "11:00")))
+                .andExpect(status().isForbidden());
+
+        // Admins use the documented support path instead.
+        mockMvc.perform(post("/api/v1/appointments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(selfBookingJson(doctor.getId(), date, "10:00", "11:00")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminSupportBookingIsRejectedForPatientCallers() throws Exception {
+        Patient patient = createTestPatient("rest-adminpath-pat@medbook.test");
+        Doctor doctor = createTestDoctor("rest-adminpath-doc@medbook.test", "Rest Adminpath Cardio");
+        LocalDate date = futureDate();
+        createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
+
+        mockMvc.perform(post("/api/v1/appointments/admin")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(patient.getUser(), "ROLE_PATIENT"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(bookingJson(patient.getId(), doctor.getId(), date, "10:00", "11:00")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Booking for another patient requires an administrator"));
+    }
+
+    @Test
+    void patientSelfBookingRecordsTheCallerInStatusHistory() throws Exception {
+        Doctor doctor = createTestDoctor("rest-self-hist-doc@medbook.test", "Rest Self History");
+        Patient patient = createTestPatient("rest-self-hist-pat@medbook.test");
+        LocalDate date = futureDate();
+        createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
+
+        MvcResult result = mockMvc.perform(post("/api/v1/appointments")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(patient.getUser(), "ROLE_PATIENT"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(selfBookingJson(doctor.getId(), date, "09:00", "10:00")))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long appointmentId = ((Number) JsonPath.read(
+                result.getResponse().getContentAsString(), "$.id")).longValue();
+
+        var history = statusHistoryRepository.findByAppointmentId(appointmentId);
+        assertThat(history).hasSize(1);
+        assertThat(history.get(0).getChangedByUser()).isNotNull();
+        assertThat(history.get(0).getChangedByUser().getId()).isEqualTo(patient.getUser().getId());
+    }
+
+    @Test
+    void patientSelfBookingReturns404WhenDoctorDoesNotExist() throws Exception {
+        Patient patient = createTestPatient("rest-self-404-pat@medbook.test");
+
+        mockMvc.perform(post("/api/v1/appointments")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(patient.getUser(), "ROLE_PATIENT"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(selfBookingJson(999_999L, futureDate(), "10:00", "11:00")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Doctor not found with id: 999999"));
     }
 
     @Test
