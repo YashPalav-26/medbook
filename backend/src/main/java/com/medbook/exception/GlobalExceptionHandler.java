@@ -3,6 +3,11 @@ package com.medbook.exception;
 import com.medbook.dto.ErrorResponse;
 import com.medbook.service.AppointmentConflictException;
 import com.medbook.service.AppointmentNotFoundException;
+import com.medbook.service.AvailabilityNotFoundException;
+import com.medbook.service.DuplicateAvailabilitySlotException;
+import com.medbook.service.DuplicateLicenseNumberException;
+import com.medbook.service.DuplicateSpecialtyNameException;
+import com.medbook.service.SpecialtyNotFoundException;
 import com.medbook.service.AccountInactiveException;
 import com.medbook.service.AccountLockedException;
 import com.medbook.service.DoctorInactiveException;
@@ -58,7 +63,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             DoctorNotFoundException.class,
             PatientNotFoundException.class,
-            AppointmentNotFoundException.class
+            AppointmentNotFoundException.class,
+            SpecialtyNotFoundException.class,
+            AvailabilityNotFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException exception, HttpServletRequest request) {
         return build(HttpStatus.NOT_FOUND, exception, request);
@@ -73,7 +80,10 @@ public class GlobalExceptionHandler {
             PatientInactiveException.class,
             DoctorUnavailableException.class,
             AppointmentConflictException.class,
-            InvalidAppointmentStatusException.class
+            InvalidAppointmentStatusException.class,
+            DuplicateSpecialtyNameException.class,
+            DuplicateLicenseNumberException.class,
+            DuplicateAvailabilitySlotException.class
     })
     public ResponseEntity<ErrorResponse> handleBusinessConflict(RuntimeException exception, HttpServletRequest request) {
         return build(HttpStatus.CONFLICT, exception, request);
