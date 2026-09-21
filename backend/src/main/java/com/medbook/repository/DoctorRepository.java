@@ -30,6 +30,9 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
      */
     Optional<Doctor> findByMedicalLicenseNumber(String medicalLicenseNumber);
 
+    /** Uniqueness probe for license numbers — clean 409 instead of a constraint 500. */
+    boolean existsByMedicalLicenseNumber(String medicalLicenseNumber);
+
     /**
      * Derived query method with nested property traversal.
      * Spring Data JPA generates SQL
@@ -87,6 +90,25 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
     @Query("SELECT d FROM Doctor d JOIN FETCH d.user JOIN FETCH d.specialty "
             + "WHERE d.specialty.id = :specialtyId AND d.active = true ORDER BY d.id ASC")
     List<Doctor> findAllBySpecialtyIdAndActiveTrueWithUserAndSpecialty(@Param("specialtyId") Long specialtyId);
+
+    /**
+     * All doctors (active and inactive) with user + specialty fetched — the admin list.
+     * Fetch joins are needed because Open Session In View is disabled and the admin
+     * response reads both associations.
+     */
+    @Query("SELECT d FROM Doctor d JOIN FETCH d.user JOIN FETCH d.specialty ORDER BY d.id ASC")
+    List<Doctor> findAllWithUserAndSpecialty();
+
+    /**
+     * One doctor by ID with user + specialty fetched — the admin detail/update path.
+     */
+    @Query("SELECT d FROM Doctor d JOIN FETCH d.user JOIN FETCH d.specialty WHERE d.id = :id")
+    Optional<Doctor> findByIdWithUserAndSpecialty(@Param("id") Long id);
+
+    /**
+     * Uniqueness probe for license numbers excluding one row — the update variant.
+     */
+    boolean existsByMedicalLicenseNumberAndIdNot(String medicalLicenseNumber, Long id);
 
     /**
      * Lock doctor row with SELECT ... FOR UPDATE.
