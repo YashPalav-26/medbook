@@ -80,6 +80,17 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Authenticated but forbidden: the caller's roles/ownership do not allow this
+     * operation on this resource. 403 — see {@link com.medbook.security.MedbookAccessDeniedHandler}
+     * for the framework-level equivalent.
+     */
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(org.springframework.security.access.AccessDeniedException exception,
+                                                            HttpServletRequest request) {
+        return build(HttpStatus.FORBIDDEN, exception, request);
+    }
+
+    /**
      * Login failures: wrong credentials, or an account that is locked or deactivated.
      * All of them are 401 — login never succeeded, so there is nothing to "forbid" yet.
      * The locked/inactive messages only reach this point after the password matched inside
