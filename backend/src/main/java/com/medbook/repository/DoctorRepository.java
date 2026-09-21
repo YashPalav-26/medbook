@@ -1,7 +1,11 @@
 package com.medbook.repository;
 
 import com.medbook.entity.Doctor;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -57,4 +61,17 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
      * Used to look up a doctor by the user account they are linked to.</p>
      */
     Optional<Doctor> findByUserId(Long userId);
+
+    /**
+     * Lock doctor row with SELECT ... FOR UPDATE.
+     * Use during appointment booking to prevent concurrent double-booking.
+     *
+     * <p>Pessimistic write lock held until transaction commits/rolls back.</p>
+     *
+     * @param id the doctor's ID
+     * @return the locked doctor entity, or empty if not found
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT d FROM Doctor d WHERE d.id = :id")
+    Optional<Doctor> findByIdForUpdate(@Param("id") Long id);
 }
