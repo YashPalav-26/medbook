@@ -1,0 +1,12 @@
+node_modules
+dist
+dist-ssr
+coverage
+*.local
+.env
+npm-debug.log*
+
+# editor/tooling noise
+.vscode/*
+!.vscode/extensions.json
+.idea
