@@ -91,8 +91,17 @@ class SecurityFilterTest {
 
     private MockMvc mockMvc;
 
+    /**
+     * Real user row backing the synthetic tokens. Since ownership authorization the
+     * service resolves the JWT {@code sub} against {@code users}, so filter-level tests
+     * mint tokens for a caller that actually exists (rolled back with the transaction).
+     */
+    private User callerUser;
+
     @BeforeEach
     void setUp() {
+        callerUser = userRepository.save(new User(
+                "filter-caller@medbook.test", "hashed-password", "Filter", "Caller", "+919876543300"));
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .apply(springSecurity())
                 .build();
@@ -118,10 +127,11 @@ class SecurityFilterTest {
                 .getTokenValue();
     }
 
-    /** A valid one-hour token carrying the given business roles. */
+    /** A valid one-hour token for the real fixture caller, carrying the given business roles. */
     private String validToken(String... roles) {
         Instant now = Instant.now();
-        return mintToken("2", "filter@medbook.test", List.of(roles), now, now.plus(1, ChronoUnit.HOURS));
+        return mintToken(String.valueOf(callerUser.getId()), callerUser.getEmail(),
+                List.of(roles), now, now.plus(1, ChronoUnit.HOURS));
     }
 
     private String bearer(String token) {
@@ -244,6 +254,20 @@ class SecurityFilterTest {
                         .header(HttpHeaders.AUTHORIZATION, bearer(validToken("ROLE_PATIENT"))))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Appointment not found with id: 987654321"));
+    }
+
+    @Test
+    void tokenForUnknownUserIsRejectedByOwnershipCheck() throws Exception {
+        // A syntactically valid token whose subject has no user row: the security fence
+        // lets it through (role claim present), then ownership authorization rejects it.
+        Instant now = Instant.now();
+        String ghost = mintToken("999999999", "ghost@medbook.test", List.of("ROLE_PATIENT"),
+                now, now.plus(1, ChronoUnit.HOURS));
+
+        mockMvc.perform(get("/api/v1/appointments/987654321")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(ghost)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403));
     }
 
     @Test
