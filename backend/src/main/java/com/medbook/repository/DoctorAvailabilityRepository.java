@@ -34,4 +34,12 @@ public interface DoctorAvailabilityRepository extends JpaRepository<DoctorAvaila
      * on Mondays?"</p>
      */
     List<DoctorAvailability> findByDoctorIdAndDayOfWeek(Long doctorId, byte dayOfWeek);
+
+    /**
+     * One doctor's availability windows, ordered for stable API output.
+     *
+     * <p>Powers {@code GET /api/v1/doctors/{id}/availability}: day of week first,
+     * then start time, so the weekly schedule reads like a calendar.</p>
+     */
+    List<DoctorAvailability> findByDoctorIdOrderByDayOfWeekAscStartTimeAsc(Long doctorId);
 }
