@@ -6,17 +6,21 @@ import com.medbook.entity.AppointmentStatusHistory;
 import com.medbook.entity.Doctor;
 import com.medbook.entity.DoctorAvailability;
 import com.medbook.entity.Patient;
+import com.medbook.entity.User;
 import com.medbook.repository.AppointmentRepository;
 import com.medbook.repository.AppointmentStatusHistoryRepository;
 import com.medbook.repository.DoctorAvailabilityRepository;
 import com.medbook.repository.DoctorRepository;
 import com.medbook.repository.PatientRepository;
+import com.medbook.repository.UserRepository;
+import com.medbook.security.CurrentUserProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service (business logic) layer for appointments.
@@ -44,42 +48,105 @@ public class AppointmentService {
      */
     private static final int JAVA_SUNDAY = 7;
 
+    /** Role names exactly as stored in the {@code roles} table (no {@code ROLE_} prefix). */
+    private static final String ROLE_ADMIN = "ADMIN";
+    private static final String ROLE_DOCTOR = "DOCTOR";
+    private static final String ROLE_PATIENT = "PATIENT";
+
+    /** Message for a rejected ownership read/write — deliberately does not echo the ID. */
+    private static final String ACCESS_DENIED_TO_APPOINTMENT =
+            "You do not have access to this appointment";
+
     private final AppointmentRepository appointmentRepository;
     private final AppointmentStatusHistoryRepository statusHistoryRepository;
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
     private final DoctorAvailabilityRepository availabilityRepository;
+    private final UserRepository userRepository;
+    private final CurrentUserProvider currentUserProvider;
 
     public AppointmentService(
             AppointmentRepository appointmentRepository,
             AppointmentStatusHistoryRepository statusHistoryRepository,
             DoctorRepository doctorRepository,
             PatientRepository patientRepository,
-            DoctorAvailabilityRepository availabilityRepository
+            DoctorAvailabilityRepository availabilityRepository,
+            UserRepository userRepository,
+            CurrentUserProvider currentUserProvider
     ) {
         this.appointmentRepository = appointmentRepository;
         this.statusHistoryRepository = statusHistoryRepository;
         this.doctorRepository = doctorRepository;
         this.patientRepository = patientRepository;
         this.availabilityRepository = availabilityRepository;
+        this.userRepository = userRepository;
+        this.currentUserProvider = currentUserProvider;
     }
 
     /**
-     * Read one appointment by ID.
+     * Read one appointment by ID, enforcing ownership for the authenticated caller.
      *
-     * <p>This is a plain read used by the REST layer for {@code GET /api/v1/appointments/{id}};
-     * it contains no business rules beyond "the appointment must exist". It runs in a
-     * read-only transaction and fetches patient and doctor eagerly so the caller can map the
-     * entity to a response DTO after the transaction has ended.</p>
+     * <p>Authorization rules (documented in {@code docs/appointment-authorization.md}):</p>
+     * <ul>
+     * <li><strong>PATIENT</strong> — only their own appointments;</li>
+     * <li><strong>DOCTOR</strong> — only appointments assigned to them;</li>
+     * <li><strong>ADMIN</strong> — any appointment (administrative support role).</li>
+     * </ul>
+     *
+     * <p>An appointment that exists but is not visible to the caller is rejected with
+     * {@link AppointmentOwnershipException} (HTTP 403) — the caller is authenticated, so
+     * this is a permission problem, not a missing-row problem. A non-existent row stays a
+     * 404 {@link AppointmentNotFoundException}. Both paths are enforced here on the server;
+     * the React UI merely reflects what this method allows.</p>
      *
      * @param appointmentId the appointment to read
      * @return the stored appointment
-     * @throws AppointmentNotFoundException when no appointment row exists for that ID
+     * @throws AppointmentNotFoundException     when no appointment row exists for that ID
+     * @throws AppointmentOwnershipException    when the caller exists but may not see it
+     * @throws org.springframework.security.authentication.InsufficientAuthenticationException
+     *         when there is no authenticated caller
      */
     @Transactional(readOnly = true)
     public Appointment getAppointment(Long appointmentId) {
-        return appointmentRepository.findByIdWithPatientAndDoctor(appointmentId)
+        User caller = requireCurrentUser();
+
+        Appointment appointment = appointmentRepository.findByIdWithPatientAndDoctor(appointmentId)
                 .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
+
+        if (!canAccess(caller, appointment)) {
+            throw new AppointmentOwnershipException(ACCESS_DENIED_TO_APPOINTMENT);
+        }
+        return appointment;
+    }
+
+    /**
+     * All appointments of the authenticated caller, per role.
+     *
+     * <ul>
+     * <li><strong>PATIENT</strong> — the appointments they booked;</li>
+     * <li><strong>DOCTOR</strong> — the appointments assigned to them;</li>
+     * <li><strong>ADMIN</strong> — rejected: a global appointment feed is an
+     *     administrative feature that does not exist yet, so it fails loudly (403)
+     *     instead of silently returning everything.</li>
+     * </ul>
+     *
+     * @return the caller's appointments, newest first
+     * @throws AppointmentOwnershipException when the caller's role has no listing yet (ADMIN)
+     * @throws org.springframework.security.authentication.InsufficientAuthenticationException
+     *         when there is no authenticated caller
+     */
+    @Transactional(readOnly = true)
+    public List<Appointment> getCurrentUserAppointments() {
+        User caller = requireCurrentUser();
+
+        if (caller.hasRole(ROLE_PATIENT)) {
+            return appointmentRepository.findAllByPatientUserId(caller.getId());
+        }
+        if (caller.hasRole(ROLE_DOCTOR)) {
+            return appointmentRepository.findAllByDoctorUserId(caller.getId());
+        }
+        throw new AppointmentOwnershipException(
+                "Appointment listing is not available for this account role");
     }
 
     /**
@@ -157,39 +224,74 @@ public class AppointmentService {
         Appointment saved = appointmentRepository.save(appointment);
 
         // 8. Record the first status history row: the appointment starts as SCHEDULED.
-        recordStatusChange(saved, AppointmentStatus.SCHEDULED, "Appointment created");
+        // When a JWT caller exists (every HTTP request), they are recorded as the actor;
+        // context-free internal/test callers legitimately produce NULL.
+        recordStatusChange(saved, AppointmentStatus.SCHEDULED, "Appointment created",
+                currentUserProvider.currentUserId().flatMap(userRepository::findById).orElse(null));
 
         return saved;
     }
 
     /**
-     * Cancel an existing appointment.
+     * Cancel one appointment on behalf of the authenticated caller (ownership enforced).
      *
-     * <p>Business flow (all inside one transaction):</p>
-     * <ol>
-     * <li>lock the appointment row with {@code SELECT ... FOR UPDATE};</li>
-     * <li>reject the request when the appointment is already in a terminal state;</li>
-     * <li>set status to CANCELLED and store the reason (the schema CHECK constraint
-     *     requires a reason whenever status = 'CANCELLED');</li>
-     * <li>append a new status history row without touching earlier ones.</li>
-     * </ol>
+     * <p>Rules mirror {@link #getAppointment(Long)}: patients cancel only their own
+     * appointments, doctors only appointments assigned to them, and ADMIN cancellation is
+     * deliberately not supported yet — an administrator silently cancelling a clinic visit
+     * is a policy decision that has not been made, so the request is rejected (403) and
+     * must be performed by the patient or the doctor. Unknown rows stay 404. The history
+     * row records the real caller (never fabricated; never a user ID from the request).</p>
      *
      * @param appointmentId      the appointment to cancel
      * @param cancellationReason why the appointment is cancelled (required)
      * @return the updated appointment, with status CANCELLED
      * @throws AppointmentNotFoundException      when the appointment ID does not exist
+     * @throws AppointmentOwnershipException     when the caller may not cancel it
      * @throws InvalidAppointmentStatusException when the current status cannot become CANCELLED
      * @throws IllegalArgumentException          when no cancellation reason is supplied
+     * @throws org.springframework.security.authentication.InsufficientAuthenticationException
+     *         when there is no authenticated caller
+     */
+    @Transactional
+    public Appointment cancelAppointmentForCurrentUser(Long appointmentId, String cancellationReason) {
+        User caller = requireCurrentUser();
+
+        Appointment appointment = appointmentRepository.findByIdForUpdate(appointmentId)
+                .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
+
+        if (!canCancel(caller, appointment)) {
+            throw new AppointmentOwnershipException(ACCESS_DENIED_TO_APPOINTMENT);
+        }
+        return cancelAppointment(appointment, caller, cancellationReason);
+    }
+
+    /**
+     * Cancel an appointment without a security context.
+     *
+     * <p>Kept for internal/test callers that run without authentication (for example the
+     * transactional-behaviour tests). The audit row is written with
+     * {@code changed_by_user_id = NULL} because no caller legitimately exists — a NULL is
+     * never fabricated into a user. HTTP requests must use
+     * {@link #cancelAppointmentForCurrentUser(Long, String)}, which enforces ownership.</p>
+     *
+     * @param appointmentId      the appointment to cancel
+     * @param cancellationReason why the appointment is cancelled (required)
+     * @return the updated appointment, with status CANCELLED
      */
     @Transactional
     public Appointment cancelAppointment(Long appointmentId, String cancellationReason) {
+        return cancelAppointment(appointmentRepository.findByIdForUpdate(appointmentId)
+                .orElseThrow(() -> new AppointmentNotFoundException(appointmentId)), null, cancellationReason);
+    }
+
+    /**
+     * Shared cancellation flow: validate, lock in the status change, audit with the caller
+     * (nullable only when no authenticated caller legitimately exists).
+     */
+    private Appointment cancelAppointment(Appointment appointment, User caller, String cancellationReason) {
         if (cancellationReason == null || cancellationReason.isBlank()) {
             throw new IllegalArgumentException("Cancellation reason is required");
         }
-
-        // Lock the row first: the read-check-write below must be atomic.
-        Appointment appointment = appointmentRepository.findByIdForUpdate(appointmentId)
-                .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
 
         AppointmentStatus currentStatus = appointment.getStatus();
 
@@ -209,7 +311,8 @@ public class AppointmentService {
         Appointment saved = appointmentRepository.save(appointment);
 
         // Audit trail: append the new status, never delete or rewrite history rows.
-        recordStatusChange(saved, AppointmentStatus.CANCELLED, cancellationReason);
+        // changedByUser is the real authenticated caller, or NULL when there is none.
+        recordStatusChange(saved, AppointmentStatus.CANCELLED, cancellationReason, caller);
 
         return saved;
     }
@@ -330,13 +433,68 @@ public class AppointmentService {
      * Append one status history row. History is append-only: a status change adds a
      * record and never removes an earlier one.
      *
-     * <p>The actor ({@code changedByUser}) is intentionally left null until the
-     * authentication step exists to identify the caller.</p>
+     * @param changedBy the authenticated user who caused the change, or {@code null} only
+     *                  when no caller legitimately exists (context-free internal/test path)
      */
-    private void recordStatusChange(Appointment appointment, AppointmentStatus status, String notes) {
+    private void recordStatusChange(Appointment appointment, AppointmentStatus status, String notes, User changedBy) {
         AppointmentStatusHistory history = new AppointmentStatusHistory(appointment, status);
         history.setNotes(notes);
+        history.setChangedByUser(changedBy);
         statusHistoryRepository.save(history);
+    }
+
+    // ------------------------------------------------------------------
+    // Caller identity and ownership rules
+    // ------------------------------------------------------------------
+
+    /**
+     * The authenticated user as a row in {@code users}, or an exception when there is no
+     * authenticated caller. The JWT is the only identity source — a user ID supplied in a
+     * request body or path is never trusted for authorization.
+     */
+    private User requireCurrentUser() {
+        Long callerId = currentUserProvider.requireCurrentUserId();
+        return userRepository.findById(callerId)
+                .orElseThrow(() -> new AppointmentOwnershipException(
+                        "Authenticated account no longer exists"));
+    }
+
+    /**
+     * The ownership matrix, evaluated on the loaded entities.
+     *
+     * <ul>
+     * <li>ADMIN → any appointment (administrative support);</li>
+     * <li>DOCTOR → appointments assigned to that doctor;</li>
+     * <li>PATIENT → appointments booked by that patient;</li>
+     * <li>any other role combination → denied.</li>
+     * </ul>
+     */
+    private boolean canAccess(User caller, Appointment appointment) {
+        if (caller.hasRole(ROLE_ADMIN)) {
+            return true;
+        }
+        if (caller.hasRole(ROLE_DOCTOR)) {
+            return appointment.getDoctor().getUser().getId().equals(caller.getId());
+        }
+        if (caller.hasRole(ROLE_PATIENT)) {
+            return appointment.getPatient().getUser().getId().equals(caller.getId());
+        }
+        return false;
+    }
+
+    /**
+     * Who may cancel: the same ownership matrix minus ADMIN.
+     *
+     * <p>Cancellation changes a patient's clinic visit, so the project deliberately does
+     * not let an administrator do it yet — the operation is reserved for the patient who
+     * booked (or the assigned doctor). When admin cancellation becomes a product decision,
+     * this is the single place to change.</p>
+     */
+    private boolean canCancel(User caller, Appointment appointment) {
+        if (caller.hasRole(ROLE_ADMIN)) {
+            return false;
+        }
+        return canAccess(caller, appointment);
     }
 
     /**
