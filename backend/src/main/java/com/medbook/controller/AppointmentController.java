@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.util.List;
 
 /**
  * REST API for appointments.
@@ -34,9 +35,14 @@ import java.net.URI;
  * <h3>Endpoints</h3>
  * <pre>
  * POST /api/v1/appointments            -&gt; 201 Created  (Location header points at the new appointment)
- * GET  /api/v1/appointments/{id}       -&gt; 200 OK
- * POST /api/v1/appointments/{id}/cancel-&gt; 200 OK
+ * GET  /api/v1/appointments/me         -&gt; 200 OK (the caller's own appointments, per role)
+ * GET  /api/v1/appointments/{id}       -&gt; 200 OK (ownership enforced)
+ * POST /api/v1/appointments/{id}/cancel-&gt; 200 OK (ownership enforced)
  * </pre>
+ *
+ * <p>Ownership is enforced in the service layer using the JWT identity (never a user ID
+ * from the request); see {@code docs/appointment-authorization.md} for the rule matrix and
+ * the 401/403/404 mapping.</p>
  *
  * <p>Failed requests are turned into a consistent {@link com.medbook.dto.ErrorResponse} body
  * by {@link com.medbook.exception.GlobalExceptionHandler}, for example
@@ -85,10 +91,28 @@ public class AppointmentController {
     }
 
     /**
-     * Read a single appointment.
+     * The authenticated caller's appointments.
+     *
+     * <p>Registered before {@code /{id}} so "me" is never parsed as an ID. Takes no user
+     * ID from the request — the role decides which listing is returned: a patient sees the
+     * appointments they booked, a doctor sees the ones assigned to them, and ADMIN has no
+     * listing yet (the service rejects it with 403 rather than leaking a global feed).</p>
+     *
+     * @return {@code 200 OK} with the caller's appointments (possibly empty)
+     */
+    @GetMapping("/me")
+    public List<AppointmentResponse> getCurrentUserAppointments() {
+        return appointmentService.getCurrentUserAppointments().stream()
+                .map(AppointmentResponse::from)
+                .toList();
+    }
+
+    /**
+     * Read a single appointment (ownership enforced server-side).
      *
      * @param id the appointment ID
-     * @return {@code 200 OK} with the appointment, or {@code 404} when it does not exist
+     * @return {@code 200 OK} with the appointment, {@code 404} when it does not exist,
+     *         {@code 403} when the authenticated caller may not see it
      */
     @GetMapping("/{id}")
     public AppointmentResponse getAppointment(@PathVariable Long id) {
@@ -96,7 +120,7 @@ public class AppointmentController {
     }
 
     /**
-     * Cancel an appointment.
+     * Cancel an appointment as the authenticated caller (ownership enforced server-side).
      *
      * <p>Returns the updated resource instead of {@code 204 No Content} so the caller can see
      * the new status and the recorded cancellation reason without a second request.</p>
@@ -104,8 +128,8 @@ public class AppointmentController {
      * @param id      the appointment to cancel
      * @param request the cancellation request, which must contain a reason
      * @return {@code 200 OK} with the cancelled appointment, {@code 404} when unknown,
-     *         {@code 409} when the current status cannot be cancelled, {@code 400} when the
-     *         reason is missing
+     *         {@code 403} when the caller may not cancel it, {@code 409} when the current
+     *         status cannot be cancelled, {@code 400} when the reason is missing
      */
     @PostMapping("/{id}/cancel")
     public AppointmentResponse cancelAppointment(
@@ -113,6 +137,6 @@ public class AppointmentController {
             @Valid @RequestBody CancelAppointmentRequest request
     ) {
         return AppointmentResponse.from(
-                appointmentService.cancelAppointment(id, request.cancellationReason()));
+                appointmentService.cancelAppointmentForCurrentUser(id, request.cancellationReason()));
     }
 }
