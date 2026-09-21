@@ -12,6 +12,7 @@ import java.time.LocalTime;
  * selection; persistence details (foreign keys, creation timestamp) stay internal.
  * Day of week uses the project's MySQL convention: {@code 0 = Sunday ... 6 = Saturday}.</p>
  *
+ * @param id             window identifier (used by the admin edit/close operations)
  * @param dayOfWeek      0 = Sunday ... 6 = Saturday
  * @param startTime      window start, serialized as {@code HH:mm}
  * @param endTime        window end, serialized as {@code HH:mm}
@@ -20,6 +21,7 @@ import java.time.LocalTime;
  * @param effectiveUntil last date the window applies (may be {@code null})
  */
 public record DoctorAvailabilityResponse(
+        Long id,
         int dayOfWeek,
         @com.fasterxml.jackson.annotation.JsonFormat(pattern = "HH:mm") LocalTime startTime,
         @com.fasterxml.jackson.annotation.JsonFormat(pattern = "HH:mm") LocalTime endTime,
@@ -31,6 +33,7 @@ public record DoctorAvailabilityResponse(
     /** Map an availability row to its API representation. */
     public static DoctorAvailabilityResponse from(DoctorAvailability availability) {
         return new DoctorAvailabilityResponse(
+                availability.getId(),
                 availability.getDayOfWeek(),
                 availability.getStartTime(),
                 availability.getEndTime(),
