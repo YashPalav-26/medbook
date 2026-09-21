@@ -109,9 +109,23 @@ class AppointmentControllerTest {
 
     private MockMvc mockMvc;
 
+    /**
+     * Real ADMIN user row backing the default test token. Ownership authorization resolves
+     * the JWT subject against {@code users}, and this contract test exercises the HTTP
+     * layer with an administrator (who may access any appointment by ID). Caller-visibility
+     * rules for patients/doctors are covered in {@code AppointmentOwnershipTest}.
+     */
+    private User adminUser;
+
     @BeforeEach
     void setUp() {
-        String token = createTestToken();
+        Role adminRole = roleRepository.findByName("ADMIN")
+                .orElseThrow(() -> new IllegalStateException("ADMIN role not seeded"));
+        adminUser = new User("rest-admin@medbook.test", "hashed-password", "Rest", "Admin", "+919876543230");
+        adminUser.addRole(adminRole);
+        userRepository.save(adminUser);
+
+        String token = createTestToken(String.valueOf(adminUser.getId()), "ROLE_ADMIN");
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .apply(springSecurity())
                 .defaultRequest(get("/").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
@@ -121,15 +135,15 @@ class AppointmentControllerTest {
     /**
      * Issue a real JWT through the application's encoder for the appointment calls below.
      */
-    private String createTestToken() {
+    private String createTestToken(String subject, String... roles) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("medbook")
-                .subject("1")
+                .subject(subject)
                 .issuedAt(now)
                 .expiresAt(now.plus(1, ChronoUnit.HOURS))
                 .claim("email", "rest-tester@medbook.test")
-                .claim("roles", List.of("ROLE_PATIENT"))
+                .claim("roles", List.of(roles))
                 .build();
         return jwtEncoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
                 .getTokenValue();
@@ -496,7 +510,12 @@ class AppointmentControllerTest {
         long appointmentId = postBookingAndReadId(
                 bookingJson(patient.getId(), doctor.getId(), date, "10:00", "11:00"));
 
+        // The owning patient cancels (ADMIN cannot cancel by policy — see
+        // AppointmentOwnershipTest; the default caller here is the ADMIN fixture).
+        String patientToken = createTestToken(String.valueOf(patient.getUser().getId()), "ROLE_PATIENT");
+
         mockMvc.perform(post("/api/v1/appointments/" + appointmentId + "/cancel")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + patientToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ \"cancellationReason\": \"Patient asked to reschedule\" }"))
                 .andExpect(status().isOk())
@@ -542,6 +561,67 @@ class AppointmentControllerTest {
                         .value("cancellationReason must be at most 255 characters"));
     }
 
+    // ------------------------------------------------------------------
+    // 6. GET /appointments/me (authenticated listing)
+    // ------------------------------------------------------------------
+
+    @Test
+    void meEndpointReturnsOnlyTheCallingPatientsAppointments() throws Exception {
+        Doctor doctor = createTestDoctor("rest-me-doc@medbook.test", "Rest Me Cardiology");
+        Patient mine = createTestPatient("rest-me-pat-a@medbook.test");
+        Patient other = createTestPatient("rest-me-pat-b@medbook.test");
+        LocalDate date = futureDate();
+        createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
+
+        long myAppointmentId = postBookingAndReadId(
+                bookingJson(mine.getId(), doctor.getId(), date, "10:00", "11:00"));
+        postBookingAndReadId(bookingJson(other.getId(), doctor.getId(), date, "12:00", "13:00"));
+
+        String myToken = createTestToken(String.valueOf(mine.getUser().getId()), "ROLE_PATIENT");
+
+        mockMvc.perform(get("/api/v1/appointments/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + myToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(myAppointmentId))
+                .andExpect(jsonPath("$[0].patientId").value(mine.getId().intValue()))
+                .andExpect(jsonPath("$[0].doctorId").value(doctor.getId().intValue()))
+                .andExpect(jsonPath("$[0].status").value("SCHEDULED"));
+    }
+
+    @Test
+    void meEndpointReturnsEmptyListForPatientWithoutAppointments() throws Exception {
+        Patient lonely = createTestPatient("rest-me-lonely@medbook.test");
+        String token = createTestToken(String.valueOf(lonely.getUser().getId()), "ROLE_PATIENT");
+
+        mockMvc.perform(get("/api/v1/appointments/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void meEndpointIsRejectedForAdminRoleByPolicy() throws Exception {
+        mockMvc.perform(get("/api/v1/appointments/me"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.message")
+                        .value("Appointment listing is not available for this account role"));
+    }
+
+    @Test
+    void meEndpointRequiresAuthentication() throws Exception {
+        // A MockMvc without the default ADMIN Authorization header: truly anonymous call.
+        MockMvc anonymous = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(springSecurity())
+                .build();
+
+        anonymous.perform(get("/api/v1/appointments/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
+    }
+
     @Test
     void cancelAppointmentReturns409WhenAlreadyCancelled() throws Exception {
         Doctor doctor = createTestDoctor("rest-cancel-doc2@medbook.test", "Rest Hematology");
@@ -552,12 +632,16 @@ class AppointmentControllerTest {
         long appointmentId = postBookingAndReadId(
                 bookingJson(patient.getId(), doctor.getId(), date, "10:00", "11:00"));
 
+        String patientToken = createTestToken(String.valueOf(patient.getUser().getId()), "ROLE_PATIENT");
+
         mockMvc.perform(post("/api/v1/appointments/" + appointmentId + "/cancel")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + patientToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ \"cancellationReason\": \"First cancellation\" }"))
                 .andExpect(status().isOk());
 
         mockMvc.perform(post("/api/v1/appointments/" + appointmentId + "/cancel")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + patientToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ \"cancellationReason\": \"Second cancellation\" }"))
                 .andExpect(status().isConflict())
