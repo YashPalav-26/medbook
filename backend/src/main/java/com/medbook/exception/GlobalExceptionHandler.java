@@ -3,10 +3,14 @@ package com.medbook.exception;
 import com.medbook.dto.ErrorResponse;
 import com.medbook.service.AppointmentConflictException;
 import com.medbook.service.AppointmentNotFoundException;
+import com.medbook.service.AccountInactiveException;
+import com.medbook.service.AccountLockedException;
 import com.medbook.service.DoctorInactiveException;
 import com.medbook.service.DoctorNotFoundException;
 import com.medbook.service.DoctorUnavailableException;
+import com.medbook.service.EmailAlreadyRegisteredException;
 import com.medbook.service.InvalidAppointmentStatusException;
+import com.medbook.service.InvalidCredentialsException;
 import com.medbook.service.PatientInactiveException;
 import com.medbook.service.PatientNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -72,6 +76,33 @@ public class GlobalExceptionHandler {
             InvalidAppointmentStatusException.class
     })
     public ResponseEntity<ErrorResponse> handleBusinessConflict(RuntimeException exception, HttpServletRequest request) {
+        return build(HttpStatus.CONFLICT, exception, request);
+    }
+
+    /**
+     * Login failures: wrong credentials, or an account that is locked or deactivated.
+     * All of them are 401 — login never succeeded, so there is nothing to "forbid" yet.
+     * The locked/inactive messages only reach this point after the password matched inside
+     * {@link com.medbook.service.AuthService#login}, so the account's existence is never
+     * disclosed to someone who does not know the credentials.
+     */
+    @ExceptionHandler({
+            InvalidCredentialsException.class,
+            AccountLockedException.class,
+            AccountInactiveException.class
+    })
+    public ResponseEntity<ErrorResponse> handleAuthenticationFailure(RuntimeException exception,
+                                                                     HttpServletRequest request) {
+        return build(HttpStatus.UNAUTHORIZED, exception, request);
+    }
+
+    /**
+     * Registration with an email that already has an account. Unlike the login failures,
+     * telling the caller is unavoidable here — the email must be unique.
+     */
+    @ExceptionHandler(EmailAlreadyRegisteredException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateEmail(EmailAlreadyRegisteredException exception,
+                                                              HttpServletRequest request) {
         return build(HttpStatus.CONFLICT, exception, request);
     }
 

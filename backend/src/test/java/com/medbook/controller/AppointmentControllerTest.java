@@ -21,7 +21,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -29,10 +35,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -55,6 +65,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * <p>HTTP contract asserted here: creation → 201 (+ {@code Location}), reads and successful
  * cancellation → 200, unknown doctor/patient/appointment → 404, business conflict → 409,
  * invalid request → 400.</p>
+ *
+ * <p>Since Step 14 the appointment API is protected by Spring Security, so MockMvc is built
+ * with the real security filter chain and every request carries a real (test-issued) JWT.
+ * The tokens are made by the application's own {@code JwtEncoder}, so the full decode path
+ * is exercised — the only difference from production is that the values are test fixtures.</p>
  */
 @SpringBootTest
 @Transactional
@@ -64,6 +79,9 @@ class AppointmentControllerTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
+
+    @Autowired
+    private JwtEncoder jwtEncoder;
 
     @Autowired
     private DoctorRepository doctorRepository;
@@ -93,7 +111,28 @@ class AppointmentControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        String token = createTestToken();
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(springSecurity())
+                .defaultRequest(get("/").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .build();
+    }
+
+    /**
+     * Issue a real JWT through the application's encoder for the appointment calls below.
+     */
+    private String createTestToken() {
+        Instant now = Instant.now();
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer("medbook")
+                .subject("1")
+                .issuedAt(now)
+                .expiresAt(now.plus(1, ChronoUnit.HOURS))
+                .claim("email", "rest-tester@medbook.test")
+                .claim("roles", List.of("ROLE_PATIENT"))
+                .build();
+        return jwtEncoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
+                .getTokenValue();
     }
 
     // ------------------------------------------------------------------
