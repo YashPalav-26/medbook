@@ -2,33 +2,35 @@ import React from 'react';
 
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
+  helper?: string;
   error?: string;
 }
 
 /**
- * Labeled select field, styled to match {@link Input}.
- * The label is programmatically associated with the control (htmlFor/id) so
- * screen readers and label-based tests can target it.
+ * MedBook select field, mirroring Input: same radius, borders, focus ring and
+ * error treatment. Chevron is decorative (the native one remains for interaction).
  */
-export function Select({ label, error, className = '', id, children, ...props }: SelectProps) {
+export function Select({ label, helper, error, className = '', id, children, ...props }: SelectProps) {
   const generatedId = React.useId();
   const selectId = id ?? generatedId;
 
   return (
     <div className={className}>
-      <label htmlFor={selectId} className="block text-sm font-medium text-gray-700 mb-1">
+      <label htmlFor={selectId} className="mb-1 block text-sm font-medium text-ink-700">
         {label}
       </label>
+      {helper && <p className="mb-1 text-xs text-ink-500">{helper}</p>}
       <select
         id={selectId}
-        className={`w-full rounded-lg border px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-          error ? 'border-red-400' : 'border-gray-300'
+        aria-invalid={error ? true : undefined}
+        className={`w-full rounded-field border bg-white px-3 py-2 text-ink-900 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 ${
+          error ? 'border-danger-600' : 'border-ink-200'
         }`}
         {...props}
       >
         {children}
       </select>
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-sm text-danger-700">{error}</p>}
     </div>
   );
 }
