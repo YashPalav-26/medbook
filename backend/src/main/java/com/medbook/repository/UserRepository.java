@@ -20,4 +20,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * {@code SELECT ... FROM users WHERE email = ?} at startup.
      */
     Optional<User> findByEmail(String email);
+
+    /**
+     * Case-insensitive email existence probe (emails are stored lower-cased).
+     * Used by doctor creation to reject a duplicate account with a clean 409
+     * instead of a database constraint violation.
+     */
+    boolean existsByEmailIgnoreCase(String email);
 }
