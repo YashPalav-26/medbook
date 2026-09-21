@@ -23,8 +23,8 @@ vi.mock('../api/appointmentApi', () => ({
 const mockedApi = vi.mocked(appointmentApi);
 
 const SPECIALTIES = [
-  { id: 5, name: 'Cardiology', description: null },
-  { id: 6, name: 'Dermatology', description: null },
+  { id: 5, name: 'Cardiology', description: null, active: true },
+  { id: 6, name: 'Dermatology', description: null, active: true },
 ];
 
 const DOCTORS = [
@@ -41,7 +41,7 @@ const DOCTORS = [
 ];
 
 const AVAILABILITY = [
-  { dayOfWeek: 1, startTime: '09:00', endTime: '17:00', recurring: true, effectiveFrom: null, effectiveUntil: null },
+  { id: 3, dayOfWeek: 1, startTime: '09:00', endTime: '17:00', recurring: true, effectiveFrom: null, effectiveUntil: null },
 ];
 
 const BOOKED: AppointmentResponse = {
@@ -81,10 +81,10 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
     await screen.findByRole('option', { name: 'Cardiology' }));
   await user.selectOptions(await screen.findByLabelText('Doctor'),
     await screen.findByRole('option', { name: /Dr\. Alice Smith/ }));
-  const dateInput = screen.getByLabelText('Appointment Date');
+  const dateInput = screen.getByLabelText('Appointment date');
   await user.type(dateInput, '2026-09-28');
-  await user.type(screen.getByLabelText('Start Time'), '09:00');
-  await user.type(screen.getByLabelText('End Time'), '09:30');
+  await user.type(screen.getByLabelText('Start time'), '09:00');
+  await user.type(screen.getByLabelText('End time'), '09:30');
 }
 
 beforeEach(() => {
@@ -118,7 +118,7 @@ describe('BookAppointmentPage (secure patient self-booking)', () => {
     const user = userEvent.setup();
     await fillValidForm(user);
 
-    expect(await screen.findByText(/Available windows on 2026-09-28/)).toBeInTheDocument();
+    expect(await screen.findByText(/Availability on 2026-09-28/)).toBeInTheDocument();
     expect(await screen.findByText(/09:00–17:00/)).toBeInTheDocument();
   });
 
@@ -202,9 +202,12 @@ describe('BookAppointmentPage (secure patient self-booking)', () => {
     const user = userEvent.setup();
     await fillValidForm(user);
 
-    expect(await screen.findByText(/Booking summary/i)).toBeInTheDocument();
-    expect(screen.getByText(/Dr\. Alice Smith \(Cardiology\)/)).toBeInTheDocument();
-    // The full summary line is unique to the summary box (the doctor card also shows a fee).
-    expect(screen.getByText(/on 2026-09-28, 09:00–09:30 · Fee: \$500/)).toBeInTheDocument();
+    // Step 3 heading is the confirmation summary (wizard style since Step 20).
+    expect(await screen.findByText('Confirm your visit')).toBeInTheDocument();
+    // "Dr. Alice Smith" appears in the doctor card AND the summary — assert both.
+    expect(screen.getAllByText('Dr. Alice Smith').length).toBeGreaterThanOrEqual(1);
+    // Date · time line and the fee line are distinct elements.
+    expect(screen.getByText(/2026-09-28 · 09:00–09:30/)).toBeInTheDocument();
+    expect(screen.getByText(/Consultation fee: \$500/)).toBeInTheDocument();
   });
 });
