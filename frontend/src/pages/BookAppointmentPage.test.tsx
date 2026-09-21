@@ -1,36 +1,60 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BookAppointmentPage } from './BookAppointmentPage';
 import * as appointmentApi from '../api/appointmentApi';
+import type { AppointmentResponse } from '../types/appointment';
 
-// Mock the appointment API so the test never touches the network.
+// The hooks read authentication state to decide whether queries may run.
+vi.mock('../hooks/useAuth', () => ({
+  useAuth: () => ({ isAuthenticated: true, user: { id: 42 } }),
+}));
+
+// All server access is mocked; the page is tested against the contract below.
 vi.mock('../api/appointmentApi', () => ({
+  getSpecialties: vi.fn(),
+  getDoctors: vi.fn(),
+  getDoctorAvailability: vi.fn(),
   createAppointment: vi.fn(),
 }));
 
-// Mock auth: signed-in patient whose auth user id (999) must NOT leak into the form.
-vi.mock('../hooks/useAuth', () => ({
-  useAuth: () => ({
-    user: { id: 999, email: 'test@example.com', firstName: 'Test', lastName: 'User', roles: ['ROLE_PATIENT'] },
-    token: 'fake-token',
-    isAuthenticated: true,
-    login: vi.fn(),
-    register: vi.fn(),
-    logout: vi.fn(),
-  }),
-}));
+const mockedApi = vi.mocked(appointmentApi);
 
-// Mock navigation so we can assert the redirect target.
-const navigateMock = vi.fn();
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
-  return { ...actual, useNavigate: () => navigateMock };
-});
+const SPECIALTIES = [
+  { id: 5, name: 'Cardiology', description: null },
+  { id: 6, name: 'Dermatology', description: null },
+];
 
-const mockedCreate = vi.mocked(appointmentApi.createAppointment);
+const DOCTORS = [
+  {
+    id: 7,
+    firstName: 'Alice',
+    lastName: 'Smith',
+    specialty: 'Cardiology',
+    yearsExperience: 8,
+    bio: 'Heart health specialist',
+    consultationFee: 500,
+    profilePictureUrl: null,
+  },
+];
+
+const AVAILABILITY = [
+  { dayOfWeek: 1, startTime: '09:00', endTime: '17:00', recurring: true, effectiveFrom: null, effectiveUntil: null },
+];
+
+const BOOKED: AppointmentResponse = {
+  id: 99,
+  patientId: 123,
+  doctorId: 7,
+  appointmentDate: '2026-09-28',
+  startTime: '09:00',
+  endTime: '09:30',
+  status: 'SCHEDULED',
+  cancellationReason: null,
+  consultationFeeSnapshot: 500,
+};
 
 function renderPage() {
   const queryClient = new QueryClient({
@@ -38,85 +62,149 @@ function renderPage() {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <BookAppointmentPage />
+      <MemoryRouter initialEntries={['/appointments/new']}>
+        <Routes>
+          <Route path="/appointments/new" element={<BookAppointmentPage />} />
+          <Route path="/appointments/:id" element={<div>DETAIL PAGE PROBE</div>} />
+          <Route path="/appointments" element={<div>MY APPOINTMENTS PROBE</div>} />
+          <Route path="/dashboard" element={<div>DASHBOARD PROBE</div>} />
+        </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
   );
 }
 
-const successResponse = {
-  id: 42,
-  patientId: 1350,
-  doctorId: 1,
-  appointmentDate: '2026-09-28',
-  startTime: '09:00',
-  endTime: '09:30',
-  status: 'SCHEDULED' as const,
-  cancellationReason: null,
-  consultationFeeSnapshot: 500,
-};
+/** Select specialty → doctor, then set date and times through the real form controls. */
+async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
+  // Options arrive asynchronously, so wait for the option elements themselves.
+  await user.selectOptions(await screen.findByLabelText('Specialty'),
+    await screen.findByRole('option', { name: 'Cardiology' }));
+  await user.selectOptions(await screen.findByLabelText('Doctor'),
+    await screen.findByRole('option', { name: /Dr\. Alice Smith/ }));
+  const dateInput = screen.getByLabelText('Appointment Date');
+  await user.type(dateInput, '2026-09-28');
+  await user.type(screen.getByLabelText('Start Time'), '09:00');
+  await user.type(screen.getByLabelText('End Time'), '09:30');
+}
 
-describe('BookAppointmentPage', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockedApi.getSpecialties.mockResolvedValue(SPECIALTIES);
+  mockedApi.getDoctors.mockResolvedValue(DOCTORS);
+  mockedApi.getDoctorAvailability.mockResolvedValue(AVAILABILITY);
+  mockedApi.createAppointment.mockResolvedValue(BOOKED);
+});
+
+describe('BookAppointmentPage (secure patient self-booking)', () => {
+  it('renders specialty and doctor options from the discovery APIs', async () => {
+    renderPage();
+    const user = userEvent.setup();
+
+    // Specialties load into the dropdown.
+    await user.selectOptions(await screen.findByLabelText('Specialty'),
+      await screen.findByRole('option', { name: 'Cardiology' }));
+
+    // Doctors of that specialty load into the second dropdown.
+    const doctorSelect = await screen.findByLabelText('Doctor');
+    await waitFor(() => expect(doctorSelect).not.toBeDisabled());
+    expect(await screen.findByRole('option', { name: /Dr\. Alice Smith/ })).toBeInTheDocument();
+
+    // The doctor query was narrowed to the selected specialty.
+    expect(mockedApi.getDoctors).toHaveBeenCalledWith(5);
   });
 
-  it('submits exactly the patient/doctor IDs typed into the form (no silent substitution)', async () => {
-    const user = userEvent.setup();
-    mockedCreate.mockResolvedValueOnce(successResponse);
+  it('shows the doctor availability for the selected date', async () => {
     renderPage();
+    const user = userEvent.setup();
+    await fillValidForm(user);
 
-    // Type explicit test data — auth user id 999 must never be submitted instead.
-    await user.type(screen.getByLabelText(/patient id/i), '1350');
-    await user.type(screen.getByLabelText(/doctor id/i), '1');
-    await user.type(screen.getByLabelText(/appointment date/i), '2026-09-28');
-    await user.type(screen.getByLabelText(/start time/i), '09:00');
-    await user.type(screen.getByLabelText(/end time/i), '09:30');
-    await user.click(screen.getByRole('button', { name: /book appointment/i }));
-
-    await waitFor(() => {
-      expect(mockedCreate).toHaveBeenCalledTimes(1);
-    });
-    expect(mockedCreate).toHaveBeenCalledWith({
-      patientId: 1350,
-      doctorId: 1,
-      appointmentDate: '2026-09-28',
-      startTime: '09:00',
-      endTime: '09:30',
-    });
-    await waitFor(() => {
-      expect(navigateMock).toHaveBeenCalledWith('/appointments/42');
-    });
+    expect(await screen.findByText(/Available windows on 2026-09-28/)).toBeInTheDocument();
+    expect(await screen.findByText(/09:00–17:00/)).toBeInTheDocument();
   });
 
-  it('rejects empty patient/doctor ID instead of inventing values', async () => {
-    const user = userEvent.setup();
+  it('shows a clear empty state when the doctor has no availability that day', async () => {
+    mockedApi.getDoctorAvailability.mockResolvedValue([]);
     renderPage();
+    const user = userEvent.setup();
+    await fillValidForm(user);
 
-    await user.click(screen.getByRole('button', { name: /book appointment/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('Patient ID is required')).toBeInTheDocument();
-    });
-    expect(screen.getByText('Doctor ID is required')).toBeInTheDocument();
-    expect(mockedCreate).not.toHaveBeenCalled();
+    expect(await screen.findByText(/No availability windows for this doctor on 2026-09-28/))
+      .toBeInTheDocument();
   });
 
-  it('rejects end time earlier than start time', async () => {
-    const user = userEvent.setup();
+  it('has no patient ID input anywhere on the page', () => {
     renderPage();
+    expect(screen.queryByLabelText(/patient id/i)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/patient id/i)).not.toBeInTheDocument();
+  });
 
-    await user.type(screen.getByLabelText(/patient id/i), '1350');
-    await user.type(screen.getByLabelText(/doctor id/i), '1');
-    await user.type(screen.getByLabelText(/appointment date/i), '2026-09-28');
-    await user.type(screen.getByLabelText(/start time/i), '10:00');
-    await user.type(screen.getByLabelText(/end time/i), '09:00');
+  it('does not submit when required choices are missing', async () => {
+    renderPage();
+    const user = userEvent.setup();
+
     await user.click(screen.getByRole('button', { name: /book appointment/i }));
 
-    await waitFor(() => {
-      expect(screen.getByText('End time must be after start time')).toBeInTheDocument();
+    expect(await screen.findByText('Select a specialty')).toBeInTheDocument();
+    expect(mockedApi.createAppointment).not.toHaveBeenCalled();
+  });
+
+  it('submits the booking without any patient identity and navigates to the detail page', async () => {
+    renderPage();
+    const user = userEvent.setup();
+    await fillValidForm(user);
+
+    await user.click(screen.getByRole('button', { name: /book appointment/i }));
+
+    await waitFor(() => expect(mockedApi.createAppointment).toHaveBeenCalledTimes(1));
+    const payload = mockedApi.createAppointment.mock.calls[0][0];
+    // The JWT is the only identity source: no patientId may be sent, ever.
+    expect('patientId' in payload).toBe(false);
+    expect(payload.doctorId).toBe(7);
+    expect(payload.appointmentDate).toBe('2026-09-28');
+    expect(payload.startTime).toBe('09:00');
+    expect(payload.endTime).toBe('09:30');
+
+    expect(await screen.findByText('DETAIL PAGE PROBE')).toBeInTheDocument();
+  });
+
+  it('shows a readable message when the backend reports a slot conflict (409)', async () => {
+    mockedApi.createAppointment.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 409, data: { message: 'Doctor already has an appointment overlapping this time' } },
     });
-    expect(mockedCreate).not.toHaveBeenCalled();
+    renderPage();
+    const user = userEvent.setup();
+    await fillValidForm(user);
+
+    await user.click(screen.getByRole('button', { name: /book appointment/i }));
+
+    expect(await screen.findByText(/already has an appointment overlapping/i)).toBeInTheDocument();
+    // The user stays on the form to correct the choice.
+    expect(screen.getByLabelText('Specialty')).toBeInTheDocument();
+  });
+
+  it('shows a readable message when the backend reports 403', async () => {
+    mockedApi.createAppointment.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 403, data: { message: 'Only patients can book appointments for themselves' } },
+    });
+    renderPage();
+    const user = userEvent.setup();
+    await fillValidForm(user);
+
+    await user.click(screen.getByRole('button', { name: /book appointment/i }));
+
+    expect(await screen.findByText(/only patients can book appointments/i)).toBeInTheDocument();
+  });
+
+  it('shows the booking summary before submission', async () => {
+    renderPage();
+    const user = userEvent.setup();
+    await fillValidForm(user);
+
+    expect(await screen.findByText(/Booking summary/i)).toBeInTheDocument();
+    expect(screen.getByText(/Dr\. Alice Smith \(Cardiology\)/)).toBeInTheDocument();
+    // The full summary line is unique to the summary box (the doctor card also shows a fee).
+    expect(screen.getByText(/on 2026-09-28, 09:00–09:30 · Fee: \$500/)).toBeInTheDocument();
   });
 });
