@@ -142,4 +142,58 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
      */
     @Query("SELECT a FROM Appointment a JOIN FETCH a.patient JOIN FETCH a.doctor WHERE a.id = :id")
     Optional<Appointment> findByIdWithPatientAndDoctor(@Param("id") Long id);
+
+    /**
+     * Find one appointment by ID only when it belongs to the given patient, fetching
+     * patient and doctor in the same query (Open Session In View is disabled).
+     *
+     * <p>Ownership filter lives in the WHERE clause so an unauthorized read is
+     * indistinguishable from a missing row at the query level; the service decides
+     * which HTTP status (404 vs 403) each case maps to.</p>
+     *
+     * @param id        the appointment's ID
+     * @param patientId the patient's ID (the owning side, not the user's ID)
+     * @return the appointment with patient and doctor initialized, or empty when not owned
+     */
+    @Query("SELECT a FROM Appointment a JOIN FETCH a.patient JOIN FETCH a.doctor " +
+           "WHERE a.id = :id AND a.patient.id = :patientId")
+    Optional<Appointment> findByIdAndPatientIdWithParticipants(
+            @Param("id") Long id, @Param("patientId") Long patientId);
+
+    /**
+     * Find one appointment by ID only when it is assigned to the given doctor, fetching
+     * patient and doctor in the same query.
+     *
+     * @param id       the appointment's ID
+     * @param doctorId the doctor's ID (the assigned side, not the user's ID)
+     * @return the appointment with patient and doctor initialized, or empty when not assigned
+     */
+    @Query("SELECT a FROM Appointment a JOIN FETCH a.patient JOIN FETCH a.doctor " +
+           "WHERE a.id = :id AND a.doctor.id = :doctorId")
+    Optional<Appointment> findByIdAndDoctorIdWithParticipants(
+            @Param("id") Long id, @Param("doctorId") Long doctorId);
+
+    /**
+     * All appointments of one patient (via the patient's user account), newest first.
+     *
+     * <p>Traverses {@code Appointment → Patient → User}, so the lookup key is the
+     * authenticated user's ID — the value the JWT carries — not the patient row ID.
+     * {@code JOIN FETCH} keeps participant IDs readable after the transaction ends.</p>
+     *
+     * @param userId the owning patient's user ID
+     * @return the patient's appointments, newest first
+     */
+    @Query("SELECT a FROM Appointment a JOIN FETCH a.patient p JOIN FETCH a.doctor " +
+           "WHERE p.user.id = :userId ORDER BY a.appointmentDate DESC, a.startTime DESC")
+    List<Appointment> findAllByPatientUserId(@Param("userId") Long userId);
+
+    /**
+     * All appointments assigned to one doctor (via the doctor's user account), newest first.
+     *
+     * @param userId the assigned doctor's user ID
+     * @return the doctor's appointments, newest first
+     */
+    @Query("SELECT a FROM Appointment a JOIN FETCH a.patient JOIN FETCH a.doctor d " +
+           "WHERE d.user.id = :userId ORDER BY a.appointmentDate DESC, a.startTime DESC")
+    List<Appointment> findAllByDoctorUserId(@Param("userId") Long userId);
 }
