@@ -150,7 +150,107 @@ public class AppointmentService {
     }
 
     /**
-     * Book a new appointment.
+     * Book a new appointment for the <strong>authenticated patient</strong> (self-booking).
+     *
+     * <p>This is the entry point for {@code POST /api/v1/appointments} with a
+     * {@link com.medbook.dto.PatientBookingRequest} body — a body that carries no
+     * {@code patientId} at all. The booking patient is resolved from the JWT caller:
+     * {@code users.id} → the patient profile linked to that account. A client cannot
+     * book for someone else because there is simply no field it could influence —
+     * identity is never taken from request data.</p>
+     *
+     * <p>Doctors are rejected (they have no patient profile; booking is not a doctor
+     * capability in this project), admins are pointed at the support path
+     * {@link #createAppointmentForPatient(com.medbook.dto.CreateAppointmentRequest)}.
+     * All slot/availability/conflict validation and the doctor row lock are the same
+     * rules used by every other booking path.</p>
+     *
+     * @param request the self-booking request ({@code doctorId}, date, time window, optional reason)
+     * @return the persisted appointment, with status SCHEDULED
+     * @throws AppointmentOwnershipException when the caller is not a patient (DOCTOR/ADMIN)
+     * @throws IllegalStateException         when the authenticated account has no patient profile
+     * @throws PatientInactiveException      when the caller's patient profile is deactivated
+     * @throws DoctorNotFoundException       when no doctor row exists for {@code doctorId}
+     * @throws DoctorInactiveException       when the doctor exists but is deactivated
+     * @throws IllegalArgumentException      when the date/time window itself is invalid
+     * @throws DoctorUnavailableException    when the window is outside doctor availability
+     * @throws AppointmentConflictException  when the doctor already has a clashing appointment
+     */
+    @Transactional
+    public Appointment createAppointmentForCurrentUser(com.medbook.dto.PatientBookingRequest request) {
+        User caller = requireCurrentUser();
+
+        if (!caller.hasRole(ROLE_PATIENT)) {
+            throw new AppointmentOwnershipException(
+                    "Only patients can book appointments for themselves;"
+                            + " use the support path to book on behalf of a patient");
+        }
+
+        Patient patient = patientRepository.findByUserId(caller.getId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Authenticated account has no patient profile: " + caller.getId()));
+
+        return createAppointment(
+                patient.getId(),
+                request.doctorId(),
+                request.appointmentDate(),
+                request.startTime(),
+                request.endTime(),
+                request.reason());
+    }
+
+    /**
+     * Book a new appointment for an explicitly named patient — the ADMIN support path.
+     *
+     * <p>Justification for accepting {@code patientId} here (documented in
+     * {@code docs/doctor-discovery-and-booking.md}): administrators operate the clinic
+     * back office, where booking on behalf of a patient who called by phone or cannot
+     * use the app is the entire point. The capability is restricted to the ADMIN role:
+     * patients must use {@link #createAppointmentForCurrentUser}, where their identity
+     * comes from the JWT and no {@code patientId} is accepted; doctors cannot book.</p>
+     *
+     * @param request the support request (includes the target {@code patientId})
+     * @return the persisted appointment, with status SCHEDULED
+     * @throws AppointmentOwnershipException when the caller is not an admin
+     */
+    @Transactional
+    public Appointment createAppointmentForPatient(com.medbook.dto.CreateAppointmentRequest request) {
+        User caller = requireCurrentUser();
+
+        if (!caller.hasRole(ROLE_ADMIN)) {
+            throw new AppointmentOwnershipException(
+                    "Booking for another patient requires an administrator");
+        }
+        return createAppointment(
+                request.patientId(),
+                request.doctorId(),
+                request.appointmentDate(),
+                request.startTime(),
+                request.endTime(),
+                null);
+    }
+
+    /**
+     * Book a new appointment for a patient by ID without an explicit reason.
+     *
+     * <p>Convenience overload kept for existing internal/test callers; the HTTP
+     * request paths {@link #createAppointmentForCurrentUser} and
+     * {@link #createAppointmentForPatient} provide the reason field.</p>
+     */
+    @Transactional
+    public Appointment createAppointment(
+            Long patientId,
+            Long doctorId,
+            LocalDate appointmentDate,
+            LocalTime startTime,
+            LocalTime endTime
+    ) {
+        return createAppointment(patientId, doctorId, appointmentDate, startTime, endTime, null);
+    }
+
+    /**
+     * Core booking routine shared by every path (patient self-booking, admin support,
+     * context-free internal use).
      *
      * <p>Business flow (all inside one transaction):</p>
      * <ol>
@@ -164,11 +264,12 @@ public class AppointmentService {
      * <li>insert the first status history row (SCHEDULED).</li>
      * </ol>
      *
-     * @param patientId       the booking patient's ID
+     * @param patientId       the booking patient's ID (already resolved and authorized upstream)
      * @param doctorId        the booked doctor's ID
      * @param appointmentDate the clinic visit date
      * @param startTime       window start time
      * @param endTime         window end time (exclusive, must be after {@code startTime})
+     * @param reason          optional visit reason stored with the appointment (may be null)
      * @return the persisted appointment, with status SCHEDULED
      * @throws DoctorNotFoundException      when no doctor row exists for {@code doctorId}
      * @throws DoctorInactiveException      when the doctor exists but is deactivated
@@ -184,7 +285,8 @@ public class AppointmentService {
             Long doctorId,
             LocalDate appointmentDate,
             LocalTime startTime,
-            LocalTime endTime
+            LocalTime endTime,
+            String reason
     ) {
         // 1 + 2. Lock the doctor row, then check the doctor exists and is active.
         // The lock is held until this transaction commits or rolls back.
@@ -221,6 +323,7 @@ public class AppointmentService {
                 endTime,
                 doctor.getConsultationFee()
         );
+        appointment.setReason(reason);
         Appointment saved = appointmentRepository.save(appointment);
 
         // 8. Record the first status history row: the appointment starts as SCHEDULED.
