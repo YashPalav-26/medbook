@@ -4,9 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import * as React from 'react';
 import { useAppointment, useCancelAppointment } from '../hooks/useAppointment';
+import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
+import { Modal } from '../components/ui/Modal';
+import { StatusBadge, ErrorBox, EmptyState, Skeleton, Spinner } from '../components/ui/Feedback';
+import { useToast } from '../components/ui/Toast';
 import { toApiError } from '../api/client';
 import {
   Calendar,
@@ -15,33 +19,14 @@ import {
   Stethoscope,
   AlertCircle,
   XCircle,
-  CheckCircle,
-  Loader2,
-  IndianRupee
+  IndianRupee,
 } from 'lucide-react';
-import type { AppointmentStatus } from '../types/appointment';
 
 const cancelSchema = z.object({
   cancellationReason: z.string().min(1, 'Cancellation reason is required').max(255, 'Reason must be at most 255 characters'),
 });
 
 type CancelFormData = z.infer<typeof cancelSchema>;
-
-const statusColors: Record<AppointmentStatus, string> = {
-  SCHEDULED: 'bg-blue-100 text-blue-800',
-  CONFIRMED: 'bg-green-100 text-green-800',
-  COMPLETED: 'bg-gray-100 text-gray-800',
-  CANCELLED: 'bg-red-100 text-red-800',
-  NO_SHOW: 'bg-orange-100 text-orange-800',
-};
-
-const statusIcons: Record<AppointmentStatus, React.ReactElement> = {
-  SCHEDULED: <Clock className="w-4 h-4" />,
-  CONFIRMED: <CheckCircle className="w-4 h-4" />,
-  COMPLETED: <CheckCircle className="w-4 h-4" />,
-  CANCELLED: <XCircle className="w-4 h-4" />,
-  NO_SHOW: <AlertCircle className="w-4 h-4" />,
-};
 
 export function AppointmentDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -61,6 +46,8 @@ export function AppointmentDetailPage() {
     resolver: zodResolver(cancelSchema),
   });
 
+  const toast = useToast();
+
   const onCancelSubmit = async (data: CancelFormData) => {
     if (!appointmentId) return;
 
@@ -71,8 +58,9 @@ export function AppointmentDetailPage() {
       });
       setShowCancelForm(false);
       reset();
-    } catch (err) {
-      // Error handled by mutation
+      toast.success('Appointment cancelled.');
+    } catch {
+      // Error surfaced through the modal via cancelMutation.error.
     }
   };
 
@@ -81,185 +69,197 @@ export function AppointmentDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 flex items-center justify-center">
-        <div className="flex items-center gap-3 text-gray-600">
-          <Loader2 className="w-6 h-6 animate-spin" />
-          Loading appointment...
-        </div>
-      </div>
+      <AppShell title="Appointment">
+        <Card className="space-y-4 p-6">
+          <div className="flex justify-between">
+            <Skeleton className="h-7 w-40" />
+            <Skeleton className="h-6 w-24 rounded-full" />
+          </div>
+          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-4 w-52" />
+          <Skeleton className="h-9 w-36" />
+        </Card>
+      </AppShell>
     );
   }
 
   if (apiError?.status === 404 || !appointment) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4">
-        <Card className="max-w-md mx-auto p-8">
-          <div className="text-center">
-            <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Appointment Not Found</h2>
-            <p className="text-gray-600 mb-6">
-              {apiError?.message || 'The appointment you are looking for does not exist.'}
-            </p>
-            <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
-          </div>
+      <AppShell title="Appointment">
+        <Card className="p-6">
+          <EmptyState
+            icon={<AlertCircle className="h-8 w-8" />}
+            title="Appointment not found"
+            message={apiError?.message || 'The appointment you are looking for does not exist or belongs to another patient.'}
+            action={<Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>}
+          />
         </Card>
-      </div>
+      </AppShell>
     );
   }
 
   if (apiError) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4">
-        <Card className="max-w-md mx-auto p-8">
-          <div className="text-center">
-            <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Appointment</h2>
-            <p className="text-gray-600 mb-6">{apiError.message}</p>
-            <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
-          </div>
-        </Card>
-      </div>
+      <AppShell title="Appointment">
+        <ErrorBox message={apiError.message} onRetry={() => navigate(0)} />
+      </AppShell>
     );
   }
 
   const canCancel = appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED';
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-6">
-          <Link to="/dashboard" className="text-blue-600 hover:underline text-sm">
-            ← Back to Dashboard
-          </Link>
+    <AppShell title={`Appointment #${appointment.id}`}>
+      <div className="mb-6">
+        <Link to="/appointments/me" className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline">
+          <Calendar className="h-4 w-4" aria-hidden="true" />
+          Back to My Appointments
+        </Link>
+      </div>
+
+      <Card className="p-6 sm:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="font-display text-2xl font-semibold text-ink-900">Appointment #{appointment.id}</h2>
+            <p className="mt-1 text-sm text-ink-500">Booked visit details and status.</p>
+          </div>
+          <StatusBadge status={appointment.status} />
         </div>
 
-        <Card className="p-8">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <Calendar className="w-8 h-8 text-blue-600" />
-                Appointment #{appointment.id}
-              </h1>
+        <div className="mt-8 space-y-6">
+          {/* Who — patient and doctor, straight from the API response */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex items-center gap-3 rounded-field border border-ink-100 bg-ink-50 p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-brand-600 shadow-card">
+                <User className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-sm text-ink-500">Patient</p>
+                <p className="font-medium text-ink-900">Patient #{appointment.patientId}</p>
+              </div>
             </div>
-            <div className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2 ${statusColors[appointment.status]}`}>
-              {statusIcons[appointment.status]}
-              {appointment.status}
+            <div className="flex items-center gap-3 rounded-field border border-ink-100 bg-ink-50 p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-brand-600 shadow-card">
+                <Stethoscope className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-sm text-ink-500">Doctor</p>
+                <p className="font-medium text-ink-900">Doctor #{appointment.doctorId}</p>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h2 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  Patient
-                </h2>
-                <p className="text-lg text-gray-900">Patient ID: {appointment.patientId}</p>
+          {/* When */}
+          <div>
+            <h3 className="mb-3 text-sm font-medium text-ink-500">Date &amp; time</h3>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-field border border-ink-100 p-3">
+                <p className="flex items-center gap-1.5 text-xs text-ink-500">
+                  <Calendar className="h-3.5 w-3.5" aria-hidden="true" /> Date
+                </p>
+                <p className="mt-0.5 font-medium text-ink-900">{appointment.appointmentDate}</p>
               </div>
-
-              <div>
-                <h2 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
-                  <Stethoscope className="w-4 h-4" />
-                  Doctor
-                </h2>
-                <p className="text-lg text-gray-900">Doctor ID: {appointment.doctorId}</p>
+              <div className="rounded-field border border-ink-100 p-3">
+                <p className="flex items-center gap-1.5 text-xs text-ink-500">
+                  <Clock className="h-3.5 w-3.5" aria-hidden="true" /> Start
+                </p>
+                <p className="mt-0.5 font-medium text-ink-900">{appointment.startTime}</p>
               </div>
-            </div>
-
-            <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-sm font-medium text-gray-500 mb-4 flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Appointment Details
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">Date</p>
-                  <p className="text-lg font-medium text-gray-900">{appointment.appointmentDate}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Start Time</p>
-                  <p className="text-lg font-medium text-gray-900">{appointment.startTime}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">End Time</p>
-                  <p className="text-lg font-medium text-gray-900">{appointment.endTime}</p>
-                </div>
+              <div className="rounded-field border border-ink-100 p-3">
+                <p className="flex items-center gap-1.5 text-xs text-ink-500">
+                  <Clock className="h-3.5 w-3.5" aria-hidden="true" /> End
+                </p>
+                <p className="mt-0.5 font-medium text-ink-900">{appointment.endTime}</p>
               </div>
             </div>
-
-            <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
-                <IndianRupee className="w-4 h-4" />
-                Consultation Fee
-              </h2>
-              <p className="text-2xl font-bold text-gray-900">₹{appointment.consultationFeeSnapshot.toFixed(2)}</p>
-            </div>
-
-            {appointment.cancellationReason && (
-              <div className="border-t border-gray-200 pt-6">
-                <h2 className="text-sm font-medium text-gray-500 mb-2 flex items-center gap-2">
-                  <XCircle className="w-4 h-4" />
-                  Cancellation Reason
-                </h2>
-                <p className="text-gray-900">{appointment.cancellationReason}</p>
-              </div>
-            )}
-
-            {canCancel && !showCancelForm && (
-              <div className="border-t border-gray-200 pt-6">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowCancelForm(true)}
-                  className="text-red-600 border-red-300 hover:bg-red-50"
-                >
-                  Cancel Appointment
-                </Button>
-              </div>
-            )}
-
-            {canCancel && showCancelForm && (
-              <div className="border-t border-gray-200 pt-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Cancel Appointment</h2>
-                <form onSubmit={handleSubmit(onCancelSubmit)} className="space-y-4">
-                  <Input
-                    label="Cancellation Reason"
-                    {...register('cancellationReason')}
-                    error={errors.cancellationReason?.message}
-                    placeholder="Please provide a reason for cancellation"
-                  />
-
-                  {cancelError && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4" />
-                      {cancelError.message}
-                    </div>
-                  )}
-
-                  <div className="flex gap-4">
-                    <Button
-                      type="submit"
-                      disabled={cancelMutation.isPending}
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                    >
-                      {cancelMutation.isPending ? 'Cancelling...' : 'Confirm Cancellation'}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowCancelForm(false);
-                        reset();
-                      }}
-                    >
-                      Keep Appointment
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            )}
           </div>
-        </Card>
-      </div>
-    </div>
+
+          {/* Fee */}
+          <div className="flex items-center justify-between rounded-field border border-brand-100 bg-brand-50 p-4">
+            <p className="flex items-center gap-2 text-sm font-medium text-ink-700">
+              <IndianRupee className="h-4 w-4 text-brand-600" aria-hidden="true" />
+              Consultation fee
+            </p>
+            <p className="font-display text-2xl font-semibold text-brand-700">
+              ${appointment.consultationFeeSnapshot.toFixed(2)}
+            </p>
+          </div>
+
+          {appointment.cancellationReason && (
+            <div className="rounded-field border border-danger-600/30 bg-danger-100/60 p-4">
+              <p className="flex items-center gap-2 text-sm font-medium text-danger-700">
+                <XCircle className="h-4 w-4" aria-hidden="true" />
+                Cancellation reason
+              </p>
+              <p className="mt-1 text-sm text-danger-700">{appointment.cancellationReason}</p>
+            </div>
+          )}
+
+          {/* Actions — destructive cancel goes through a confirmation modal */}
+          {canCancel && (
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  reset();
+                  setShowCancelForm(true);
+                }}
+                className="border-danger-300 text-danger-700 hover:bg-danger-100/60"
+              >
+                <XCircle className="h-4 w-4" aria-hidden="true" />
+                Cancel Appointment
+              </Button>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Cancel confirmation dialog: warns, requires a reason, shows the consequence */}
+      {showCancelForm && (
+        <Modal
+          title="Cancel this appointment?"
+          description="This releases the time slot. The appointment cannot be re-opened afterwards."
+          onClose={() => setShowCancelForm(false)}
+        >
+          <form onSubmit={handleSubmit(onCancelSubmit)} className="space-y-4">
+            <Input
+              label="Cancellation reason"
+              {...register('cancellationReason')}
+              error={errors.cancellationReason?.message}
+              placeholder="Please provide a reason for cancellation"
+            />
+
+            {cancelError && <ErrorBox message={cancelError.message} />}
+
+            <div className="flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowCancelForm(false);
+                  reset();
+                }}
+              >
+                Keep Appointment
+              </Button>
+              <Button
+                type="submit"
+                disabled={cancelMutation.isPending}
+                className="bg-danger-600 hover:bg-danger-700"
+              >
+                {cancelMutation.isPending ? (
+                  <>
+                    <Spinner className="text-white" />
+                    Cancelling…
+                  </>
+                ) : (
+                  'Confirm Cancellation'
+                )}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </AppShell>
   );
 }
