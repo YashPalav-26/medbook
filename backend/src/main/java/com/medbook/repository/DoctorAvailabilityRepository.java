@@ -42,4 +42,19 @@ public interface DoctorAvailabilityRepository extends JpaRepository<DoctorAvaila
      * then start time, so the weekly schedule reads like a calendar.</p>
      */
     List<DoctorAvailability> findByDoctorIdOrderByDayOfWeekAscStartTimeAsc(Long doctorId);
+
+    /**
+     * Uniqueness probe for the schema's {@code uk_availability_doctor_day_time} constraint.
+     * Lets the service return a friendly 409 instead of a raw constraint-violation 500.
+     */
+    boolean existsByDoctorIdAndDayOfWeekAndStartTimeAndEndTime(
+            Long doctorId, byte dayOfWeek, java.time.LocalTime startTime, java.time.LocalTime endTime);
+
+    /**
+     * Uniqueness probe for the schema's {@code uk_availability_doctor_day_time} constraint,
+     * excluding one row — the update variant. Lets the service return a friendly 409
+     * instead of a raw constraint-violation 500.
+     */
+    boolean existsByDoctorIdAndDayOfWeekAndStartTimeAndEndTimeAndIdNot(
+            Long doctorId, byte dayOfWeek, java.time.LocalTime startTime, java.time.LocalTime endTime, Long id);
 }
