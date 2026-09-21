@@ -229,6 +229,15 @@ public class User {
     }
 
     /**
+     * Check whether the user carries a role by name (for example {@code "PATIENT"}).
+     * Names are stored without the {@code ROLE_} prefix in the {@code roles} table;
+     * JWT authorities carry the prefix, but this helper works on the entity side.
+     */
+    public boolean hasRole(String roleName) {
+        return roles.stream().anyMatch(role -> role.getName().equals(roleName));
+    }
+
+    /**
      * Identity is based on the surrogate primary key when persisted.
      * For transient (unsaved) instances, hashCode stability is preserved so
      * hash-based collections behave before and after the id is assigned.
