@@ -54,4 +54,25 @@ public interface SpecialtyRepository extends JpaRepository<Specialty, Long> {
      * @return active specialties sorted alphabetically
      */
     List<Specialty> findByActiveTrueOrderByNameAsc();
+
+    /**
+     * Case-insensitive uniqueness probe for specialty names.
+     *
+     * <p>Used by the admin service to reject duplicates with a friendly 409 before
+     * the database's UNIQUE constraint turns the same situation into a raw 500.
+     * Case-insensitive so "Cardiology" and "cardiology" are treated as the same name.</p>
+     */
+    boolean existsByNameIgnoreCase(String name);
+
+    /**
+     * Case-insensitive uniqueness probe excluding one row — the update variant:
+     * "does another specialty (not {@code id}) already use this name?".
+     */
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+
+    /**
+     * Every specialty (active and inactive), ordered by name — the admin list.
+     * The public discovery API stays active-only; admins manage both states.
+     */
+    List<Specialty> findAllByOrderByNameAsc();
 }
