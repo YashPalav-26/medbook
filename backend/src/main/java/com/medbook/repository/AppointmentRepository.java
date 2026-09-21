@@ -127,4 +127,19 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM Appointment a WHERE a.id = :id")
     Optional<Appointment> findByIdForUpdate(@Param("id") Long id);
+
+    /**
+     * Read one appointment together with its patient and doctor in a single query.
+     *
+     * <p>{@code JOIN FETCH} is used because both relationships are mapped
+     * {@code FetchType.LAZY} and Open Session In View is disabled
+     * ({@code spring.jpa.open-in-view=false}). Fetching them here means the caller can
+     * safely read the participants' IDs after the transaction has ended, which is what
+     * the REST response mapper needs.</p>
+     *
+     * @param id the appointment's ID
+     * @return the appointment with patient and doctor initialized, or empty when not found
+     */
+    @Query("SELECT a FROM Appointment a JOIN FETCH a.patient JOIN FETCH a.doctor WHERE a.id = :id")
+    Optional<Appointment> findByIdWithPatientAndDoctor(@Param("id") Long id);
 }

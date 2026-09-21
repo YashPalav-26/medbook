@@ -65,6 +65,24 @@ public class AppointmentService {
     }
 
     /**
+     * Read one appointment by ID.
+     *
+     * <p>This is a plain read used by the REST layer for {@code GET /api/v1/appointments/{id}};
+     * it contains no business rules beyond "the appointment must exist". It runs in a
+     * read-only transaction and fetches patient and doctor eagerly so the caller can map the
+     * entity to a response DTO after the transaction has ended.</p>
+     *
+     * @param appointmentId the appointment to read
+     * @return the stored appointment
+     * @throws AppointmentNotFoundException when no appointment row exists for that ID
+     */
+    @Transactional(readOnly = true)
+    public Appointment getAppointment(Long appointmentId) {
+        return appointmentRepository.findByIdWithPatientAndDoctor(appointmentId)
+                .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
+    }
+
+    /**
      * Book a new appointment.
      *
      * <p>Business flow (all inside one transaction):</p>
