@@ -50,20 +50,24 @@ describe('Dashboard navigation', () => {
     window.history.pushState({}, '', '/');
   });
 
-  it('renders the dashboard with all three action cards', () => {
-    renderApp(); // "/" redirects to /dashboard
+  it('renders the redesigned dashboard with welcome, quick actions and shell navigation', () => {
+    // "/" is now the public homepage (Step 20); the dashboard lives at /dashboard.
+    window.history.pushState({}, '', '/dashboard');
+    renderApp();
 
-    expect(screen.getByRole('heading', { name: 'MedBook', level: 1 })).toBeInTheDocument();
-    expect(screen.getByText('Book Appointment')).toBeInTheDocument();
-    expect(screen.getByText('My Appointments')).toBeInTheDocument();
-    expect(screen.getByText('My Profile')).toBeInTheDocument();
+    // Personalized welcome from the authenticated user.
+    expect(screen.getByText(/Good to see you, Test/i)).toBeInTheDocument();
+    // Quick actions exist (sidebar nav + dashboard card, so allow multiples).
+    expect(screen.getAllByText('Book Appointment').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('My Appointments').length).toBeGreaterThan(0);
   });
 
   it('links My Appointments to the appointments list route', () => {
+    window.history.pushState({}, '', '/dashboard');
     renderApp();
 
-    const link = screen.getByText('My Appointments').closest('a');
-    expect(link).not.toBeNull();
+    // The sidebar navigation link is the stable click target.
+    const link = screen.getByRole('link', { name: 'My Appointments' });
     expect(link).toHaveAttribute('href', '/appointments/me');
   });
 
