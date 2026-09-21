@@ -29,11 +29,12 @@ export interface AdminCreateAppointmentRequest {
   endTime: string;
 }
 
-/** GET /api/v1/specialties — active specialty */
+/** GET /api/v1/specialties — specialty (admin list also returns inactive rows) */
 export interface SpecialtyResponse {
   id: number;
   name: string;
   description: string | null;
+  active: boolean;
 }
 
 /** GET /api/v1/doctors — booking-facing doctor profile */
@@ -50,6 +51,7 @@ export interface DoctorSummaryResponse {
 
 /** GET /api/v1/doctors/:id/availability — one scheduling window */
 export interface DoctorAvailabilityResponse {
+  id: number | null;
   dayOfWeek: number; // 0 = Sunday ... 6 = Saturday (MySQL convention)
   startTime: string; // "HH:mm"
   endTime: string;   // "HH:mm"
