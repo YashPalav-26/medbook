@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
@@ -6,6 +6,8 @@ import { Button } from './components/ui/Button';
 import { Card } from './components/ui/Card';
 import { Input } from './components/ui/Input';
 import { AlertCircle, Calendar, Clock, User } from 'lucide-react';
+import { BookAppointmentPage } from './pages/BookAppointmentPage';
+import { AppointmentDetailPage } from './pages/AppointmentDetailPage';
 import * as React from 'react';
 
 // ------------------------------------------------------------------
@@ -14,6 +16,7 @@ import * as React from 'react';
 
 function LoginPage() {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
@@ -26,6 +29,7 @@ function LoginPage() {
 
     try {
       await login({ email, password });
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Login failed');
     } finally {
@@ -73,9 +77,9 @@ function LoginPage() {
 
         <p className="mt-6 text-center text-sm text-gray-600">
           Do not have an account?{' '}
-          <a href="/register" className="text-blue-600 hover:underline">
+          <Link to="/register" className="text-blue-600 hover:underline">
             Register
-          </a>
+          </Link>
         </p>
       </Card>
     </div>
@@ -84,6 +88,7 @@ function LoginPage() {
 
 function RegisterPage() {
   const { register } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = React.useState({
     email: '',
     password: '',
@@ -113,6 +118,7 @@ function RegisterPage() {
         phoneNumber: formData.phoneNumber,
         dateOfBirth: formData.dateOfBirth,
       });
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err?.response?.data?.message || 'Registration failed');
     } finally {
@@ -189,9 +195,9 @@ function RegisterPage() {
 
         <p className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{' '}
-          <a href="/login" className="text-blue-600 hover:underline">
+          <Link to="/login" className="text-blue-600 hover:underline">
             Sign In
-          </a>
+          </Link>
         </p>
       </Card>
     </div>
@@ -200,6 +206,7 @@ function RegisterPage() {
 
 function DashboardPage() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -210,7 +217,14 @@ function DashboardPage() {
             <span className="font-medium">{user?.firstName} {user?.lastName}</span>
             <span className="ml-2 text-gray-500">({user?.roles?.[0]?.replace('ROLE_', '') || 'Patient'})</span>
           </div>
-          <Button onClick={logout} variant="outline" className="text-gray-700 hover:bg-gray-100">
+          <Button
+            onClick={() => {
+              logout();
+              navigate('/login');
+            }}
+            variant="outline"
+            className="text-gray-700 hover:bg-gray-100"
+          >
             Sign Out
           </Button>
         </div>
@@ -223,13 +237,15 @@ function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="p-6 flex flex-col items-center text-center space-y-3">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-              <Calendar className="w-6 h-6" />
-            </div>
-            <h3 className="font-medium text-gray-900">Book Appointment</h3>
-            <p className="text-sm text-gray-600">Schedule a visit with a doctor</p>
-          </Card>
+          <Link to="/appointments/new" className="block">
+            <Card className="p-6 flex flex-col items-center text-center space-y-3 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                <Calendar className="w-6 h-6" />
+              </div>
+              <h3 className="font-medium text-gray-900">Book Appointment</h3>
+              <p className="text-sm text-gray-600">Schedule a visit with a doctor</p>
+            </Card>
+          </Link>
           <Card className="p-6 flex flex-col items-center text-center space-y-3">
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600">
               <Clock className="w-6 h-6" />
@@ -310,6 +326,22 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/appointments/new"
+              element={
+                <ProtectedRoute>
+                  <BookAppointmentPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/appointments/:id"
+              element={
+                <ProtectedRoute>
+                  <AppointmentDetailPage />
                 </ProtectedRoute>
               }
             />

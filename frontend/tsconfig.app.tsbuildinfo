@@ -1,1 +1,0 @@
-{"root":["./src/app.test.tsx","./src/app.tsx","./src/main.tsx","./src/api/authapi.ts","./src/api/client.ts","./src/components/ui/button.tsx","./src/components/ui/card.tsx","./src/components/ui/input.tsx","./src/context/authcontext.tsx","./src/hooks/useauth.ts","./src/lib/storage.ts","./src/test/setup.ts","./src/types/auth.ts"],"version":"5.8.3"}
