@@ -63,6 +63,32 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
     Optional<Doctor> findByUserId(Long userId);
 
     /**
+     * All active doctors with their {@code user} and {@code specialty} fetched in one query.
+     *
+     * <p>Fetch joins are required because Open Session In View is disabled: the list is
+     * mapped to {@code DoctorSummaryResponse} outside any transaction, which touches
+     * both associations. Ordering by id keeps API output stable between calls.</p>
+     *
+     * @return active doctors, user + specialty initialized, ordered by id
+     */
+    @Query("SELECT d FROM Doctor d JOIN FETCH d.user JOIN FETCH d.specialty "
+            + "WHERE d.active = true ORDER BY d.id ASC")
+    List<Doctor> findAllByActiveTrueWithUserAndSpecialty();
+
+    /**
+     * Active doctors of one specialty, with {@code user} and {@code specialty} fetched.
+     *
+     * <p>Same fetch-join reasoning as {@link #findAllByActiveTrueWithUserAndSpecialty()};
+     * this variant powers the booking page's doctor dropdown after a specialty is chosen.</p>
+     *
+     * @param specialtyId the specialty to filter by
+     * @return active doctors of that specialty, ordered by id
+     */
+    @Query("SELECT d FROM Doctor d JOIN FETCH d.user JOIN FETCH d.specialty "
+            + "WHERE d.specialty.id = :specialtyId AND d.active = true ORDER BY d.id ASC")
+    List<Doctor> findAllBySpecialtyIdAndActiveTrueWithUserAndSpecialty(@Param("specialtyId") Long specialtyId);
+
+    /**
      * Lock doctor row with SELECT ... FOR UPDATE.
      * Use during appointment booking to prevent concurrent double-booking.
      *
