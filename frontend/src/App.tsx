@@ -8,6 +8,7 @@ import { Input } from './components/ui/Input';
 import { AlertCircle, Calendar, Clock, User } from 'lucide-react';
 import { BookAppointmentPage } from './pages/BookAppointmentPage';
 import { AppointmentDetailPage } from './pages/AppointmentDetailPage';
+import { MyAppointmentsPage } from './pages/MyAppointmentsPage';
 import * as React from 'react';
 
 // ------------------------------------------------------------------
@@ -246,13 +247,15 @@ function DashboardPage() {
               <p className="text-sm text-gray-600">Schedule a visit with a doctor</p>
             </Card>
           </Link>
-          <Card className="p-6 flex flex-col items-center text-center space-y-3">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600">
-              <Clock className="w-6 h-6" />
-            </div>
-            <h3 className="font-medium text-gray-900">My Appointments</h3>
-            <p className="text-sm text-gray-600">View your upcoming visits</p>
-          </Card>
+          <Link to="/appointments/me" className="block">
+            <Card className="p-6 flex flex-col items-center text-center space-y-3 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+                <Clock className="w-6 h-6" />
+              </div>
+              <h3 className="font-medium text-gray-900">My Appointments</h3>
+              <p className="text-sm text-gray-600">View your upcoming visits</p>
+            </Card>
+          </Link>
           <Card className="p-6 flex flex-col items-center text-center space-y-3">
             <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
               <User className="w-6 h-6" />
@@ -326,6 +329,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/appointments/me"
+              element={
+                <ProtectedRoute>
+                  <MyAppointmentsPage />
                 </ProtectedRoute>
               }
             />
