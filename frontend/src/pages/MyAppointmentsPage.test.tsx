@@ -85,10 +85,13 @@ describe('MyAppointmentsPage', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the loading state first', () => {
+  it('renders skeleton placeholders while loading (never a bare "Loading...")', () => {
     mockedGetMyAppointments.mockReturnValue(new Promise(() => {}));
     renderPage();
-    expect(screen.getByText(/loading your appointments/i)).toBeInTheDocument();
+    // Skeletons are aria-hidden decorative divs; there must be several, and no list yet.
+    const skeletons = document.querySelectorAll('.animate-pulse');
+    expect(skeletons.length).toBeGreaterThanOrEqual(3);
+    expect(screen.queryByText('Appointment #1101')).not.toBeInTheDocument();
   });
 
   it('renders the appointment list from the real API response', async () => {
@@ -102,8 +105,10 @@ describe('MyAppointmentsPage', () => {
     expect(screen.getByText('SCHEDULED')).toBeInTheDocument();
     expect(screen.getByText('CANCELLED')).toBeInTheDocument();
     expect(screen.getByText(/Plan changed/)).toBeInTheDocument();
-    expect(screen.getAllByText('Patient ID: 1350')).toHaveLength(2);
-    expect(screen.getAllByText('Doctor ID: 1')).toHaveLength(2);
+    // Doctor/patient context line on each card (real API fields).
+    expect(screen.getAllByText(/Doctor #1 · Patient #1350/)).toHaveLength(2);
+    // Fee is rendered with two decimals on both cards.
+    expect(screen.getAllByText('$500.00')).toHaveLength(2);
   });
 
   it('renders the empty state when the patient has no appointments', async () => {
@@ -113,7 +118,7 @@ describe('MyAppointmentsPage', () => {
     await waitFor(() => {
       expect(screen.getByText('No appointments yet')).toBeInTheDocument();
     });
-    expect(screen.getByText(/You have not booked any appointments/i)).toBeInTheDocument();
+    expect(screen.getByText(/When you book a visit it will appear here/i)).toBeInTheDocument();
   });
 
   it('renders a generic API error message', async () => {
@@ -123,11 +128,13 @@ describe('MyAppointmentsPage', () => {
 
     await waitFor(
       () => {
-        expect(screen.getByText('Error Loading Appointments')).toBeInTheDocument();
+        // The error callout (role=alert) shows the API error, never a raw dump.
+        expect(screen.getByRole('alert')).toBeInTheDocument();
       },
       { timeout: 4000 },
     );
-    expect(screen.getByRole('button', { name: /back to dashboard/i })).toBeInTheDocument();
+    // Errors are actionable: a retry control must exist.
+    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
 
   it('renders a forbidden message on 403', async () => {
@@ -136,11 +143,11 @@ describe('MyAppointmentsPage', () => {
 
     await waitFor(
       () => {
-        expect(screen.getByText('Not Allowed')).toBeInTheDocument();
+        expect(screen.getByText('You are not allowed to view this list.')).toBeInTheDocument();
       },
       { timeout: 4000 },
     );
-    expect(screen.getByText(/You do not have access to this resource/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
 
   it('navigates to the appointment detail page when a card is clicked', async () => {
