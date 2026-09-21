@@ -1,152 +1,178 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMyAppointments } from '../hooks/useMyAppointments';
 import { toApiError } from '../api/client';
-import { useAuth } from '../hooks/useAuth';
+import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import {
-  Calendar,
-  Clock,
-  User,
-  Stethoscope,
-  AlertCircle,
-  Loader2,
-  IndianRupee,
-  XCircle,
-  CalendarPlus,
-} from 'lucide-react';
+import { StatusBadge, EmptyState, ErrorBox, Skeleton } from '../components/ui/Feedback';
+import { CalendarDays, CalendarPlus, Clock, IndianRupee, Stethoscope, XCircle } from 'lucide-react';
 import type { AppointmentResponse } from '../types/appointment';
 
-const statusColors: Record<AppointmentResponse['status'], string> = {
-  SCHEDULED: 'bg-blue-100 text-blue-800',
-  CONFIRMED: 'bg-green-100 text-green-800',
-  COMPLETED: 'bg-gray-100 text-gray-800',
-  CANCELLED: 'bg-red-100 text-red-800',
-  NO_SHOW: 'bg-orange-100 text-orange-800',
-};
+/**
+ * My Appointments — appointment management view.
+ * Status filter tabs (counts from real data), responsive cards (list collapses to
+ * single column on mobile, no wide table), click-through to detail preserved.
+ */
 
-function statusStyle(status: AppointmentResponse['status']): string {
-  return statusColors[status] ?? 'bg-gray-100 text-gray-800';
+type StatusFilter = 'ALL' | 'UPCOMING' | 'CANCELLED';
+const FILTERS: { key: StatusFilter; label: string }[] = [
+  { key: 'ALL', label: 'All' },
+  { key: 'UPCOMING', label: 'Upcoming' },
+  { key: 'CANCELLED', label: 'Cancelled' },
+];
+
+function matchesFilter(appointment: AppointmentResponse, filter: StatusFilter): boolean {
+  if (filter === 'ALL') return true;
+  if (filter === 'CANCELLED') return appointment.status === 'CANCELLED';
+  return appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED';
 }
 
 export function MyAppointmentsPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { data: appointments, isLoading, error } = useMyAppointments();
+  const { data: appointments, isLoading, isError, error, refetch } = useMyAppointments();
+  const [filter, setFilter] = useState<StatusFilter>('ALL');
 
-  const apiError = error ? toApiError(error) : null;
-
-  if (isLoading) {
+  if (isError) {
+    const apiError = toApiError(error);
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 flex items-center justify-center">
-        <div className="flex items-center gap-3 text-gray-600">
-          <Loader2 className="w-6 h-6 animate-spin" />
-          Loading your appointments...
-        </div>
-      </div>
+      <AppShell title="My Appointments">
+        <ErrorBox
+          message={apiError.status === 403 ? 'You are not allowed to view this list.' : apiError.message}
+          onRetry={() => refetch()}
+        />
+      </AppShell>
     );
   }
 
-  if (apiError) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4">
-        <Card className="max-w-md mx-auto p-8">
-          <div className="text-center">
-            <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {apiError.status === 403 ? 'Not Allowed' : 'Error Loading Appointments'}
-            </h2>
-            <p className="text-gray-600 mb-6">{apiError.message}</p>
-            <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
+  const all = appointments ?? [];
+  const shown = all.filter((a) => matchesFilter(a, filter));
+  const counts = {
+    ALL: all.length,
+    UPCOMING: all.filter((a) => matchesFilter(a, 'UPCOMING')).length,
+    CANCELLED: all.filter((a) => matchesFilter(a, 'CANCELLED')).length,
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-6">
-          <Link to="/dashboard" className="text-blue-600 hover:underline text-sm">
-            ← Back to Dashboard
-          </Link>
-        </div>
-
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Calendar className="w-8 h-8 text-blue-600" />
-            My Appointments
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Appointments for <span className="font-medium">{user?.firstName} {user?.lastName}</span>
-          </p>
-        </div>
-
-        {appointments && appointments.length === 0 && (
-          <Card className="p-8 text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CalendarPlus className="w-8 h-8 text-blue-600" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">No appointments yet</h2>
-            <p className="text-gray-600 mb-6">You have not booked any appointments.</p>
-            <Button onClick={() => navigate('/appointments/new')}>Book Appointment</Button>
-          </Card>
-        )}
-
-        {appointments && appointments.length > 0 && (
-          <ul className="space-y-4">
-            {appointments.map((appointment) => (
-              <li key={appointment.id}>
-                <Card
-                  className="p-6 cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => navigate(`/appointments/${appointment.id}`)}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Appointment #{appointment.id}
-                    </h3>
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${statusStyle(appointment.status)}`}
-                    >
-                      {appointment.status}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <User className="w-4 h-4 text-gray-400" />
-                      Patient ID: {appointment.patientId}
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Stethoscope className="w-4 h-4 text-gray-400" />
-                      Doctor ID: {appointment.doctorId}
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      {appointment.appointmentDate}
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      {appointment.startTime} – {appointment.endTime}
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <IndianRupee className="w-4 h-4 text-gray-400" />
-                      ₹{appointment.consultationFeeSnapshot.toFixed(2)}
-                    </div>
-                    {appointment.status === 'CANCELLED' && appointment.cancellationReason && (
-                      <div className="flex items-center gap-2 text-red-700 md:col-span-2">
-                        <XCircle className="w-4 h-4" />
-                        {appointment.cancellationReason}
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        )}
+    <AppShell title="My Appointments">
+      {/* Header row with primary action */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <p className="text-ink-500">
+          Every visit you have booked, newest first.
+        </p>
+        <Link to="/appointments/new">
+          <Button>
+            <CalendarPlus className="h-4 w-4" aria-hidden="true" />
+            Book Appointment
+          </Button>
+        </Link>
       </div>
-    </div>
+
+      {/* Status filter tabs — real counts, keyboard accessible radios */}
+      <div role="tablist" aria-label="Filter appointments by status" className="mb-6 flex flex-wrap gap-2">
+        {FILTERS.map((f) => (
+          <button
+            key={f.key}
+            role="tab"
+            aria-selected={filter === f.key}
+            onClick={() => setFilter(f.key)}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              filter === f.key
+                ? 'bg-brand-600 text-white shadow-card'
+                : 'bg-white text-ink-600 shadow-card hover:text-ink-900'
+            }`}
+          >
+            {f.label} <span className="opacity-70">({counts[f.key]})</span>
+          </button>
+        ))}
+      </div>
+
+      {/* List */}
+      {isLoading ? (
+        <ul className="space-y-4" aria-label="Loading appointments">
+          {[0, 1, 2].map((i) => (
+            <li key={i}>
+              <Card className="space-y-3 p-6">
+                <div className="flex justify-between">
+                  <Skeleton className="h-5 w-36" />
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                </div>
+                <Skeleton className="h-4 w-52" />
+                <Skeleton className="h-4 w-40" />
+              </Card>
+            </li>
+          ))}
+        </ul>
+      ) : shown.length === 0 ? (
+        <Card className="p-6">
+          <EmptyState
+            icon={<CalendarDays className="h-8 w-8" />}
+            title={all.length === 0 ? 'No appointments yet' : 'Nothing under this filter'}
+            message={
+              all.length === 0
+                ? 'When you book a visit it will appear here with its time, doctor and status.'
+                : 'Try a different filter to see your other appointments.'
+            }
+            action={
+              all.length === 0 ? (
+                <Link to="/appointments/new"><Button size="sm">Book Appointment</Button></Link>
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => setFilter('ALL')}>Show all</Button>
+              )
+            }
+          />
+        </Card>
+      ) : (
+        <ul className="space-y-4">
+          {shown.map((appointment) => (
+            <li key={appointment.id}>
+              <Card
+                hover
+                onClick={() => navigate(`/appointments/${appointment.id}`)}
+                className="p-5"
+                aria-label={`Appointment #${appointment.id}`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                      <Stethoscope className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-ink-900">Appointment #{appointment.id}</p>
+                      <p className="text-sm text-ink-500">
+                        Doctor #{appointment.doctorId} · Patient #{appointment.patientId}
+                      </p>
+                    </div>
+                  </div>
+                  <StatusBadge status={appointment.status} />
+                </div>
+
+                <div className="mt-4 grid gap-2 text-sm text-ink-700 sm:grid-cols-3">
+                  <p className="flex items-center gap-2">
+                    <CalendarDays className="h-4 w-4 text-ink-400" aria-hidden="true" />
+                    {appointment.appointmentDate}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-ink-400" aria-hidden="true" />
+                    {appointment.startTime} – {appointment.endTime}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <IndianRupee className="h-4 w-4 text-ink-400" aria-hidden="true" />
+                    ${appointment.consultationFeeSnapshot.toFixed(2)}
+                  </p>
+                </div>
+
+                {appointment.status === 'CANCELLED' && appointment.cancellationReason && (
+                  <p className="mt-3 flex items-start gap-2 rounded-field bg-danger-100/60 p-2.5 text-sm text-danger-700">
+                    <XCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                    {appointment.cancellationReason}
+                  </p>
+                )}
+              </Card>
+            </li>
+          ))}
+        </ul>
+      )}
+    </AppShell>
   );
 }
