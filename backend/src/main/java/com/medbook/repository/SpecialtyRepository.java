@@ -4,6 +4,7 @@ import com.medbook.entity.Specialty;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -33,5 +34,24 @@ public interface SpecialtyRepository extends JpaRepository<Specialty, Long> {
      * "cardiology" and the backend should find the canonical row regardless
      * of case.</p>
      */
+    /**
+     * Derived query method with IgnoreCase modifier.
+     * Spring Data JPA generates SQL
+     * {@code SELECT ... FROM specialties WHERE LOWER(name) = LOWER(?)}
+     *
+     * <p>Useful for UI scenarios where the user types "Cardiology" or
+     * "cardiology" and the backend should find the canonical row regardless
+     * of case.</p>
+     */
     Optional<Specialty> findByNameIgnoreCase(String name);
+
+    /**
+     * All active specialties, ordered by name.
+     *
+     * <p>Powers {@code GET /api/v1/specialties} — the booking UI's specialty dropdown.
+     * Inactive rows (retired specialties) never appear in the list.</p>
+     *
+     * @return active specialties sorted alphabetically
+     */
+    List<Specialty> findByActiveTrueOrderByNameAsc();
 }
