@@ -1,12 +1,15 @@
 package com.medbook.controller;
 
 import com.medbook.dto.AppointmentResponse;
-import com.medbook.dto.CancelAppointmentRequest;
 import com.medbook.dto.CreateAppointmentRequest;
-import com.medbook.entity.Appointment;
+import com.medbook.dto.CancelAppointmentRequest;
+import com.medbook.dto.PatientBookingRequest;
 import com.medbook.service.AppointmentService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import java.net.URI;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,52 +17,21 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.net.URI;
 import java.util.List;
 
 /**
- * REST API for appointments.
+ * Appointment REST API.
  *
- * <p>The controller is intentionally thin. Its only jobs are:</p>
- * <ol>
- * <li>accept and validate the request body,</li>
- * <li>call {@link AppointmentService} — the single owner of the booking rules,</li>
- * <li>map the returned entity to {@link AppointmentResponse},</li>
- * <li>choose the HTTP status.</li>
- * </ol>
- *
- * <p>There is deliberately no availability, overlap, or status logic here: a controller that
- * decides whether a doctor is free would duplicate the service rules and would have to open
- * its own transaction to do so safely.</p>
- *
- * <h3>Endpoints</h3>
- * <pre>
- * POST /api/v1/appointments            -&gt; 201 Created  (Location header points at the new appointment)
- * GET  /api/v1/appointments/me         -&gt; 200 OK (the caller's own appointments, per role)
- * GET  /api/v1/appointments/{id}       -&gt; 200 OK (ownership enforced)
- * POST /api/v1/appointments/{id}/cancel-&gt; 200 OK (ownership enforced)
- * </pre>
- *
- * <p>Ownership is enforced in the service layer using the JWT identity (never a user ID
- * from the request); see {@code docs/appointment-authorization.md} for the rule matrix and
- * the 401/403/404 mapping.</p>
- *
- * <p>Failed requests are turned into a consistent {@link com.medbook.dto.ErrorResponse} body
- * by {@link com.medbook.exception.GlobalExceptionHandler}, for example
- * {@code 404} for an unknown doctor/patient/appointment, {@code 409} for a business conflict
- * (doctor unavailable, slot taken, illegal status change) and {@code 400} for an invalid
- * request.</p>
- *
- * <p><strong>Development note:</strong> authentication and authorization are not part of this
- * step, so these endpoints currently accept anonymous requests. Cancellation history rows are
- * therefore written with {@code changed_by_user_id = NULL} instead of a fabricated user.</p>
+ * <h3>How the caller's identity reaches the service</h3>
+ * This controller never reads a caller identity from the request body or query string.
+ * The authenticated user is resolved from the JWT (via {@code CurrentUserProvider} in the
+ * service layer). Anything a client writes into {@code patientId} is advisory at best:
+ * for patient callers it is ignored entirely, for admins it must match the support rules
+ * documented in {@code docs/doctor-discovery-and-booking.md}.
  */
 @RestController
-@RequestMapping(AppointmentController.BASE_PATH)
+@RequestMapping("/api/v1/appointments")
 public class AppointmentController {
-
-    /** Versioned base path shared with {@code HelloController} ({@code /api/v1}). */
-    static final String BASE_PATH = "/api/v1/appointments";
 
     private final AppointmentService appointmentService;
 
@@ -68,75 +40,81 @@ public class AppointmentController {
     }
 
     /**
-     * Book a new appointment.
-     *
-     * @param request the booking request (patient, doctor, date, start time, end time)
-     * @return {@code 201 Created} with the stored appointment and a {@code Location} header
-     */
-    @PostMapping
-    public ResponseEntity<AppointmentResponse> createAppointment(
-            @Valid @RequestBody CreateAppointmentRequest request
-    ) {
-        Appointment created = appointmentService.createAppointment(
-                request.patientId(),
-                request.doctorId(),
-                request.appointmentDate(),
-                request.startTime(),
-                request.endTime()
-        );
-
-        return ResponseEntity
-                .created(URI.create(BASE_PATH + "/" + created.getId()))
-                .body(AppointmentResponse.from(created));
-    }
-
-    /**
-     * The authenticated caller's appointments.
-     *
-     * <p>Registered before {@code /{id}} so "me" is never parsed as an ID. Takes no user
-     * ID from the request — the role decides which listing is returned: a patient sees the
-     * appointments they booked, a doctor sees the ones assigned to them, and ADMIN has no
-     * listing yet (the service rejects it with 403 rather than leaking a global feed).</p>
-     *
-     * @return {@code 200 OK} with the caller's appointments (possibly empty)
+     * List the authenticated caller's appointments.
+     * Patients see bookings made for them, doctors see their schedule, admins get 403
+     * (no admin listing exists — see {@code AppointmentService#getCurrentUserAppointments}).
      */
     @GetMapping("/me")
-    public List<AppointmentResponse> getCurrentUserAppointments() {
-        return appointmentService.getCurrentUserAppointments().stream()
+    public ResponseEntity<List<AppointmentResponse>> getCurrentUserAppointments() {
+        List<AppointmentResponse> appointments = appointmentService.getCurrentUserAppointments().stream()
                 .map(AppointmentResponse::from)
                 .toList();
+        return ResponseEntity.ok(appointments);
     }
 
     /**
-     * Read a single appointment (ownership enforced server-side).
+     * Book an appointment — <strong>two request shapes, chosen by role on the server</strong>.
      *
-     * @param id the appointment ID
-     * @return {@code 200 OK} with the appointment, {@code 404} when it does not exist,
-     *         {@code 403} when the authenticated caller may not see it
+     * <ul>
+     *   <li><strong>PATIENT</strong> sends {@link PatientBookingRequest}: no {@code patientId}
+     *       at all. The service books for the patient profile linked to the JWT caller.</li>
+     *   <li><strong>ADMIN</strong> sends {@link CreateAppointmentRequest} (with
+     *       {@code patientId}): the support path for booking on behalf of a patient.</li>
+     * </ul>
+     *
+     * <p>The shape is decided by the caller's <em>role</em>, not by what the client
+     * happens to send — a patient's {@code patientId} (if present) is never read.</p>
+     */
+    @PostMapping
+    public ResponseEntity<AppointmentResponse> createAppointment(@Valid @RequestBody PatientBookingRequest request) {
+        AppointmentResponse response =
+                AppointmentResponse.from(appointmentService.createAppointmentForCurrentUser(request));
+        return created(response);
+    }
+
+    /**
+     * Admin support path: book an appointment for a specified patient.
+     * Patient callers are rejected here because {@code POST /api/v1/appointments} is
+     * mapped to the self-booking shape; sending a patient token to this route yields
+     * 403 rather than an identity that could be fabricated from the body.
+     */
+    @PostMapping("/admin")
+    public ResponseEntity<AppointmentResponse> createAppointmentForPatient(
+            @Valid @RequestBody CreateAppointmentRequest request) {
+        AppointmentResponse response =
+                AppointmentResponse.from(appointmentService.createAppointmentForPatient(request));
+        return created(response);
+    }
+
+    /** 201 with a Location header pointing at the new resource. */
+    private ResponseEntity<AppointmentResponse> created(AppointmentResponse response) {
+        return ResponseEntity.created(URI.create("/api/v1/appointments/" + response.id())).body(response);
+    }
+
+    /**
+     * Fetch one appointment with server-side ownership authorization:
+     * patients may read only their own bookings, doctors only appointments assigned
+     * to them, admins any appointment (support rule). Unknown IDs are 404;
+     * unauthorized access is 403.
      */
     @GetMapping("/{id}")
-    public AppointmentResponse getAppointment(@PathVariable Long id) {
-        return AppointmentResponse.from(appointmentService.getAppointment(id));
+    public ResponseEntity<AppointmentResponse> getAppointment(@PathVariable Long id) {
+        AppointmentResponse response = AppointmentResponse.from(appointmentService.getAppointment(id));
+        return ResponseEntity.ok(response);
     }
 
     /**
-     * Cancel an appointment as the authenticated caller (ownership enforced server-side).
-     *
-     * <p>Returns the updated resource instead of {@code 204 No Content} so the caller can see
-     * the new status and the recorded cancellation reason without a second request.</p>
-     *
-     * @param id      the appointment to cancel
-     * @param request the cancellation request, which must contain a reason
-     * @return {@code 200 OK} with the cancelled appointment, {@code 404} when unknown,
-     *         {@code 403} when the caller may not cancel it, {@code 409} when the current
-     *         status cannot be cancelled, {@code 400} when the reason is missing
+     * Cancel an appointment as the authenticated caller. The cancellation history row
+     * records the caller's real user ID ({@code changed_by_user_id}); patients cancel
+     * only their own bookings, doctors only appointments assigned to them, admins
+     * are rejected (policy deliberately pending).
      */
     @PostMapping("/{id}/cancel")
-    public AppointmentResponse cancelAppointment(
+    public ResponseEntity<AppointmentResponse> cancelAppointment(
             @PathVariable Long id,
-            @Valid @RequestBody CancelAppointmentRequest request
-    ) {
-        return AppointmentResponse.from(
-                appointmentService.cancelAppointmentForCurrentUser(id, request.cancellationReason()));
+            @Valid @RequestBody CancelAppointmentRequest request) {
+        AppointmentResponse response =
+                AppointmentResponse.from(appointmentService.cancelAppointmentForCurrentUser(id, request.cancellationReason()));
+        return ResponseEntity.ok(response);
     }
 }
