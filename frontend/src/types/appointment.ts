@@ -77,3 +77,54 @@ export interface AppointmentResponse {
   cancellationReason: string | null;
   consultationFeeSnapshot: number;
 }
+
+/**
+ * ADMIN clinic-wide appointment row (GET /api/v1/admin/appointments[?filters]).
+ * Mirrors backend AdminAppointmentResponse — includes participant display names
+ * and the doctor's specialty, which the patient/doctor-facing shape does not carry.
+ */
+export interface AdminAppointmentResponse {
+  id: number;
+  patientId: number;
+  patientName: string;
+  doctorId: number;
+  doctorName: string;
+  specialty: string;
+  appointmentDate: string;
+  startTime: string;
+  endTime: string;
+  status: AppointmentStatus;
+  cancellationReason: string | null;
+  consultationFeeSnapshot: number;
+}
+
+/** One status-change audit row of the admin detail timeline. */
+export interface AppointmentStatusHistoryResponse {
+  id: number;
+  status: AppointmentStatus;
+  notes: string | null;
+  changedByName: string | null;
+  changedAt: string; // ISO-8601 timestamp
+}
+
+/** GET /api/v1/admin/appointments/:id — appointment plus its audit trail. */
+export interface AdminAppointmentDetailResponse {
+  appointment: AdminAppointmentResponse;
+  history: AppointmentStatusHistoryResponse[];
+}
+
+/** GET /api/v1/admin/appointments/overview — real dashboard metrics. */
+export interface AdminOverviewResponse {
+  todayAppointments: number;
+  today: string;
+  statusCounts: Record<AppointmentStatus, number>;
+  totalAppointments: number;
+}
+
+/** Query params of GET /api/v1/admin/appointments — every filter optional. */
+export interface AdminAppointmentFilters {
+  date?: string;
+  status?: AppointmentStatus | '';
+  doctorId?: number | '';
+  patientId?: number;
+}
