@@ -14,11 +14,20 @@ import { useToast } from '../components/ui/Toast';
 import { toApiError } from '../api/client';
 import { Calendar, Stethoscope, CheckCircle2, Clock, User } from 'lucide-react';
 
+/** Local (not UTC) ISO date for "today" — matches the <input type="date"> value format. */
+function localTodayIso(): string {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000).toISOString().slice(0, 10);
+}
+
 const bookingSchema = z.object({
   // UI-only field: narrows the doctor dropdown. Never sent to the backend.
   specialtyId: z.number({ error: 'Select a specialty' }).min(1, 'Select a specialty'),
   doctorId: z.number({ error: 'Select a doctor' }).min(1, 'Select a doctor'),
-  appointmentDate: z.string().min(1, 'Date is required'),
+  appointmentDate: z.string().min(1, 'Date is required').refine(
+    (value) => value >= localTodayIso(),
+    'Appointment date must be today or in the future',
+  ),
   startTime: z.string().min(1, 'Start time is required'),
   endTime: z.string().min(1, 'End time is required'),
   reason: z.string().max(500, 'Reason must be at most 500 characters').optional(),
@@ -224,6 +233,7 @@ export function BookAppointmentPage() {
             <Input
               label="Appointment date"
               type="date"
+              min={localTodayIso()}
               className="sm:max-w-xs"
               {...register('appointmentDate')}
               error={errors.appointmentDate?.message}
@@ -297,7 +307,17 @@ export function BookAppointmentPage() {
               </p>
             )}
 
-            {apiError && <div className="mt-4"><ErrorBox message={apiError.message} /></div>}
+            {apiError && (
+              <div className="mt-4">
+                <ErrorBox
+                  message={
+                    apiError.fieldErrors.length > 0
+                      ? apiError.fieldErrors.map((f) => f.message).join(' ')
+                      : apiError.message
+                  }
+                />
+              </div>
+            )}
 
             <div className="mt-5 flex flex-wrap gap-3">
               <Button type="submit" disabled={createMutation.isPending} size="lg">
