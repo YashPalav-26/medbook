@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
+import { ToastProvider } from './components/ui/Toast';
 import { Card } from './components/ui/Card';
 import { Button } from './components/ui/Button';
 import { ShieldAlert } from 'lucide-react';
@@ -12,10 +13,14 @@ import { DashboardPage } from './pages/DashboardPage';
 import { BookAppointmentPage } from './pages/BookAppointmentPage';
 import { AppointmentDetailPage } from './pages/AppointmentDetailPage';
 import { MyAppointmentsPage } from './pages/MyAppointmentsPage';
+import { DoctorDashboardPage } from './pages/DoctorDashboardPage';
+import { DoctorAppointmentsPage } from './pages/DoctorAppointmentsPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { SpecialtiesAdminPage } from './pages/admin/SpecialtiesAdminPage';
 import { DoctorsAdminPage } from './pages/admin/DoctorsAdminPage';
 import { AvailabilityAdminPage } from './pages/admin/AvailabilityAdminPage';
+import { AdminAppointmentsPage } from './pages/admin/AdminAppointmentsPage';
+import { AdminAppointmentDetailPage } from './pages/admin/AdminAppointmentDetailPage';
 import type { ReactNode } from 'react';
 
 // ------------------------------------------------------------------
@@ -60,6 +65,46 @@ function AdminRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * Doctor area guard — UX only, not security. Doctors see the doctor portal;
+ * everyone else gets the same "Access denied" treatment as the admin area.
+ * The authoritative check is the backend: /appointments/me is role-aware and
+ * every transition endpoint verifies DOCTOR role + assignment from the JWT.
+ */
+function DoctorRoute({ children }: { children: ReactNode }) {
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  const isDoctor = user?.roles?.includes('ROLE_DOCTOR') ?? false;
+  if (!isDoctor) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-ink-50 px-4">
+        <Card className="max-w-md p-8 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-danger-100">
+            <ShieldAlert className="h-8 w-8 text-danger-600" aria-hidden="true" />
+          </div>
+          <h2 className="font-display text-2xl font-semibold text-ink-900">Access denied</h2>
+          <p className="mt-2 text-ink-600">
+            This area is for doctors. Your account does not have doctor rights.
+          </p>
+          <Button variant="outline" className="mt-6" onClick={() => window.history.back()}>
+            Go Back
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
+
+/** Dashboard route switch: each role lands on its own dashboard. */
+function DashboardRouter() {
+  const { user } = useAuth();
+  const isDoctor = user?.roles?.includes('ROLE_DOCTOR') ?? false;
+  return isDoctor ? <DoctorDashboardPage /> : <DashboardPage />;
+}
+
 // ------------------------------------------------------------------
 // Query client
 // ------------------------------------------------------------------
@@ -79,7 +124,8 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
         <BrowserRouter>
           <Routes>
             {/* Public */}
@@ -92,7 +138,7 @@ export default function App() {
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <DashboardPage />
+                  <DashboardRouter />
                 </ProtectedRoute>
               }
             />
@@ -121,16 +167,22 @@ export default function App() {
               }
             />
 
+            {/* Doctor portal (UX guard only — the backend remains authoritative) */}
+            <Route path="/doctor" element={<DoctorRoute><DoctorDashboardPage /></DoctorRoute>} />
+            <Route path="/doctor/appointments" element={<DoctorRoute><DoctorAppointmentsPage /></DoctorRoute>} />
+
             {/* Admin */}
             <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
+            <Route path="/admin/appointments" element={<AdminRoute><AdminAppointmentsPage /></AdminRoute>} />
+            <Route path="/admin/appointments/:id" element={<AdminRoute><AdminAppointmentDetailPage /></AdminRoute>} />
             <Route path="/admin/specialties" element={<AdminRoute><SpecialtiesAdminPage /></AdminRoute>} />
             <Route path="/admin/doctors" element={<AdminRoute><DoctorsAdminPage /></AdminRoute>} />
             <Route path="/admin/availability" element={<AdminRoute><AvailabilityAdminPage /></AdminRoute>} />
 
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+        </BrowserRouter>        </AuthProvider>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }
