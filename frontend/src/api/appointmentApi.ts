@@ -43,6 +43,26 @@ export async function cancelAppointment(id: number, payload: CancelAppointmentRe
   return response.data;
 }
 
+/**
+ * Doctor lifecycle transitions (POST /appointments/:id/confirm|complete|no-show).
+ * No body and no caller identity: the backend resolves the doctor from the JWT and
+ * enforces assignment + the SCHEDULED→CONFIRMED→COMPLETED/NO_SHOW transition rules.
+ */
+export async function confirmAppointment(id: number): Promise<AppointmentResponse> {
+  const response: AxiosResponse<AppointmentResponse> = await api.post(`/appointments/${id}/confirm`);
+  return response.data;
+}
+
+export async function completeAppointment(id: number): Promise<AppointmentResponse> {
+  const response: AxiosResponse<AppointmentResponse> = await api.post(`/appointments/${id}/complete`);
+  return response.data;
+}
+
+export async function markAppointmentNoShow(id: number): Promise<AppointmentResponse> {
+  const response: AxiosResponse<AppointmentResponse> = await api.post(`/appointments/${id}/no-show`);
+  return response.data;
+}
+
 /** Active specialties for the booking dropdown (GET /specialties). */
 export async function getSpecialties(): Promise<SpecialtyResponse[]> {
   const response: AxiosResponse<SpecialtyResponse[]> = await api.get('/specialties');
