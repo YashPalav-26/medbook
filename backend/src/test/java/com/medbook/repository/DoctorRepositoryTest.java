@@ -64,7 +64,9 @@ class DoctorRepositoryTest {
      * Helper: creates a test specialty.
      */
     private Specialty createTestSpecialty(String name) {
-        return specialtyRepository.save(new Specialty(name, "Test specialty"));
+        // Unique suffix: the shared test database may already contain the demo seed data
+        // (real specialties like "Cardiology"), and the name column is unique.
+        return specialtyRepository.save(new Specialty(name + "-" + System.nanoTime(), "Test specialty"));
     }
 
     @Test
@@ -123,7 +125,9 @@ class DoctorRepositoryTest {
         doctorRepository.save(doc2);
         doctorRepository.save(doc3);
 
-        List<Doctor> cardiologists = doctorRepository.findBySpecialtyName("Cardiology");
+        // The fixture specialty's name is unique per run (seed-data safe), so exactly
+        // the two doctors created above match it.
+        List<Doctor> cardiologists = doctorRepository.findBySpecialtyName(cardiology.getName());
 
         assertThat(cardiologists)
                 .hasSize(2)
@@ -218,7 +222,8 @@ class DoctorRepositoryTest {
         Specialty loadedSpecialty = reloaded.getSpecialty();
 
         assertThat(loadedSpecialty).isNotNull();
-        assertThat(loadedSpecialty.getName()).isEqualTo("Urology");
+        assertThat(loadedSpecialty.getId()).isEqualTo(urology.getId());
+        assertThat(loadedSpecialty.getName()).startsWith("Urology-");
     }
 
     @Test
