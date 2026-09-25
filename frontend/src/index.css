@@ -90,20 +90,22 @@
   }
 }
 
-/* Two display/utility webfonts (system fallbacks above keep tests offline-safe). */
+/* Self-hosted display/utility webfonts (public/fonts) — the app renders with the
+   intended typography even with no internet connection; system fallbacks above
+   keep tests offline-safe too. */
 @font-face {
   font-family: "Inter";
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url("https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2") format("woff2");
+  src: url("/fonts/inter.woff2") format("woff2");
 }
 @font-face {
   font-family: "Source Serif 4";
   font-style: normal;
   font-weight: 200 900;
   font-display: swap;
-  src: url("https://fonts.gstatic.com/s/sourceserif4/v46/vEFy2_tTDB4M7-auWDN0ahZJW3IX2ih5nk3AucvUHf6OAVIJmeUDygwjihdqrhxXD-wGvjU.woff2") format("woff2");
+  src: url("/fonts/source-serif-4.woff2") format("woff2");
 }
 
 /* Subtle entrance for modals/toasts; disabled under reduced motion */
