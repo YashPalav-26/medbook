@@ -132,7 +132,10 @@ class AppointmentServiceTest {
 
     private Doctor createTestDoctor(String email, String specialtyName) {
         User user = createTestDoctorUser(email);
-        Specialty specialty = specialtyRepository.save(new Specialty(specialtyName, "Test specialty"));
+        // Unique suffix: the shared test database may already contain the demo seed data
+        // (real specialties like "Cardiology"), and the name column is unique.
+        Specialty specialty = specialtyRepository.save(
+                new Specialty(specialtyName + "-" + System.nanoTime(), "Test specialty"));
         return doctorRepository.save(
                 new Doctor(user, specialty, "LIC-" + System.nanoTime(), 5, TEST_FEE));
     }
