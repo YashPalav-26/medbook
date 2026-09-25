@@ -2,6 +2,10 @@ import type { AxiosResponse } from 'axios';
 import type {
   SpecialtyResponse,
   DoctorAvailabilityResponse,
+  AdminAppointmentResponse,
+  AdminAppointmentDetailResponse,
+  AdminOverviewResponse,
+  AdminAppointmentFilters,
 } from '../types/appointment';
 import { api } from './client';
 
@@ -165,5 +169,58 @@ export async function updateAvailability(
 export async function deactivateAvailability(id: number): Promise<DoctorAvailabilityResponse> {
   const response: AxiosResponse<DoctorAvailabilityResponse> =
     await api.patch(`/admin/availability/${id}/deactivate`);
+  return response.data;
+}
+
+// ------------------------------------------------------------------
+// Appointments (clinic-wide visibility + support cancellation)
+// ------------------------------------------------------------------
+
+/** Build a clean query string: empty/undefined filters are never sent. */
+function appointmentParams(filters: AdminAppointmentFilters): Record<string, string | number> {
+  const params: Record<string, string | number> = {};
+  if (filters.date) params.date = filters.date;
+  if (filters.status) params.status = filters.status;
+  if (filters.doctorId) params.doctorId = filters.doctorId;
+  if (filters.patientId) params.patientId = filters.patientId;
+  return params;
+}
+
+/**
+ * Clinic-wide appointment list with optional filters (GET /admin/appointments).
+ * Filters are applied server-side — the backend does the querying, not JavaScript.
+ */
+export async function listAdminAppointments(
+  filters: AdminAppointmentFilters = {},
+): Promise<AdminAppointmentResponse[]> {
+  const response: AxiosResponse<AdminAppointmentResponse[]> =
+    await api.get('/admin/appointments', { params: appointmentParams(filters) });
+  return response.data;
+}
+
+/** One appointment with its full status-change audit trail (GET /admin/appointments/:id). */
+export async function getAdminAppointment(id: number): Promise<AdminAppointmentDetailResponse> {
+  const response: AxiosResponse<AdminAppointmentDetailResponse> =
+    await api.get(`/admin/appointments/${id}`);
+  return response.data;
+}
+
+/** Real clinic overview metrics for the dashboard (GET /admin/appointments/overview). */
+export async function getAdminOverview(): Promise<AdminOverviewResponse> {
+  const response: AxiosResponse<AdminOverviewResponse> =
+    await api.get('/admin/appointments/overview');
+  return response.data;
+}
+
+/**
+ * ADMIN support cancellation (POST /admin/appointments/:id/cancel).
+ * A reason is required; the backend records the authenticated admin as the actor.
+ */
+export async function cancelAppointmentAsAdmin(
+  id: number,
+  cancellationReason: string,
+): Promise<AdminAppointmentResponse> {
+  const response: AxiosResponse<AdminAppointmentResponse> =
+    await api.post(`/admin/appointments/${id}/cancel`, { cancellationReason });
   return response.data;
 }
