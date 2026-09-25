@@ -3,7 +3,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import * as React from 'react';
-import { useAppointment, useCancelAppointment } from '../hooks/useAppointment';
+import { useAuth } from '../hooks/useAuth';
+import {
+  useAppointment,
+  useCancelAppointment,
+  useConfirmAppointment,
+  useCompleteAppointment,
+  useNoShowAppointment,
+} from '../hooks/useAppointment';
 import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -20,6 +27,9 @@ import {
   AlertCircle,
   XCircle,
   IndianRupee,
+  CheckCircle2,
+  BadgeCheck,
+  UserX,
 } from 'lucide-react';
 
 const cancelSchema = z.object({
@@ -36,6 +46,15 @@ export function AppointmentDetailPage() {
   const appointmentId = id ? parseInt(id, 10) : null;
   const { data: appointment, isLoading, error } = useAppointment(appointmentId);
   const cancelMutation = useCancelAppointment();
+
+  // Doctor lifecycle actions (server still enforces role + ownership + transition rules;
+  // these buttons are convenience, not security).
+  const { user } = useAuth();
+  const isDoctor = user?.roles?.includes('ROLE_DOCTOR') ?? false;
+  const confirmMutation = useConfirmAppointment();
+  const completeMutation = useCompleteAppointment();
+  const noShowMutation = useNoShowAppointment();
+  const [pendingAction, setPendingAction] = React.useState<'confirm' | 'complete' | 'no-show' | null>(null);
 
   const {
     register,
@@ -66,6 +85,44 @@ export function AppointmentDetailPage() {
 
   const apiError = error ? toApiError(error) : null;
   const cancelError = cancelMutation.error ? toApiError(cancelMutation.error) : null;
+
+  const doctorActions = {
+    confirm: {
+      open: 'Confirm this appointment?',
+      description: 'The patient will see this visit as confirmed.',
+      button: 'Confirm Appointment',
+      success: 'Appointment confirmed.',
+      mutation: confirmMutation,
+    },
+    complete: {
+      open: 'Mark this visit as completed?',
+      description: 'This closes the appointment as COMPLETED. A completed visit cannot be changed afterwards.',
+      button: 'Mark Completed',
+      success: 'Visit marked as completed.',
+      mutation: completeMutation,
+    },
+    'no-show': {
+      open: 'Mark this appointment as no-show?',
+      description: 'Use this when the patient did not arrive. The appointment is closed as NO_SHOW.',
+      button: 'Mark No-Show',
+      success: 'Appointment marked as no-show.',
+      mutation: noShowMutation,
+    },
+  } as const;
+
+  const onDoctorAction = async () => {
+    if (!appointmentId || !pendingAction) return;
+    try {
+      await doctorActions[pendingAction].mutation.mutateAsync(appointmentId);
+      toast.success(doctorActions[pendingAction].success);
+      setPendingAction(null);
+    } catch {
+      // Error surfaced through the modal via the mutation's error state.
+    }
+  };
+
+  const actionMeta = pendingAction ? doctorActions[pendingAction] : null;
+  const actionError = actionMeta?.mutation.error ? toApiError(actionMeta.mutation.error) : null;
 
   if (isLoading) {
     return (
@@ -195,9 +252,28 @@ export function AppointmentDetailPage() {
             </div>
           )}
 
-          {/* Actions — destructive cancel goes through a confirmation modal */}
-          {canCancel && (
-            <div className="flex flex-wrap gap-3">
+          {/* Actions — role-aware. Doctors drive the visit lifecycle; patients cancel.
+              Every action re-validates on the server (role, ownership, transition). */}
+          <div className="flex flex-wrap gap-3">
+            {isDoctor && appointment.status === 'SCHEDULED' && (
+              <Button onClick={() => setPendingAction('confirm')}>
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                Confirm Appointment
+              </Button>
+            )}
+            {isDoctor && appointment.status === 'CONFIRMED' && (
+              <>
+                <Button onClick={() => setPendingAction('complete')}>
+                  <BadgeCheck className="h-4 w-4" aria-hidden="true" />
+                  Mark Completed
+                </Button>
+                <Button variant="outline" onClick={() => setPendingAction('no-show')}>
+                  <UserX className="h-4 w-4" aria-hidden="true" />
+                  Mark No-Show
+                </Button>
+              </>
+            )}
+            {canCancel && (
               <Button
                 variant="outline"
                 onClick={() => {
@@ -209,8 +285,8 @@ export function AppointmentDetailPage() {
                 <XCircle className="h-4 w-4" aria-hidden="true" />
                 Cancel Appointment
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </Card>
 
@@ -258,6 +334,34 @@ export function AppointmentDetailPage() {
               </Button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* Doctor lifecycle confirmation dialog — one reusable modal for all three actions */}
+      {actionMeta && (
+        <Modal
+          title={actionMeta.open}
+          description={actionMeta.description}
+          onClose={() => setPendingAction(null)}
+        >
+          <div className="space-y-4">
+            {actionError && <ErrorBox message={actionError.message} />}
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={() => setPendingAction(null)}>
+                Go Back
+              </Button>
+              <Button onClick={onDoctorAction} disabled={actionMeta.mutation.isPending}>
+                {actionMeta.mutation.isPending ? (
+                  <>
+                    <Spinner className="text-white" />
+                    Updating…
+                  </>
+                ) : (
+                  actionMeta.button
+                )}
+              </Button>
+            </div>
+          </div>
         </Modal>
       )}
     </AppShell>
