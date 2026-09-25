@@ -51,7 +51,9 @@ export function useSpecialties() {
     queryKey: ['specialties'],
     queryFn: appointmentApi.getSpecialties,
     enabled: isAuthenticated,
-    staleTime: Infinity,
+    // Refetch at most once a minute. (staleTime: Infinity here previously kept an
+    // empty list cached forever if the page was opened before any specialty existed.)
+    staleTime: 60 * 1000,
   });
 }
 
@@ -85,4 +87,42 @@ export function useDoctorAvailability(doctorId: number | null, date: string | nu
     enabled: isAuthenticated && doctorId !== null,
     staleTime: 60 * 1000,
   });
+}
+
+/**
+ * Shared invalidation for doctor lifecycle transitions: the detail view, the list
+ * and the dashboards all read from these keys, so updating them is enough.
+ */
+function useTransitionMutation(
+  action: 'confirm' | 'complete' | 'no-show',
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) =>
+      action === 'confirm'
+        ? appointmentApi.confirmAppointment(id)
+        : action === 'complete'
+          ? appointmentApi.completeAppointment(id)
+          : appointmentApi.markAppointmentNoShow(id),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.setQueryData(['appointment', response.id], response);
+    },
+  });
+}
+
+/** Doctor action: SCHEDULED → CONFIRMED. */
+export function useConfirmAppointment() {
+  return useTransitionMutation('confirm');
+}
+
+/** Doctor action: CONFIRMED → COMPLETED. */
+export function useCompleteAppointment() {
+  return useTransitionMutation('complete');
+}
+
+/** Doctor action: CONFIRMED → NO_SHOW. */
+export function useNoShowAppointment() {
+  return useTransitionMutation('no-show');
 }
