@@ -18,9 +18,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Service (business logic) layer for appointments.
@@ -56,6 +59,30 @@ public class AppointmentService {
     /** Message for a rejected ownership read/write — deliberately does not echo the ID. */
     private static final String ACCESS_DENIED_TO_APPOINTMENT =
             "You do not have access to this appointment";
+
+    /**
+     * Status transitions an assigned doctor may perform, enforced server-side.
+     *
+     * <p>The lifecycle (documented in {@code docs/doctor-portal-and-status-lifecycle.md}):</p>
+     * <pre>
+     * SCHEDULED → CONFIRMED            (doctor confirms the visit)
+     * CONFIRMED → COMPLETED            (visit happened)
+     * CONFIRMED → NO_SHOW              (patient did not arrive)
+     * SCHEDULED → CANCELLED            (already implemented, patient/doctor)
+     * CONFIRMED → CANCELLED            (already implemented, patient/doctor)
+     * </pre>
+     *
+     * <p>Terminal states (COMPLETED, CANCELLED, NO_SHOW) map to empty sets: nothing can
+     * follow them, so {@code COMPLETED → CANCELLED}, {@code CANCELLED → CONFIRMED},
+     * {@code NO_SHOW → COMPLETED} and every other backward/edge transition are rejected
+     * with {@link InvalidAppointmentStatusException} (HTTP 409). Patient cancellation is
+     * governed separately by {@link #cancelAppointment(Appointment, User, String)}, whose
+     * rules overlap this map (cancel allowed from SCHEDULED/CONFIRMED only).</p>
+     */
+    private static final Map<AppointmentStatus, Set<AppointmentStatus>> DOCTOR_TRANSITIONS = Map.of(
+            AppointmentStatus.SCHEDULED, Set.of(AppointmentStatus.CONFIRMED),
+            AppointmentStatus.CONFIRMED, Set.of(AppointmentStatus.COMPLETED, AppointmentStatus.NO_SHOW)
+    );
 
     private final AppointmentRepository appointmentRepository;
     private final AppointmentStatusHistoryRepository statusHistoryRepository;
@@ -418,6 +445,112 @@ public class AppointmentService {
         recordStatusChange(saved, AppointmentStatus.CANCELLED, cancellationReason, caller);
 
         return saved;
+    }
+
+    /**
+     * Confirm one appointment (SCHEDULED → CONFIRMED) as the assigned doctor.
+     *
+     * @param appointmentId the appointment to confirm
+     * @return the updated appointment, with status CONFIRMED and {@code confirmed_at} set
+     * @throws AppointmentOwnershipException     when the caller is not the assigned doctor
+     * @throws AppointmentNotFoundException      when the appointment ID does not exist
+     * @throws InvalidAppointmentStatusException when the current status is not SCHEDULED
+     */
+    @Transactional
+    public Appointment confirmAppointmentForCurrentUser(Long appointmentId) {
+        return transitionAppointmentForCurrentUser(
+                appointmentId, AppointmentStatus.CONFIRMED, "Appointment confirmed by doctor");
+    }
+
+    /**
+     * Mark one appointment completed (CONFIRMED → COMPLETED) as the assigned doctor.
+     *
+     * @param appointmentId the appointment to complete
+     * @return the updated appointment, with status COMPLETED and {@code completed_at} set
+     * @throws AppointmentOwnershipException     when the caller is not the assigned doctor
+     * @throws AppointmentNotFoundException      when the appointment ID does not exist
+     * @throws InvalidAppointmentStatusException when the current status is not CONFIRMED
+     */
+    @Transactional
+    public Appointment completeAppointmentForCurrentUser(Long appointmentId) {
+        return transitionAppointmentForCurrentUser(
+                appointmentId, AppointmentStatus.COMPLETED, "Visit completed");
+    }
+
+    /**
+     * Mark one appointment as a no-show (CONFIRMED → NO_SHOW) as the assigned doctor.
+     *
+     * @param appointmentId the appointment to mark
+     * @return the updated appointment, with status NO_SHOW
+     * @throws AppointmentOwnershipException     when the caller is not the assigned doctor
+     * @throws AppointmentNotFoundException      when the appointment ID does not exist
+     * @throws InvalidAppointmentStatusException when the current status is not CONFIRMED
+     */
+    @Transactional
+    public Appointment markNoShowForCurrentUser(Long appointmentId) {
+        return transitionAppointmentForCurrentUser(
+                appointmentId, AppointmentStatus.NO_SHOW, "Patient marked as no-show by doctor");
+    }
+
+    /**
+     * Shared doctor-transition flow: resolve caller, lock, authorize, validate, apply, audit.
+     *
+     * <p>Authorization is a two-layer server-side check, never taken from the request:</p>
+     * <ol>
+     * <li>the caller must hold the DOCTOR role (patients/admins → 403 — this workflow is
+     *     the doctor's, and granting it to others is a product decision, not a default);</li>
+     * <li>the appointment's doctor must be the caller ({@code doctors.user_id = caller.id}).</li>
+     * </ol>
+     *
+     * <p>The row is read with {@code SELECT ... FOR UPDATE} ({@link AppointmentRepository#findByIdForUpdate}),
+     * so two concurrent transitions serialize on the row lock: both may run, but the loser
+     * sees the winner's already-changed status and is rejected by the transition map.
+     * Everything (status update, timestamps, history row) commits atomically.</p>
+     */
+    private Appointment transitionAppointmentForCurrentUser(
+            Long appointmentId, AppointmentStatus target, String notes) {
+        User caller = requireCurrentUser();
+
+        if (!caller.hasRole(ROLE_DOCTOR)) {
+            throw new AppointmentOwnershipException(
+                "Only the assigned doctor can perform this action");
+        }
+
+        Appointment appointment = appointmentRepository.findByIdForUpdate(appointmentId)
+                .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
+
+        if (!appointment.getDoctor().getUser().getId().equals(caller.getId())) {
+            throw new AppointmentOwnershipException(ACCESS_DENIED_TO_APPOINTMENT);
+        }
+
+        AppointmentStatus currentStatus = appointment.getStatus();
+        Set<AppointmentStatus> allowed = DOCTOR_TRANSITIONS.getOrDefault(currentStatus, Set.of());
+        if (!allowed.contains(target)) {
+            throw new InvalidAppointmentStatusException(currentStatus, target,
+                "this appointment action is not valid from the current status");
+        }
+
+        applyDoctorTransition(appointment, target);
+        Appointment saved = appointmentRepository.save(appointment);
+
+        // Audit trail: the history row records the real authenticated doctor — never a
+        // user ID from the request, never a fabricated identity.
+        recordStatusChange(saved, target, notes, caller);
+        return saved;
+    }
+
+    /**
+     * Apply a doctor transition to the entity, stamping the schema's lifecycle columns:
+     * {@code confirmed_at} on entering CONFIRMED, {@code completed_at} on entering COMPLETED.
+     */
+    private void applyDoctorTransition(Appointment appointment, AppointmentStatus target) {
+        appointment.setStatus(target);
+        LocalDateTime now = LocalDateTime.now();
+        if (target == AppointmentStatus.CONFIRMED) {
+            appointment.setConfirmedAt(now);
+        } else if (target == AppointmentStatus.COMPLETED) {
+            appointment.setCompletedAt(now);
+        }
     }
 
     // ------------------------------------------------------------------
