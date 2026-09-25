@@ -6,7 +6,7 @@ import { Brand } from '../ui/Brand';
 import { Button } from '../ui/Button';
 import {
   LayoutDashboard, CalendarPlus, CalendarDays, ShieldCheck, Stethoscope,
-  CalendarClock, Tags, Menu, X, LogOut, UserRound,
+  CalendarClock, Tags, CalendarSearch, Menu, X, LogOut, UserRound,
 } from 'lucide-react';
 
 /**
@@ -23,15 +23,20 @@ interface NavItem {
   end?: boolean;
 }
 
-function useNavSections(): { patient: NavItem[]; admin: NavItem[] } {
+function useNavSections(): { patient: NavItem[]; doctor: NavItem[]; admin: NavItem[] } {
   return {
     patient: [
       { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" />, end: true },
       { to: '/appointments/new', label: 'Book Appointment', icon: <CalendarPlus className="h-4 w-4" /> },
       { to: '/appointments/me', label: 'My Appointments', icon: <CalendarDays className="h-4 w-4" /> },
     ],
+    doctor: [
+      { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" />, end: true },
+      { to: '/doctor/appointments', label: 'My Appointments', icon: <CalendarDays className="h-4 w-4" /> },
+    ],
     admin: [
       { to: '/admin', label: 'Admin Overview', icon: <ShieldCheck className="h-4 w-4" />, end: true },
+      { to: '/admin/appointments', label: 'Appointments', icon: <CalendarSearch className="h-4 w-4" /> },
       { to: '/admin/specialties', label: 'Specialties', icon: <Tags className="h-4 w-4" /> },
       { to: '/admin/doctors', label: 'Doctors', icon: <Stethoscope className="h-4 w-4" /> },
       { to: '/admin/availability', label: 'Availability', icon: <CalendarClock className="h-4 w-4" /> },
@@ -67,7 +72,7 @@ function NavLinks({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => 
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { user } = useAuth();
-  const { patient, admin } = useNavSections();
+  const { patient, doctor, admin } = useNavSections();
   const isAdmin = user?.roles?.includes('ROLE_ADMIN') ?? false;
   const isPatient = user?.roles?.includes('ROLE_PATIENT') ?? false;
   const isDoctor = user?.roles?.includes('ROLE_DOCTOR') ?? false;
@@ -78,10 +83,16 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <Brand to="/dashboard" />
       </div>
       <nav aria-label="Main navigation" className="flex-1 space-y-6 overflow-y-auto px-3 pb-6">
-        {(isPatient || isAdmin || isDoctor) && (
+        {isDoctor && !isAdmin && (
+          <div>
+            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-ink-400">Practice</p>
+            <NavLinks items={doctor} onNavigate={onNavigate} />
+          </div>
+        )}
+        {!isDoctor && (isPatient || isAdmin) && (
           <div>
             <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-ink-400">Care</p>
-            <NavLinks items={patient.filter((i) => isDoctor ? i.to !== '/appointments/new' : true)} onNavigate={onNavigate} />
+            <NavLinks items={patient} onNavigate={onNavigate} />
           </div>
         )}
         {isAdmin && (
