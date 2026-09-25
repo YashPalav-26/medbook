@@ -8,6 +8,7 @@ import type {
   AvailabilityCreateRequest,
   AvailabilityUpdateRequest,
 } from '../api/adminApi';
+import type { AdminAppointmentFilters } from '../types/appointment';
 import { useAuth } from './useAuth';
 
 /**
@@ -173,6 +174,64 @@ export function useDeactivateAvailability() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'availability'] });
       queryClient.invalidateQueries({ queryKey: ['doctorAvailability'] });
+    },
+  });
+}
+
+// ------------------------------------------------------------------
+// Appointments
+// ------------------------------------------------------------------
+
+/**
+ * Clinic-wide appointment list. The filters object is part of the query key, so
+ * every filter combination gets its own cache entry and changing a filter refetches
+ * from the backend (server-side filtering, not JavaScript filtering).
+ */
+export function useAdminAppointments(filters: AdminAppointmentFilters = {}) {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: ['admin', 'appointments', filters],
+    queryFn: () => adminApi.listAdminAppointments(filters),
+    enabled: isAuthenticated,
+  });
+}
+
+/** One appointment with its status-change audit trail. */
+export function useAdminAppointment(id: number | null) {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: ['admin', 'appointments', 'detail', id],
+    queryFn: () => adminApi.getAdminAppointment(id!),
+    enabled: isAuthenticated && id !== null,
+  });
+}
+
+/** Real clinic overview metrics for the admin dashboard. */
+export function useAdminOverview() {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: ['admin', 'appointments', 'overview'],
+    queryFn: adminApi.getAdminOverview,
+    enabled: isAuthenticated,
+  });
+}
+
+/**
+ * ADMIN support cancellation. Success invalidates every admin appointment view —
+ * the filtered lists (all of them, since any may include this row), the detail,
+ * and the dashboard overview counts.
+ */
+export function useAdminCancelAppointment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) =>
+      adminApi.cancelAppointmentAsAdmin(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'appointments'] });
     },
   });
 }
