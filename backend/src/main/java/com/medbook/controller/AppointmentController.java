@@ -117,4 +117,41 @@ public class AppointmentController {
                 AppointmentResponse.from(appointmentService.cancelAppointmentForCurrentUser(id, request.cancellationReason()));
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Confirm an appointment (SCHEDULED → CONFIRMED) — assigned DOCTOR only.
+     *
+     * <p>Status mapping: 200 on success; 401 unauthenticated; 403 caller is not a doctor
+     * or is not the assigned doctor; 404 unknown appointment; 409 the appointment is not
+     * SCHEDULED (invalid transition, {@link com.medbook.service.InvalidAppointmentStatusException}).
+     * The history row records the authenticated doctor as {@code changed_by_user_id}.</p>
+     */
+    @PostMapping("/{id}/confirm")
+    public ResponseEntity<AppointmentResponse> confirmAppointment(@PathVariable Long id) {
+        AppointmentResponse response =
+                AppointmentResponse.from(appointmentService.confirmAppointmentForCurrentUser(id));
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Complete an appointment (CONFIRMED → COMPLETED) — assigned DOCTOR only.
+     * Same status mapping as confirm; 409 when the appointment is not CONFIRMED.
+     */
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<AppointmentResponse> completeAppointment(@PathVariable Long id) {
+        AppointmentResponse response =
+                AppointmentResponse.from(appointmentService.completeAppointmentForCurrentUser(id));
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Mark an appointment as a no-show (CONFIRMED → NO_SHOW) — assigned DOCTOR only.
+     * Same status mapping as confirm; 409 when the appointment is not CONFIRMED.
+     */
+    @PostMapping("/{id}/no-show")
+    public ResponseEntity<AppointmentResponse> markNoShow(@PathVariable Long id) {
+        AppointmentResponse response =
+                AppointmentResponse.from(appointmentService.markNoShowForCurrentUser(id));
+        return ResponseEntity.ok(response);
+    }
 }
