@@ -101,7 +101,9 @@ class AppointmentOwnershipTest {
         patientBUser = createUser("PATIENT", "owner-b@medbook.test", "Patient", "OwnerB", "+919900000002");
         doctorAUser = createUser("DOCTOR", "doc-a@medbook.test", "Doctor", "OwnerA", "+919900000003");
         doctorBUser = createUser("DOCTOR", "doc-b@medbook.test", "Doctor", "OwnerB", "+919900000004");
-        adminUser = createUser("ADMIN", "admin@medbook.test", "Admin", "User", "+919900000005");
+        // Unique email: the shared test database may already contain the demo seed data
+        // (which includes its own admin@medbook.test), and the email column is unique.
+        adminUser = createUser("ADMIN", "admin-own@" + System.nanoTime() + "medbook.test", "Admin", "User", "+919900000005");
 
         patientA = patientRepository.save(new Patient(patientAUser, LocalDate.of(1990, 1, 1)));
         patientB = patientRepository.save(new Patient(patientBUser, LocalDate.of(1991, 2, 2)));
