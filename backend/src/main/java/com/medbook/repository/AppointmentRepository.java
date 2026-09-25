@@ -196,4 +196,80 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     @Query("SELECT a FROM Appointment a JOIN FETCH a.patient JOIN FETCH a.doctor d " +
            "WHERE d.user.id = :userId ORDER BY a.appointmentDate DESC, a.startTime DESC")
     List<Appointment> findAllByDoctorUserId(@Param("userId") Long userId);
+
+    /**
+     * ADMIN clinic-wide appointment list with every filter optional.
+     *
+     * <p>All four conditions use the {@code (:param IS NULL OR ...) } idiom: a {@code null}
+     * parameter means "do not filter on this", so one query serves every filter combination
+     * (no filter, one filter, or any mix). A null never matches a real row, so a null
+     * parameter is equivalent to omitting the condition.</p>
+     *
+     * <p>{@code JOIN FETCH} initializes every association the admin response needs — the
+     * patient and its account, the doctor, the doctor's account and specialty — in one
+     * round trip. This matters because Open Session In View is disabled
+     * ({@code spring.jpa.open-in-view=false}): without the fetch joins, reading names or
+     * the specialty while mapping the DTOs would fail after the transaction ends, and with
+     * lazy access inside the transaction each row would trigger extra queries (N+1).</p>
+     *
+     * <p>Newest visits first, ties broken by start time and then ID so the order is stable.</p>
+     *
+     * @param appointmentDate exact clinic date to show, or {@code null} for any date
+     * @param status          lifecycle status to show, or {@code null} for any status
+     * @param doctorId        doctor to show, or {@code null} for every doctor
+     * @param patientId       patient to show, or {@code null} for every patient
+     * @return the matching appointments with all participants initialized
+     */
+    @Query("SELECT a FROM Appointment a " +
+           "JOIN FETCH a.patient p JOIN FETCH p.user " +
+           "JOIN FETCH a.doctor d JOIN FETCH d.user JOIN FETCH d.specialty " +
+           "WHERE (:appointmentDate IS NULL OR a.appointmentDate = :appointmentDate) " +
+           "AND (:status IS NULL OR a.status = :status) " +
+           "AND (:doctorId IS NULL OR d.id = :doctorId) " +
+           "AND (:patientId IS NULL OR p.id = :patientId) " +
+           "ORDER BY a.appointmentDate DESC, a.startTime DESC, a.id DESC")
+    List<Appointment> findAdminAppointments(
+            @Param("appointmentDate") LocalDate appointmentDate,
+            @Param("status") AppointmentStatus status,
+            @Param("doctorId") Long doctorId,
+            @Param("patientId") Long patientId);
+
+    /**
+     * Read one appointment for the ADMIN detail view together with everything the admin
+     * response needs: patient + account, doctor + account + specialty.
+     *
+     * <p>Same fetch-join rationale as {@link #findAdminAppointments}: one query, safe to
+     * read after the transaction, no lazy-loading failure with OSIV disabled.</p>
+     *
+     * @param id the appointment's ID
+     * @return the appointment with all participants initialized, or empty when not found
+     */
+    @Query("SELECT a FROM Appointment a " +
+           "JOIN FETCH a.patient p JOIN FETCH p.user " +
+           "JOIN FETCH a.doctor d JOIN FETCH d.user JOIN FETCH d.specialty " +
+           "WHERE a.id = :id")
+    Optional<Appointment> findByIdForAdmin(@Param("id") Long id);
+
+    /**
+     * Count how many appointments carry each lifecycle status, in one grouped query.
+     *
+     * <p>Returns {@link AppointmentStatusCount} projection rows (aliased JPQL aggregate)
+     * instead of five separate {@code countByStatus} calls, so the dashboard overview costs
+     * one round trip, not five.</p>
+     *
+     * @return one row per status that currently exists in the table (statuses with zero
+     *         appointments are absent — the service fills them in)
+     */
+    @Query("SELECT a.status AS status, COUNT(a) AS total FROM Appointment a GROUP BY a.status")
+    List<AppointmentStatusCount> countGroupedByStatus();
+
+    /**
+     * Count the appointments booked for one clinic date (the dashboard's "today" figure).
+     *
+     * <p>A derived query is enough here: only the count is needed, no participant data.</p>
+     *
+     * @param appointmentDate the clinic date to count
+     * @return number of appointments on that date, whatever their status
+     */
+    long countByAppointmentDate(LocalDate appointmentDate);
 }
