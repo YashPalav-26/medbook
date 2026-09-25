@@ -1,13 +1,19 @@
 package com.medbook.controller;
 
+import com.medbook.dto.AdminAppointmentDetailResponse;
+import com.medbook.dto.AdminAppointmentResponse;
+import com.medbook.dto.AdminOverviewResponse;
 import com.medbook.dto.AvailabilityCreateRequest;
 import com.medbook.dto.AvailabilityUpdateRequest;
+import com.medbook.dto.CancelAppointmentRequest;
 import com.medbook.dto.DoctorAdminResponse;
 import com.medbook.dto.DoctorCreateRequest;
 import com.medbook.dto.DoctorUpdateRequest;
 import com.medbook.dto.SpecialtyCreateRequest;
 import com.medbook.dto.SpecialtyResponse;
 import com.medbook.dto.SpecialtyUpdateRequest;
+import com.medbook.entity.AppointmentStatus;
+import com.medbook.service.AdminAppointmentService;
 import com.medbook.service.AvailabilityAdminService;
 import com.medbook.service.DoctorAdminService;
 import com.medbook.service.SpecialtyAdminService;
@@ -21,8 +27,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -44,13 +52,16 @@ public class AdminController {
     private final SpecialtyAdminService specialtyAdminService;
     private final DoctorAdminService doctorAdminService;
     private final AvailabilityAdminService availabilityAdminService;
+    private final AdminAppointmentService adminAppointmentService;
 
     public AdminController(SpecialtyAdminService specialtyAdminService,
                            DoctorAdminService doctorAdminService,
-                           AvailabilityAdminService availabilityAdminService) {
+                           AvailabilityAdminService availabilityAdminService,
+                           AdminAppointmentService adminAppointmentService) {
         this.specialtyAdminService = specialtyAdminService;
         this.doctorAdminService = doctorAdminService;
         this.availabilityAdminService = availabilityAdminService;
+        this.adminAppointmentService = adminAppointmentService;
     }
 
     // ------------------------------------------------------------------
@@ -166,5 +177,66 @@ public class AdminController {
     public ResponseEntity<com.medbook.dto.DoctorAvailabilityResponse> deactivateAvailability(@PathVariable Long id) {
         return ResponseEntity.ok(com.medbook.dto.DoctorAvailabilityResponse.from(
                 availabilityAdminService.close(id)));
+    }
+
+    // ------------------------------------------------------------------
+    // Appointments (clinic-wide visibility + support cancellation)
+    // ------------------------------------------------------------------
+
+    /**
+     * List appointments across the whole clinic, with every filter optional.
+     *
+     * <p>All parameters may be combined: {@code ?date=2026-09-28}, {@code ?status=CONFIRMED},
+     * {@code ?doctorId=1}, {@code ?patientId=2}, or any mix. Omitted parameters are simply
+     * not filtered on. This is the clinic-wide counterpart of
+     * {@code /api/v1/appointments/me}, which serves each patient's and doctor's own
+     * appointments; admins do not have "own" appointments, so they were rejected there
+     * (403) and read here instead.</p>
+     *
+     * <p>Wrong enum or date values fail request conversion with 400 before any query runs.
+     */
+    @GetMapping("/appointments")
+    public ResponseEntity<List<AdminAppointmentResponse>> listAppointments(
+            @RequestParam(required = false) LocalDate date,
+            @RequestParam(required = false) AppointmentStatus status,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam(required = false) Long patientId) {
+        return ResponseEntity.ok(adminAppointmentService.listAppointments(date, status, doctorId, patientId));
+    }
+
+    /**
+     * Real clinic overview for the dashboard: today's appointment count and the
+     * per-status breakdown, computed from live rows (no estimated metrics).
+     * Declared before {@code /appointments/{id}} so "overview" is never captured
+     * as an appointment ID.
+     */
+    @GetMapping("/appointments/overview")
+    public ResponseEntity<AdminOverviewResponse> getOverview() {
+        return ResponseEntity.ok(adminAppointmentService.getOverview());
+    }
+
+    /**
+     * One appointment with the full status-change audit trail for support inspection.
+     * Unknown IDs are 404. Authorization is URL-level: only ADMIN tokens reach here.
+     */
+    @GetMapping("/appointments/{id}")
+    public ResponseEntity<AdminAppointmentDetailResponse> getAppointmentDetail(@PathVariable Long id) {
+        return ResponseEntity.ok(adminAppointmentService.getAppointmentDetail(id));
+    }
+
+    /**
+     * ADMIN support cancellation — the one admin appointment mutation, implemented
+     * explicitly: a required reason, the same status rules as patient/doctor cancellation
+     * (only SCHEDULED or CONFIRMED can be cancelled; otherwise 409), the authenticated
+     * admin recorded in {@code changed_by_user_id}, and a history row — all atomic.
+     * 404 unknown appointment, 400 missing reason, 409 invalid status.
+     */
+    @PostMapping("/appointments/{id}/cancel")
+    public ResponseEntity<AdminAppointmentResponse> cancelAppointment(
+            @PathVariable Long id,
+            @Valid @RequestBody CancelAppointmentRequest request) {
+        AdminAppointmentResponse response = adminAppointmentService
+                .cancelAppointmentAsAdmin(id, request.cancellationReason());
+        return ResponseEntity.ok(response);
     }
 }
