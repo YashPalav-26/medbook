@@ -25,6 +25,10 @@ vi.mock('../../api/adminApi', () => ({
   createAvailability: vi.fn(),
   updateAvailability: vi.fn(),
   deactivateAvailability: vi.fn(),
+  listAdminAppointments: vi.fn(),
+  getAdminAppointment: vi.fn(),
+  getAdminOverview: vi.fn(),
+  cancelAppointmentAsAdmin: vi.fn(),
 }));
 
 // Admin pages use the auth context for query gating and the AdminRoute guard.
@@ -85,6 +89,14 @@ beforeEach(() => {
   mockedApi.listAdminSpecialties.mockResolvedValue(SPECIALTIES);
   mockedApi.listAdminDoctors.mockResolvedValue(DOCTORS);
   mockedApi.listAdminAvailability.mockResolvedValue(WINDOWS);
+  // The dashboard now shows the real clinic overview; default to a benign payload
+  // so the management-card assertions stay focused on navigation.
+  mockedApi.getAdminOverview.mockResolvedValue({
+    todayAppointments: 0,
+    today: '2026-09-25',
+    statusCounts: { SCHEDULED: 0, CONFIRMED: 0, COMPLETED: 0, CANCELLED: 0, NO_SHOW: 0 },
+    totalAppointments: 0,
+  });
 });
 
 describe('AdminDashboardPage', () => {
