@@ -81,7 +81,9 @@ class AppointmentRepositoryTest {
      * Helper: creates a test specialty.
      */
     private Specialty createTestSpecialty(String name) {
-        return specialtyRepository.save(new Specialty(name, "Test specialty"));
+        // Unique suffix: the shared test database may already contain the demo seed data
+        // (real specialties like "Cardiology"), and the name column is unique.
+        return specialtyRepository.save(new Specialty(name + "-" + System.nanoTime(), "Test specialty"));
     }
 
     /**
@@ -246,14 +248,22 @@ class AppointmentRepositoryTest {
         List<Appointment> confirmedAppointments = appointmentRepository.findByStatus(AppointmentStatus.CONFIRMED);
         List<Appointment> cancelledAppointments = appointmentRepository.findByStatus(AppointmentStatus.CANCELLED);
 
-        assertThat(scheduledAppointments).hasSize(1);
-        assertThat(scheduledAppointments.get(0).getId()).isEqualTo(scheduled.getId());
+        // Relative assertions: the shared test database may already hold committed rows,
+        // so only this test's own fixtures are asserted on, by ID.
+        assertThat(scheduledAppointments)
+                .extracting(Appointment::getId)
+                .contains(scheduled.getId())
+                .doesNotContain(confirmed.getId(), cancelled.getId());
 
-        assertThat(confirmedAppointments).hasSize(1);
-        assertThat(confirmedAppointments.get(0).getId()).isEqualTo(confirmed.getId());
+        assertThat(confirmedAppointments)
+                .extracting(Appointment::getId)
+                .contains(confirmed.getId())
+                .doesNotContain(scheduled.getId(), cancelled.getId());
 
-        assertThat(cancelledAppointments).hasSize(1);
-        assertThat(cancelledAppointments.get(0).getId()).isEqualTo(cancelled.getId());
+        assertThat(cancelledAppointments)
+                .extracting(Appointment::getId)
+                .contains(cancelled.getId())
+                .doesNotContain(scheduled.getId(), confirmed.getId());
     }
 
     @Test
