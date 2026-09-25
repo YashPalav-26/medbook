@@ -81,7 +81,9 @@ class AppointmentStatusHistoryRepositoryTest {
      * Helper: creates a test specialty.
      */
     private Specialty createTestSpecialty(String name) {
-        return specialtyRepository.save(new Specialty(name, "Test specialty"));
+        // Unique suffix: the shared test database may already contain the demo seed data
+        // (real specialties like "Cardiology"), and the name column is unique.
+        return specialtyRepository.save(new Specialty(name + "-" + System.nanoTime(), "Test specialty"));
     }
 
     /**
@@ -222,7 +224,9 @@ class AppointmentStatusHistoryRepositoryTest {
         Doctor doctor = createTestDoctor("doctor6@medbook.test", "Ophthalmology");
         Patient patient = createTestPatient("patient6@medbook.test");
         Appointment appointment = createTestAppointment(doctor, patient);
-        User changedByUser = createTestDoctorUser("admin@medbook.test");
+        // Unique email: the shared test database may already contain the demo seed data
+        // (which includes its own admin@medbook.test), and the email column is unique.
+        User changedByUser = createTestDoctorUser("history-admin-" + System.nanoTime() + "@medbook.test");
 
         AppointmentStatusHistory history = new AppointmentStatusHistory(
                 appointment, AppointmentStatus.CONFIRMED
