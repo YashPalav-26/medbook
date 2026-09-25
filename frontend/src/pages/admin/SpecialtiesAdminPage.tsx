@@ -199,6 +199,7 @@ export function AdminNav() {
       <h1 className="text-lg font-semibold text-ink-900">MedBook Admin</h1>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
         <Link to="/admin" className="text-ink-600 hover:text-brand-700">Dashboard</Link>
+        <Link to="/admin/appointments" className="text-ink-600 hover:text-brand-700">Appointments</Link>
         <Link to="/admin/specialties" className="text-ink-600 hover:text-brand-700">Specialties</Link>
         <Link to="/admin/doctors" className="text-ink-600 hover:text-brand-700">Doctors</Link>
         <Link to="/admin/availability" className="text-ink-600 hover:text-brand-700">Availability</Link>
