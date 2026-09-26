@@ -6,7 +6,7 @@ import { Brand } from '../components/ui/Brand';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { StatusBadge, EmptyState, Skeleton } from '../components/ui/Feedback';
-import { CalendarPlus, CalendarDays, ArrowRight, Clock, Stethoscope } from 'lucide-react';
+import { CalendarPlus, CalendarDays, ArrowRight, Clock, Stethoscope, UserRound } from 'lucide-react';
 
 /**
  * Patient dashboard. Personalized welcome, quick actions, and the next upcoming
@@ -124,22 +124,23 @@ export function DashboardPage() {
             </div>
           </Card>
 
-          <Card className="p-6">
-            <h3 className="mb-3 font-medium text-ink-900">Your details</h3>
-            <dl className="space-y-2 text-sm">
-              <div className="flex justify-between gap-4">
-                <dt className="text-ink-500">Name</dt>
-                <dd className="font-medium text-ink-800">{user?.firstName} {user?.lastName}</dd>
+          <Card
+            hover
+            className="p-6 cursor-pointer"
+            onClick={() => navigate('/profile')}
+            aria-label="Open My Profile"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                <UserRound className="h-5 w-5" aria-hidden="true" />
               </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-ink-500">Email</dt>
-                <dd className="truncate font-medium text-ink-800">{user?.email}</dd>
+              <div className="min-w-0">
+                <h3 className="font-medium text-ink-900">My Profile</h3>
+                <p className="truncate text-sm text-ink-500">
+                  {user?.firstName} {user?.lastName} · {user?.email}
+                </p>
               </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-ink-500">Role</dt>
-                <dd className="font-medium text-ink-800">{user?.roles?.[0]?.replace('ROLE_', '') ?? '—'}</dd>
-              </div>
-            </dl>
+            </div>
           </Card>
         </div>
       </div>
