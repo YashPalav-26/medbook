@@ -106,6 +106,20 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
     Optional<Doctor> findByIdWithUserAndSpecialty(@Param("id") Long id);
 
     /**
+     * The doctor profile linked to a user account, with the specialty fetched.
+     *
+     * <p>Used by the own-profile API ({@code GET /api/v1/me/profile}): the response reads
+     * the specialty name, and with Open Session In View disabled that read must resolve
+     * inside the transaction — hence the fetch join instead of the plain
+     * {@link #findByUserId(Long)} lookup.</p>
+     *
+     * @param userId the doctor's user account ID
+     * @return the doctor with specialty initialized, or empty when the user has no doctor profile
+     */
+    @Query("SELECT d FROM Doctor d JOIN FETCH d.specialty WHERE d.user.id = :userId")
+    Optional<Doctor> findByUserIdWithSpecialty(@Param("userId") Long userId);
+
+    /**
      * Uniqueness probe for license numbers excluding one row — the update variant.
      */
     boolean existsByMedicalLicenseNumberAndIdNot(String medicalLicenseNumber, Long id);
