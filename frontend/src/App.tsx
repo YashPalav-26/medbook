@@ -13,6 +13,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { BookAppointmentPage } from './pages/BookAppointmentPage';
 import { AppointmentDetailPage } from './pages/AppointmentDetailPage';
 import { MyAppointmentsPage } from './pages/MyAppointmentsPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { DoctorDashboardPage } from './pages/DoctorDashboardPage';
 import { DoctorAppointmentsPage } from './pages/DoctorAppointmentsPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
@@ -163,6 +164,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <AppointmentDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
                 </ProtectedRoute>
               }
             />
