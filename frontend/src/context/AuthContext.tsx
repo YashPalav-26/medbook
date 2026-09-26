@@ -17,6 +17,8 @@ export interface AuthContextValue {
   login: (input: LoginRequest) => Promise<void>;
   register: (input: RegisterRequest) => Promise<void>;
   logout: () => void;
+  /** Merge fields into the signed-in user (e.g. a new name after a profile update). */
+  updateUser: (patch: Partial<Pick<AuthUser, 'firstName' | 'lastName'>>) => void;
 }
 
 export interface AuthContextType {
@@ -54,9 +56,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  /** Merge a patch into the user state and the stored copy (header shows the new name). */
+  const updateUser = useCallback(
+    (patch: Partial<Pick<AuthUser, 'firstName' | 'lastName'>>) => {
+      setUser((current) => {
+        if (!current) return current;
+        const next = { ...current, ...patch };
+        // Keep the stored copy in step so a refresh keeps the updated name too.
+        const storedToken = getStoredToken();
+        if (storedToken) saveAuth(storedToken, next);
+        return next;
+      });
+    },
+    [],
+  );
+
   const value = useMemo<AuthContextValue>(
-    () => ({ user, token, isAuthenticated: Boolean(token && user), login, register, logout }),
-    [user, token, login, register, logout],
+    () => ({ user, token, isAuthenticated: Boolean(token && user), login, register, logout, updateUser }),
+    [user, token, login, register, logout, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
