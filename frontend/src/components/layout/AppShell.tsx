@@ -6,7 +6,7 @@ import { Brand } from '../ui/Brand';
 import { Button } from '../ui/Button';
 import {
   LayoutDashboard, CalendarPlus, CalendarDays, ShieldCheck, Stethoscope,
-  CalendarClock, Tags, CalendarSearch, Menu, X, LogOut, UserRound,
+  CalendarClock, Tags, CalendarSearch, UserRound, Menu, X, LogOut,
 } from 'lucide-react';
 
 /**
@@ -29,10 +29,12 @@ function useNavSections(): { patient: NavItem[]; doctor: NavItem[]; admin: NavIt
       { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" />, end: true },
       { to: '/appointments/new', label: 'Book Appointment', icon: <CalendarPlus className="h-4 w-4" /> },
       { to: '/appointments/me', label: 'My Appointments', icon: <CalendarDays className="h-4 w-4" /> },
+      { to: '/profile', label: 'My Profile', icon: <UserRound className="h-4 w-4" /> },
     ],
     doctor: [
       { to: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" />, end: true },
       { to: '/doctor/appointments', label: 'My Appointments', icon: <CalendarDays className="h-4 w-4" /> },
+      { to: '/profile', label: 'My Profile', icon: <UserRound className="h-4 w-4" /> },
     ],
     admin: [
       { to: '/admin', label: 'Admin Overview', icon: <ShieldCheck className="h-4 w-4" />, end: true },
@@ -40,6 +42,7 @@ function useNavSections(): { patient: NavItem[]; doctor: NavItem[]; admin: NavIt
       { to: '/admin/specialties', label: 'Specialties', icon: <Tags className="h-4 w-4" /> },
       { to: '/admin/doctors', label: 'Doctors', icon: <Stethoscope className="h-4 w-4" /> },
       { to: '/admin/availability', label: 'Availability', icon: <CalendarClock className="h-4 w-4" /> },
+      { to: '/profile', label: 'My Profile', icon: <UserRound className="h-4 w-4" /> },
     ],
   };
 }
