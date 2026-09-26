@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { Brand } from '../ui/Brand';
 import { Button } from '../ui/Button';
+import { NotificationBell } from './NotificationBell';
 import {
   LayoutDashboard, CalendarPlus, CalendarDays, ShieldCheck, Stethoscope,
   CalendarClock, Tags, CalendarSearch, UserRound, Menu, X, LogOut,
@@ -173,6 +174,7 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
               )}
             </div>
             <div className="flex items-center gap-3">
+              <NotificationBell />
               <span className="hidden items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 sm:inline-flex">
                 <UserRound className="h-3.5 w-3.5" aria-hidden="true" />
                 {user?.firstName} {user?.lastName} · {roleLabel}
