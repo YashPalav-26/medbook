@@ -16,6 +16,7 @@ import com.medbook.service.DoctorUnavailableException;
 import com.medbook.service.EmailAlreadyRegisteredException;
 import com.medbook.service.InvalidAppointmentStatusException;
 import com.medbook.service.InvalidCredentialsException;
+import com.medbook.service.NotificationNotFoundException;
 import com.medbook.service.PatientInactiveException;
 import com.medbook.service.PatientNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -65,7 +66,8 @@ public class GlobalExceptionHandler {
             PatientNotFoundException.class,
             AppointmentNotFoundException.class,
             SpecialtyNotFoundException.class,
-            AvailabilityNotFoundException.class
+            AvailabilityNotFoundException.class,
+            NotificationNotFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException exception, HttpServletRequest request) {
         return build(HttpStatus.NOT_FOUND, exception, request);
