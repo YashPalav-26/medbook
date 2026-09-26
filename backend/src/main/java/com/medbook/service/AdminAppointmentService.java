@@ -7,6 +7,7 @@ import com.medbook.dto.AppointmentStatusHistoryResponse;
 import com.medbook.entity.Appointment;
 import com.medbook.entity.AppointmentStatus;
 import com.medbook.entity.AppointmentStatusHistory;
+import com.medbook.entity.NotificationType;
 import com.medbook.entity.User;
 import com.medbook.repository.AppointmentRepository;
 import com.medbook.repository.AppointmentStatusHistoryRepository;
@@ -51,15 +52,18 @@ public class AdminAppointmentService {
     private final AppointmentStatusHistoryRepository statusHistoryRepository;
     private final UserRepository userRepository;
     private final CurrentUserProvider currentUserProvider;
+    private final NotificationService notificationService;
 
     public AdminAppointmentService(AppointmentRepository appointmentRepository,
                                    AppointmentStatusHistoryRepository statusHistoryRepository,
                                    UserRepository userRepository,
-                                   CurrentUserProvider currentUserProvider) {
+                                   CurrentUserProvider currentUserProvider,
+                                   NotificationService notificationService) {
         this.appointmentRepository = appointmentRepository;
         this.statusHistoryRepository = statusHistoryRepository;
         this.userRepository = userRepository;
         this.currentUserProvider = currentUserProvider;
+        this.notificationService = notificationService;
     }
 
     // ------------------------------------------------------------------
@@ -193,6 +197,12 @@ public class AdminAppointmentService {
 
         // Audit trail: append the new status with the real authenticated admin as actor.
         recordStatusChange(saved, AppointmentStatus.CANCELLED, cancellationReason, admin);
+
+        // Neither participant caused the cancellation, so BOTH are notified — same
+        // transaction as the cancellation itself.
+        String actor = NotificationService.actorName(admin);
+        notificationService.notifyPatient(saved, NotificationType.APPOINTMENT_CANCELLED, actor);
+        notificationService.notifyDoctor(saved, NotificationType.APPOINTMENT_CANCELLED, actor);
 
         return AdminAppointmentResponse.from(saved);
     }
