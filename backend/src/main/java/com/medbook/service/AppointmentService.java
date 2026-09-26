@@ -5,6 +5,7 @@ import com.medbook.entity.AppointmentStatus;
 import com.medbook.entity.AppointmentStatusHistory;
 import com.medbook.entity.Doctor;
 import com.medbook.entity.DoctorAvailability;
+import com.medbook.entity.NotificationType;
 import com.medbook.entity.Patient;
 import com.medbook.entity.User;
 import com.medbook.repository.AppointmentRepository;
@@ -91,6 +92,7 @@ public class AppointmentService {
     private final DoctorAvailabilityRepository availabilityRepository;
     private final UserRepository userRepository;
     private final CurrentUserProvider currentUserProvider;
+    private final NotificationService notificationService;
 
     public AppointmentService(
             AppointmentRepository appointmentRepository,
@@ -99,7 +101,8 @@ public class AppointmentService {
             PatientRepository patientRepository,
             DoctorAvailabilityRepository availabilityRepository,
             UserRepository userRepository,
-            CurrentUserProvider currentUserProvider
+            CurrentUserProvider currentUserProvider,
+            NotificationService notificationService
     ) {
         this.appointmentRepository = appointmentRepository;
         this.statusHistoryRepository = statusHistoryRepository;
@@ -108,6 +111,7 @@ public class AppointmentService {
         this.availabilityRepository = availabilityRepository;
         this.userRepository = userRepository;
         this.currentUserProvider = currentUserProvider;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -359,6 +363,10 @@ public class AppointmentService {
         recordStatusChange(saved, AppointmentStatus.SCHEDULED, "Appointment created",
                 currentUserProvider.currentUserId().flatMap(userRepository::findById).orElse(null));
 
+        // 9. Notify the patient. Same transaction as the booking itself (see
+        // NotificationService): a committed booking always has its notification.
+        notificationService.notifyPatient(saved, NotificationType.APPOINTMENT_CREATED, null);
+
         return saved;
     }
 
@@ -443,6 +451,18 @@ public class AppointmentService {
         // Audit trail: append the new status, never delete or rewrite history rows.
         // changedByUser is the real authenticated caller, or NULL when there is none.
         recordStatusChange(saved, AppointmentStatus.CANCELLED, cancellationReason, caller);
+
+        // Notify the OTHER participant — the actor already knows they cancelled, and
+        // telling them again would just be noise. With no caller (context-free
+        // internal/test path) the patient is notified as if the clinic cancelled.
+        if (caller != null
+                && appointment.getPatient().getUser().getId().equals(caller.getId())) {
+            notificationService.notifyDoctor(saved, NotificationType.APPOINTMENT_CANCELLED,
+                    NotificationService.actorName(caller));
+        } else {
+            notificationService.notifyPatient(saved, NotificationType.APPOINTMENT_CANCELLED,
+                    NotificationService.actorName(caller));
+        }
 
         return saved;
     }
@@ -536,7 +556,26 @@ public class AppointmentService {
         // Audit trail: the history row records the real authenticated doctor — never a
         // user ID from the request, never a fabricated identity.
         recordStatusChange(saved, target, notes, caller);
+
+        // Notify the patient of the doctor's decision (confirmed/completed/no-show),
+        // in the same transaction as the status change itself.
+        notificationService.notifyPatient(saved, toNotificationType(target),
+                NotificationService.actorName(caller));
+
         return saved;
+    }
+
+    /**
+     * The notification type matching a doctor lifecycle transition.
+     */
+    private static NotificationType toNotificationType(AppointmentStatus status) {
+        return switch (status) {
+            case CONFIRMED -> NotificationType.APPOINTMENT_CONFIRMED;
+            case COMPLETED -> NotificationType.APPOINTMENT_COMPLETED;
+            case NO_SHOW -> NotificationType.APPOINTMENT_NO_SHOW;
+            default -> throw new IllegalArgumentException(
+                    "No patient notification for doctor transition to " + status);
+        };
     }
 
     /**
