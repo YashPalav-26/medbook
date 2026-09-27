@@ -9,7 +9,7 @@ import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Modal } from '../../components/ui/Modal';
-import { AdminNav } from './SpecialtiesAdminPage';
+import { AppShell } from '../../components/layout/AppShell';
 import { PageHeader, EmptyState, ErrorBox } from '../../components/admin/AdminUi';
 import { toApiError } from '../../api/client';
 import { CalendarClock, Loader2, Ban, Pencil, PlusCircle } from 'lucide-react';
@@ -142,9 +142,8 @@ export function AvailabilityAdminPage() {
   const pending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNav />
-      <main className="max-w-4xl mx-auto px-6 py-8">
+    <AppShell>
+      <div className="mx-auto max-w-4xl">
         <PageHeader
           icon={<CalendarClock className="w-8 h-8 text-blue-600" />}
           title="Manage Availability"
@@ -253,7 +252,7 @@ export function AvailabilityAdminPage() {
             />
           </Card>
         )}
-      </main>
+      </div>
 
       {modalOpen && (
         <Modal title={editing ? 'Edit Window' : 'New Availability Window'} onClose={() => setModalOpen(false)}>
@@ -284,6 +283,6 @@ export function AvailabilityAdminPage() {
           </form>
         </Modal>
       )}
-    </div>
+    </AppShell>
   );
 }
