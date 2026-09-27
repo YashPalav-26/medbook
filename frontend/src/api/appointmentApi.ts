@@ -2,6 +2,7 @@ import type { AxiosResponse } from 'axios';
 import type {
   AppointmentResponse,
   CreateAppointmentRequest,
+  AdminCreateAppointmentRequest,
   CancelAppointmentRequest,
   SpecialtyResponse,
   DoctorSummaryResponse,
@@ -19,6 +20,18 @@ import { api } from './client';
  */
 export async function createAppointment(payload: CreateAppointmentRequest): Promise<AppointmentResponse> {
   const response: AxiosResponse<AppointmentResponse> = await api.post('/appointments', payload);
+  return response.data;
+}
+
+/**
+ * ADMIN support path (POST /appointments/admin): book on behalf of a patient who
+ * cannot use the app. Backend rejects non-admin callers with 403. The booking flow
+ * notifies the patient exactly like a self-booking — no special handling needed.
+ */
+export async function createAppointmentForPatient(
+  payload: AdminCreateAppointmentRequest,
+): Promise<AppointmentResponse> {
+  const response: AxiosResponse<AppointmentResponse> = await api.post('/appointments/admin', payload);
   return response.data;
 }
 
