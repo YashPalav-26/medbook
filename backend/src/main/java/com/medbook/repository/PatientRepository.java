@@ -2,6 +2,7 @@ package com.medbook.repository;
 
 import com.medbook.entity.Patient;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -32,4 +33,12 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
      * soft-deleted patient records.</p>
      */
     java.util.List<Patient> findByActiveTrue();
+
+    /**
+     * All patients (active and inactive) with the linked {@code user} fetched — the
+     * admin list. The fetch join is needed because Open Session In View is disabled
+     * and the admin response reads the user's account fields after the transaction.
+     */
+    @Query("SELECT p FROM Patient p JOIN FETCH p.user ORDER BY p.id ASC")
+    java.util.List<Patient> findAllWithUser();
 }
