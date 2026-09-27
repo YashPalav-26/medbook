@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as appointmentApi from '../api/appointmentApi';
-import type { CreateAppointmentRequest, CancelAppointmentRequest } from '../types/appointment';
+import type {
+  CreateAppointmentRequest,
+  AdminCreateAppointmentRequest,
+  CancelAppointmentRequest,
+} from '../types/appointment';
 import { useAuth } from './useAuth';
 
 export function useAppointment(id: number | null) {
@@ -21,6 +25,24 @@ export function useCreateAppointment() {
     mutationFn: (data: CreateAppointmentRequest) => appointmentApi.createAppointment(data),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.setQueryData(['appointment', response.id], response);
+    },
+  });
+}
+
+/**
+ * ADMIN support booking (POST /appointments/admin — book on behalf of a patient).
+ * Invalidates the admin appointment lists and the dashboard overview so the new
+ * booking appears everywhere the admin looks.
+ */
+export function useCreateAppointmentForPatient() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: AdminCreateAppointmentRequest) =>
+      appointmentApi.createAppointmentForPatient(data),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'appointments'] });
       queryClient.setQueryData(['appointment', response.id], response);
     },
   });
