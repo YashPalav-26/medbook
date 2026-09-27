@@ -6,6 +6,7 @@ import type {
   AdminAppointmentDetailResponse,
   AdminOverviewResponse,
   AdminAppointmentFilters,
+  PatientAdminResponse,
 } from '../types/appointment';
 import { api } from './client';
 
@@ -135,6 +136,16 @@ export async function updateDoctor(id: number, payload: DoctorUpdateRequest): Pr
 export async function deactivateDoctor(id: number): Promise<DoctorAdminResponse> {
   const response: AxiosResponse<DoctorAdminResponse> =
     await api.patch(`/admin/doctors/${id}/deactivate`);
+  return response.data;
+}
+
+// ------------------------------------------------------------------
+// Patients (read-only — patients self-register; admins book on their behalf)
+// ------------------------------------------------------------------
+
+/** Every patient (active and inactive) with account linkage (GET /admin/patients). */
+export async function listAdminPatients(): Promise<PatientAdminResponse[]> {
+  const response: AxiosResponse<PatientAdminResponse[]> = await api.get('/admin/patients');
   return response.data;
 }
 
