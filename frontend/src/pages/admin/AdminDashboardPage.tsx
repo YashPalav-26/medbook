@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Card } from '../../components/ui/Card';
-import { AdminNav } from './SpecialtiesAdminPage';
+import { AppShell } from '../../components/layout/AppShell';
 import { PageHeader, StatusBadge, ErrorBox, Skeleton } from '../../components/admin/AdminUi';
 import { useAdminOverview } from '../../hooks/useAdmin';
 import { toApiError } from '../../api/client';
@@ -8,6 +8,16 @@ import {
   Stethoscope, UserCog, CalendarClock, CalendarSearch, TrendingUp, Activity,
 } from 'lucide-react';
 import type { AppointmentStatus } from '../../types/appointment';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
+
+/** Same semantic colors as StatusBadge, one per appointment status. */
+const STATUS_BAR_COLORS: Record<AppointmentStatus, string> = {
+  SCHEDULED: '#38bdf8',     // info
+  CONFIRMED: '#16a34a',     // brand (success green used for the brand-600 primary)
+  COMPLETED: '#6b7280',     // ink-500
+  CANCELLED: '#dc2626',     // danger-600
+  NO_SHOW:   '#d97706',     // warning-600
+};
 
 /**
  * ADMIN dashboard — the entry point of the admin area.
@@ -27,9 +37,8 @@ export function AdminDashboardPage() {
     : [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNav />
-      <main className="max-w-4xl mx-auto px-6 py-8">
+    <AppShell>
+      <div className="mx-auto max-w-4xl">
         <PageHeader
           icon={<UserCog className="w-8 h-8 text-blue-600" />}
           title="Admin Dashboard"
@@ -91,6 +100,46 @@ export function AdminDashboardPage() {
           ) : null}
         </section>
 
+        {/* Appointments by status — real data from the overview endpoint, one chart,
+            color-coded with the same status palette the badges use (color + label,
+            never color alone: each bar is labelled on the axis). */}
+        {overview && (
+          <section aria-label="Appointments by status" className="mb-8">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-ink-400">
+              <TrendingUp className="h-4 w-4" aria-hidden="true" />
+              Appointments by status
+            </h2>
+            <Card className="p-6">
+              <div className="h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={statusRows} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                    <XAxis
+                      dataKey="status"
+                      tickFormatter={(value: AppointmentStatus) => value.replace('_', ' ')}
+                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      tickLine={false}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                      interval={0}
+                    />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#6b7280' }} tickLine={false} axisLine={false} />
+                    <Tooltip
+                      cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+                      formatter={(value) => [value, 'Appointments']}
+                      labelFormatter={(label) => String(label).replace('_', ' ')}
+                    />
+                    <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={56} isAnimationActive={false}>
+                      {statusRows.map(({ status }) => (
+                        <Cell key={status} fill={STATUS_BAR_COLORS[status]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+          </section>
+        )}
+
         {/* Management cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Link to="/admin/appointments" className="block">
@@ -139,7 +188,7 @@ export function AdminDashboardPage() {
             </Card>
           </Link>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
