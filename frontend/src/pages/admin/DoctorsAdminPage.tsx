@@ -9,7 +9,7 @@ import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Modal } from '../../components/ui/Modal';
-import { AdminNav } from './SpecialtiesAdminPage';
+import { AppShell } from '../../components/layout/AppShell';
 import { PageHeader, ActiveBadge, EmptyState, ErrorBox } from '../../components/admin/AdminUi';
 import { toApiError } from '../../api/client';
 import { UserCog, PlusCircle, Loader2, Ban, Pencil } from 'lucide-react';
@@ -135,9 +135,8 @@ export function DoctorsAdminPage() {
   const pending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNav />
-      <main className="max-w-5xl mx-auto px-6 py-8">
+    <AppShell>
+      <div className="mx-auto max-w-5xl">
         <PageHeader
           icon={<UserCog className="w-8 h-8 text-blue-600" />}
           title="Manage Doctors"
@@ -214,7 +213,7 @@ export function DoctorsAdminPage() {
             </div>
           )}
         </Card>
-      </main>
+      </div>
 
       {modalOpen && !editing && (
         <Modal title="New Doctor" onClose={() => setModalOpen(false)}>
@@ -282,6 +281,6 @@ export function DoctorsAdminPage() {
           </form>
         </Modal>
       )}
-    </div>
+    </AppShell>
   );
 }
