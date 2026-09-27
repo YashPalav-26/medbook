@@ -8,6 +8,7 @@ import { AdminAppointmentDetailPage } from './AdminAppointmentDetailPage';
 import { AdminDashboardPage } from './AdminDashboardPage';
 import { ToastProvider } from '../../components/ui/Toast';
 import * as adminApi from '../../api/adminApi';
+import * as appointmentApi from '../../api/appointmentApi';
 import type { AdminAppointmentResponse, AdminAppointmentDetailResponse } from '../../types/appointment';
 
 // The pages under test call the real API module; every test controls what it returns.
@@ -21,6 +22,7 @@ vi.mock('../../api/adminApi', () => ({
   createDoctor: vi.fn(),
   updateDoctor: vi.fn(),
   deactivateDoctor: vi.fn(),
+  listAdminPatients: vi.fn(),
   listAdminAvailability: vi.fn(),
   createAvailability: vi.fn(),
   updateAvailability: vi.fn(),
@@ -36,11 +38,21 @@ vi.mock('../../hooks/useAuth', () => ({
   useAuth: () => ({
     isAuthenticated: true,
     user: { id: 1, roles: ['ROLE_ADMIN'] },
-    login: vi.fn(), register: vi.fn(), logout: vi.fn(),
+    login: vi.fn(), register: vi.fn(), logout: vi.fn(), updateUser: vi.fn(),
   }),
 }));
 
 const mockedApi = vi.mocked(adminApi);
+
+// The "Book for a patient" modal uses the public discovery APIs + the support booking.
+vi.mock('../../api/appointmentApi', () => ({
+  getSpecialties: vi.fn(),
+  getDoctors: vi.fn(),
+  getDoctorAvailability: vi.fn(),
+  createAppointmentForPatient: vi.fn(),
+  getMyAppointments: vi.fn(),
+}));
+const mockedAppointmentApi = vi.mocked(appointmentApi);
 
 const APPOINTMENTS: AdminAppointmentResponse[] = [
   {
@@ -143,6 +155,27 @@ function tableBody() {
 beforeEach(() => {
   vi.clearAllMocks();
   mockedApi.listAdminAppointments.mockResolvedValue(APPOINTMENTS);
+  mockedAppointmentApi.getSpecialties.mockResolvedValue([
+    { id: 10, name: 'Cardiology', description: null, active: true },
+  ]);
+  mockedAppointmentApi.getDoctors.mockResolvedValue([
+    {
+      id: 21, firstName: 'Sarah', lastName: 'Wells', specialty: 'Cardiology',
+      yearsExperience: 7, bio: null, consultationFee: 300, profilePictureUrl: null,
+    },
+  ]);
+  mockedAppointmentApi.getDoctorAvailability.mockResolvedValue([]);
+  mockedAppointmentApi.createAppointmentForPatient.mockResolvedValue({
+    id: 9001,
+    patientId: 11,
+    doctorId: 21,
+    appointmentDate: '2026-09-28',
+    startTime: '10:00',
+    endTime: '10:30',
+    status: 'SCHEDULED',
+    cancellationReason: null,
+    consultationFeeSnapshot: 300,
+  });
   mockedApi.listAdminDoctors.mockResolvedValue([
     {
       id: 21, email: 'wells@medbook.test', firstName: 'Sarah', lastName: 'Wells',
@@ -463,5 +496,76 @@ describe('AdminDashboardPage (real metrics)', () => {
       'href',
       '/admin/appointments',
     );
+  });
+});
+
+describe('AdminAppointmentsPage — book for a patient (support path)', () => {
+  beforeEach(() => {
+    // The modal's patient picker reads the admin patients endpoint.
+    mockedApi.listAdminPatients.mockResolvedValue([
+      {
+        id: 11, email: 'john@medbook.test', firstName: 'John', lastName: 'Reed',
+        phoneNumber: '+15550002222', dateOfBirth: '1990-01-01', active: true, userActive: true,
+      },
+    ]);
+  });
+
+  it('books on behalf of a patient through the modal', async () => {
+    const user = userEvent.setup();
+    renderWithRoutes(<AdminAppointmentsPage />, '/admin/appointments');
+    await screen.findByText('John Reed');
+
+    await user.click(screen.getByRole('button', { name: /book for a patient/i }));
+    const dialog = await screen.findByRole('dialog', { name: /book for a patient/i });
+
+    // Wait for the async patient list to render its option before changing the select.
+    await within(dialog).findByText(/John Reed \(john@medbook\.test\)/);
+    fireEvent.change(within(dialog).getByLabelText('Patient'), { target: { value: '11' } });
+    fireEvent.change(within(dialog).getByLabelText('Specialty'), { target: { value: '10' } });
+    // Doctor options arrive after the specialty is chosen.
+    await within(dialog).findByText('Dr. Sarah Wells');
+    fireEvent.change(within(dialog).getByLabelText('Doctor'), { target: { value: '21' } });
+    fireEvent.change(within(dialog).getByLabelText('Date'), { target: { value: '2026-09-28' } });
+    fireEvent.change(within(dialog).getByLabelText('Start'), { target: { value: '10:00' } });
+    fireEvent.change(within(dialog).getByLabelText('End'), { target: { value: '10:30' } });
+
+    await user.click(within(dialog).getByRole('button', { name: /book appointment/i }));
+
+    await waitFor(() =>
+      expect(mockedAppointmentApi.createAppointmentForPatient).toHaveBeenCalledWith({
+        patientId: 11,
+        doctorId: 21,
+        appointmentDate: '2026-09-28',
+        startTime: '10:00',
+        endTime: '10:30',
+      }),
+    );
+  });
+
+  it('surfaces a backend conflict inside the modal', async () => {
+    mockedAppointmentApi.createAppointmentForPatient.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 409, data: { message: 'Doctor already has an appointment that clashes' } },
+    });
+    const user = userEvent.setup();
+    renderWithRoutes(<AdminAppointmentsPage />, '/admin/appointments');
+    await screen.findByText('John Reed');
+
+    await user.click(screen.getByRole('button', { name: /book for a patient/i }));
+    const dialog = await screen.findByRole('dialog', { name: /book for a patient/i });
+
+    await within(dialog).findByText(/John Reed \(john@medbook\.test\)/);
+    fireEvent.change(within(dialog).getByLabelText('Patient'), { target: { value: '11' } });
+    fireEvent.change(within(dialog).getByLabelText('Specialty'), { target: { value: '10' } });
+    await within(dialog).findByText('Dr. Sarah Wells');
+    fireEvent.change(within(dialog).getByLabelText('Doctor'), { target: { value: '21' } });
+    fireEvent.change(within(dialog).getByLabelText('Date'), { target: { value: '2026-09-28' } });
+    fireEvent.change(within(dialog).getByLabelText('Start'), { target: { value: '10:00' } });
+    fireEvent.change(within(dialog).getByLabelText('End'), { target: { value: '10:30' } });
+    await user.click(within(dialog).getByRole('button', { name: /book appointment/i }));
+
+    expect(await screen.findByText(/clashes/i)).toBeInTheDocument();
+    // Modal stays open so the admin can correct the slot.
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });
