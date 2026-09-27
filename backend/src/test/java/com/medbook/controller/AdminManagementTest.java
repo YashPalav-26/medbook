@@ -141,10 +141,66 @@ class AdminManagementTest {
         return specialtyRepository.save(new Specialty(name, "test specialty"));
     }
 
+    private Patient createPatient(String email) {
+        User user = createUserWithRole(email, "PATIENT");
+        return patientRepository.save(new Patient(user, LocalDate.of(1990, 6, 15)));
+    }
+
     private Doctor createDoctor(String email, Specialty specialty) {
         User user = createUserWithRole(email, "DOCTOR");
         return doctorRepository.save(new Doctor(user, specialty, "LIC-ADMIN-" + System.nanoTime(), 5,
                 new BigDecimal("100.00")));
+    }
+
+    // ==================================================================
+    // PATIENTS (read-only admin list)
+    // ==================================================================
+
+    @Test
+    void adminListsPatientsWithAccountLinkage() throws Exception {
+        String suffix = String.valueOf(System.nanoTime());
+        Patient patient = createPatient("admin-list-pat-" + suffix + "@medbook.test");
+
+        mockMvc.perform(get("/api/v1/admin/patients"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == " + patient.getId() + ")]").exists())
+                .andExpect(jsonPath("$[?(@.email == 'admin-list-pat-" + suffix + "@medbook.test')]").exists());
+    }
+
+    @Test
+    void patientListNeverLeaksSecurityInternals() throws Exception {
+        String suffix = String.valueOf(System.nanoTime());
+        Patient patient = createPatient("admin-list-sec-" + suffix + "@medbook.test");
+
+        String body = mockMvc.perform(get("/api/v1/admin/patients"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        // DTO-only serialization: no hash, no date-of-birth of OTHER patients beyond the
+        // intentionally exposed one, and no raw user id reference.
+        assertThat(body).doesNotContain("passwordHash");
+        assertThat(body).doesNotContain("$2a$");
+        assertThat(body).contains(patient.getUser().getEmail());
+    }
+
+    @Test
+    void patientCannotListAdminPatients() throws Exception {
+        String suffix = String.valueOf(System.nanoTime());
+        User patientUser = createUserWithRole("admin-list-denied-" + suffix + "@medbook.test", "PATIENT");
+
+        mockMvc.perform(get("/api/v1/admin/patients")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(patientUser, "ROLE_PATIENT")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void anonymousCannotListAdminPatients() throws Exception {
+        MockMvc anonymous = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(springSecurity())
+                .build();
+
+        anonymous.perform(get("/api/v1/admin/patients"))
+                .andExpect(status().isUnauthorized());
     }
 
     // ==================================================================
