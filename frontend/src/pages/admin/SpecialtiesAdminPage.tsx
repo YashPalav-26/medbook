@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Link } from 'react-router-dom';
 import { useAdminSpecialties, useCreateSpecialty, useUpdateSpecialty, useDeactivateSpecialty } from '../../hooks/useAdmin';
+import { AppShell } from '../../components/layout/AppShell';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
@@ -92,9 +92,8 @@ export function SpecialtiesAdminPage() {
   const specialties = specialtiesQuery.data ?? [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNav />
-      <main className="max-w-4xl mx-auto px-6 py-8">
+    <AppShell>
+      <div>
         <PageHeader
           icon={<Stethoscope className="w-8 h-8 text-blue-600" />}
           title="Manage Specialties"
@@ -160,7 +159,6 @@ export function SpecialtiesAdminPage() {
             </div>
           )}
         </Card>
-      </main>
 
       {modalOpen && (
         <Modal
@@ -188,23 +186,7 @@ export function SpecialtiesAdminPage() {
           </form>
         </Modal>
       )}
-    </div>
-  );
-}
-
-/** Shared top navigation for admin pages — same nav bar pattern as Dashboard. */
-export function AdminNav() {
-  return (
-    <nav className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-ink-100 bg-white px-4 py-3 sm:px-6">
-      <h1 className="text-lg font-semibold text-ink-900">MedBook Admin</h1>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-        <Link to="/admin" className="text-ink-600 hover:text-brand-700">Dashboard</Link>
-        <Link to="/admin/appointments" className="text-ink-600 hover:text-brand-700">Appointments</Link>
-        <Link to="/admin/specialties" className="text-ink-600 hover:text-brand-700">Specialties</Link>
-        <Link to="/admin/doctors" className="text-ink-600 hover:text-brand-700">Doctors</Link>
-        <Link to="/admin/availability" className="text-ink-600 hover:text-brand-700">Availability</Link>
-        <Link to="/dashboard" className="text-ink-400 hover:text-brand-700">Patient Area</Link>
       </div>
-    </nav>
+    </AppShell>
   );
 }
