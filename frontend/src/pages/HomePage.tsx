@@ -1,4 +1,6 @@
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import gsap from 'gsap';
 import { Brand } from '../components/ui/Brand';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -51,6 +53,29 @@ const STEPS = [
 ];
 
 export function HomePage() {
+  // One subtle GSAP timeline on the hero only — eyebrow, headline, copy, buttons
+  // rise in sequence. Purely presentational, runs once, and prefers-reduced-motion
+  // users skip it entirely. No scroll-triggered effects; the rest of the page is static.
+  const heroRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // jsdom (and very old browsers) lack matchMedia; treat that as "motion allowed".
+    const prefersReducedMotion =
+      typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!heroRef.current || prefersReducedMotion) return;
+
+    const elements = heroRef.current.querySelectorAll('[data-hero]');
+    const tween = gsap.fromTo(
+      elements,
+      { opacity: 0, y: 24 },
+      { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out', stagger: 0.12 },
+    );
+    return () => {
+      tween.kill();
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-ink-50">
       {/* Header */}
@@ -73,18 +98,18 @@ export function HomePage() {
         <section className="relative overflow-hidden">
           {/* quiet brand wash behind the headline */}
           <div aria-hidden="true" className="absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-brand-50 to-transparent" />
-          <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-brand-600">
+          <div ref={heroRef} className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+            <p data-hero className="mb-3 text-sm font-semibold uppercase tracking-widest text-brand-600">
               Clinic appointments, organized
             </p>
-            <h1 className="max-w-2xl font-display text-4xl font-semibold leading-tight tracking-tight text-ink-950 sm:text-5xl">
+            <h1 data-hero className="max-w-2xl font-display text-4xl font-semibold leading-tight tracking-tight text-ink-950 sm:text-5xl">
               Book your doctor. See the schedule. Skip the phone queue.
             </h1>
-            <p className="mt-4 max-w-xl text-lg text-ink-600">
+            <p data-hero className="mt-4 max-w-xl text-lg text-ink-600">
               MedBook is a digital clinic front desk: browse doctors by specialty, book a
               real opening in their week, and manage your visits from one place.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div data-hero className="mt-8 flex flex-wrap gap-3">
               <Link to="/register">
                 <Button size="lg">
                   Book an appointment
