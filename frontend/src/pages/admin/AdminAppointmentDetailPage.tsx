@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAdminAppointment, useAdminCancelAppointment } from '../../hooks/useAdmin';
 import { toApiError } from '../../api/client';
-import { AdminNav } from './SpecialtiesAdminPage';
+import { AppShell } from '../../components/layout/AppShell';
 import { PageHeader } from '../../components/admin/AdminUi';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -108,48 +108,39 @@ export function AdminAppointmentDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <AdminNav />
-        <main className="max-w-4xl mx-auto px-6 py-8">
-          <Card className="space-y-4 p-6">
-            <Skeleton className="h-7 w-40" />
-            <Skeleton className="h-4 w-64" />
-            <Skeleton className="h-4 w-52" />
-          </Card>
-        </main>
-      </div>
+      <AppShell title="Appointment">
+        <Card className="space-y-4 p-6">
+          <Skeleton className="h-7 w-40" />
+          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-4 w-52" />
+        </Card>
+      </AppShell>
     );
   }
 
   if (apiError?.status === 404) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <AdminNav />
-        <main className="max-w-4xl mx-auto px-6 py-8">
-          <Card className="p-6">
-            <EmptyState
-              icon={<AlertCircle className="h-8 w-8" />}
-              title="Appointment not found"
-              message="This appointment does not exist. It may have been removed, or the link is wrong."
-              action={<Button onClick={() => navigate('/admin/appointments')}>Back to Appointments</Button>}
-            />
-          </Card>
-        </main>
-      </div>
+      <AppShell title="Appointment">
+        <Card className="p-6">
+          <EmptyState
+            icon={<AlertCircle className="h-8 w-8" />}
+            title="Appointment not found"
+            message="This appointment does not exist. It may have been removed, or the link is wrong."
+            action={<Button onClick={() => navigate('/admin/appointments')}>Back to Appointments</Button>}
+          />
+        </Card>
+      </AppShell>
     );
   }
 
   if (apiError) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <AdminNav />
-        <main className="max-w-4xl mx-auto px-6 py-8">
-          <ErrorBox
-            message={apiError.status === 403 ? 'You are not allowed to view this appointment.' : apiError.message}
-            onRetry={() => refetch()}
-          />
-        </main>
-      </div>
+      <AppShell title="Appointment">
+        <ErrorBox
+          message={apiError.status === 403 ? 'You are not allowed to view this appointment.' : apiError.message}
+          onRetry={() => refetch()}
+        />
+      </AppShell>
     );
   }
 
@@ -159,9 +150,8 @@ export function AdminAppointmentDetailPage() {
   const canCancel = appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED';
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNav />
-      <main className="max-w-4xl mx-auto px-6 py-8">
+    <AppShell title="Appointment">
+      <div className="mx-auto max-w-4xl">
         <div className="mb-6">
           <Link
             to="/admin/appointments"
@@ -304,7 +294,7 @@ export function AdminAppointmentDetailPage() {
             )}
           </Card>
         </div>
-      </main>
+      </div>
 
       {/* Cancel confirmation: warns, requires a reason, shows the consequence */}
       {showCancelModal && (
@@ -350,6 +340,6 @@ export function AdminAppointmentDetailPage() {
           </form>
         </Modal>
       )}
-    </div>
+    </AppShell>
   );
 }
