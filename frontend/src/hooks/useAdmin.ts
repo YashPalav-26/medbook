@@ -127,6 +127,26 @@ export function useDeactivateDoctor() {
 }
 
 // ------------------------------------------------------------------
+// Patients (read-only)
+// ------------------------------------------------------------------
+
+/**
+ * Every patient, for the booking-on-behalf picker. Static reference data for the
+ * session: the list changes only when a new patient registers, and a stale entry
+ * is corrected by the backend's 404 validation anyway.
+ */
+export function useAdminPatients() {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: ['admin', 'patients'],
+    queryFn: adminApi.listAdminPatients,
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+// ------------------------------------------------------------------
 // Availability
 // ------------------------------------------------------------------
 
