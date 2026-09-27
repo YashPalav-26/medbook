@@ -9,6 +9,7 @@ import com.medbook.dto.CancelAppointmentRequest;
 import com.medbook.dto.DoctorAdminResponse;
 import com.medbook.dto.DoctorCreateRequest;
 import com.medbook.dto.DoctorUpdateRequest;
+import com.medbook.dto.PatientAdminResponse;
 import com.medbook.dto.SpecialtyCreateRequest;
 import com.medbook.dto.SpecialtyResponse;
 import com.medbook.dto.SpecialtyUpdateRequest;
@@ -16,6 +17,7 @@ import com.medbook.entity.AppointmentStatus;
 import com.medbook.service.AdminAppointmentService;
 import com.medbook.service.AvailabilityAdminService;
 import com.medbook.service.DoctorAdminService;
+import com.medbook.service.PatientAdminService;
 import com.medbook.service.SpecialtyAdminService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -53,15 +55,30 @@ public class AdminController {
     private final DoctorAdminService doctorAdminService;
     private final AvailabilityAdminService availabilityAdminService;
     private final AdminAppointmentService adminAppointmentService;
+    private final PatientAdminService patientAdminService;
 
     public AdminController(SpecialtyAdminService specialtyAdminService,
                            DoctorAdminService doctorAdminService,
                            AvailabilityAdminService availabilityAdminService,
-                           AdminAppointmentService adminAppointmentService) {
+                           AdminAppointmentService adminAppointmentService,
+                           PatientAdminService patientAdminService) {
         this.specialtyAdminService = specialtyAdminService;
         this.doctorAdminService = doctorAdminService;
         this.availabilityAdminService = availabilityAdminService;
         this.adminAppointmentService = adminAppointmentService;
+        this.patientAdminService = patientAdminService;
+    }
+
+    // ------------------------------------------------------------------
+    // Patients (read-only: patients self-register; admins book on their behalf)
+    // ------------------------------------------------------------------
+
+    /** List all patients (active and inactive) with their account linkage. */
+    @GetMapping("/patients")
+    public ResponseEntity<List<PatientAdminResponse>> listPatients() {
+        return ResponseEntity.ok(patientAdminService.listAll().stream()
+                .map(PatientAdminResponse::from)
+                .toList());
     }
 
     // ------------------------------------------------------------------
