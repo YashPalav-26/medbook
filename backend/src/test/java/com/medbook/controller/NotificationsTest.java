@@ -205,6 +205,18 @@ class NotificationsTest {
         // Another user's notification — must never appear in the list.
         createNotification(doctorUser, NotificationType.APPOINTMENT_CANCELLED, false);
 
+        // created_at has millisecond precision; two rows written in the same millisecond
+        // would make DESC order nondeterministic. Pin distinct timestamps so the
+        // ordering assertion is about the query, not about clock speed. Bulk JPQL
+        // updates bypass the persistence context, so flush + clear afterwards.
+        jakarta.persistence.Query q = entityManager.createQuery(
+                "UPDATE Notification n SET n.createdAt = :t WHERE n.id = :id");
+        q.setParameter("t", java.time.LocalDateTime.now().minusMinutes(10));
+        q.setParameter("id", oldest.getId());
+        q.executeUpdate();
+        entityManager.flush();
+        entityManager.clear();
+
         MvcResult result = mockMvc.perform(get("/api/v1/notifications"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
