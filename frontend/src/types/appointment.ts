@@ -113,6 +113,22 @@ export interface AdminAppointmentDetailResponse {
   history: AppointmentStatusHistoryResponse[];
 }
 
+/**
+ * ADMIN patient row (GET /api/v1/admin/patients). Mirrors backend PatientAdminResponse —
+ * read-only account linkage used for the booking-on-behalf picker. No address, insurance
+ * or medical fields: the admin list answers "who is this patient and how do we reach them".
+ */
+export interface PatientAdminResponse {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  dateOfBirth: string; // ISO date
+  active: boolean;
+  userActive: boolean;
+}
+
 /** GET /api/v1/admin/appointments/overview — real dashboard metrics. */
 export interface AdminOverviewResponse {
   todayAppointments: number;
