@@ -13,18 +13,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-/**
- * Unit tests for {@link AdminBootstrapRunner}.
- *
- * <p>Pure Mockito: the runner's only collaborator ({@link BootstrapAccountService}) is
- * mocked, so these tests pin the bootstrap <em>policy</em> — when it runs, when it stays
- * out of the way, and which role it grants — without touching any database.</p>
- *
- * <p>The policy is scoped to the <em>configured email</em>, not to "does any ADMIN
- * exist": the runner always delegates to {@code ensureUser}, which finds-or-creates by
- * email, so idempotency (no duplicates, no password overwrite) is exercised against the
- * real service in {@link BootstrapAccountServiceTest}.</p>
- */
+
+
+
+
+
+
+
+
+
+
+
+
 class AdminBootstrapRunnerTest {
 
     private static BootstrapProperties properties(String email, String password) {
@@ -62,8 +62,8 @@ class AdminBootstrapRunnerTest {
 
     @Test
     void stillDelegatesWhenAnotherAdminAlreadyExists() {
-        // The email-scoped policy: the configured account is ensured even when other
-        // administrators exist; the service returns the existing account untouched.
+
+
         BootstrapAccountService service = mock(BootstrapAccountService.class);
         User existing = new User("bootstrap@medbook.test", "existing-hash", "Clinic", "Admin", "+1");
         when(service.ensureUser(any(), any(), any(), any(), any(), any()))

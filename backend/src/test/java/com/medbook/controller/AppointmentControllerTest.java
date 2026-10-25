@@ -51,26 +51,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * REST-layer (MockMvc) tests for {@link AppointmentController}.
- *
- * <p>These are integration tests: the full application context is started and the real
- * {@code AppointmentService} talks to the real MySQL database (no mocked service, no H2),
- * matching the approach the repository and service tests already follow. The service
- * business-rule tests in {@code com.medbook.service} stay untouched.</p>
- *
- * <p>The class is {@link Transactional}, so every doctor, patient, availability slot and
- * appointment created here is rolled back by Spring afterwards.</p>
- *
- * <p>HTTP contract asserted here: creation → 201 (+ {@code Location}), reads and successful
- * cancellation → 200, unknown doctor/patient/appointment → 404, business conflict → 409,
- * invalid request → 400.</p>
- *
- * <p>Since Step 14 the appointment API is protected by Spring Security, so MockMvc is built
- * with the real security filter chain and every request carries a real (test-issued) JWT.
- * The tokens are made by the application's own {@code JwtEncoder}, so the full decode path
- * is exercised — the only difference from production is that the values are test fixtures.</p>
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @SpringBootTest
 @Transactional
 class AppointmentControllerTest {
@@ -109,12 +109,12 @@ class AppointmentControllerTest {
 
     private MockMvc mockMvc;
 
-    /**
-     * Real ADMIN user row backing the default test token. Ownership authorization resolves
-     * the JWT subject against {@code users}, and this contract test exercises the HTTP
-     * layer with an administrator (who may access any appointment by ID). Caller-visibility
-     * rules for patients/doctors are covered in {@code AppointmentOwnershipTest}.
-     */
+
+
+
+
+
+
     private User adminUser;
 
     @BeforeEach
@@ -132,9 +132,9 @@ class AppointmentControllerTest {
                 .build();
     }
 
-    /**
-     * Issue a real JWT through the application's encoder for the appointment calls below.
-     */
+
+
+
     private String createTestToken(String subject, String... roles) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -149,17 +149,17 @@ class AppointmentControllerTest {
                 .getTokenValue();
     }
 
-    // ------------------------------------------------------------------
-    // Fixtures and helpers
-    // ------------------------------------------------------------------
 
-    /** Future date that reuses today's weekday, so it always matches the availability slot. */
+
+
+
+
     private static LocalDate futureDate() {
         return LocalDate.now().plusDays(7);
     }
 
     private static byte toMysqlDayOfWeek(LocalDate date) {
-        int javaDayOfWeek = date.getDayOfWeek().getValue(); // 1 = Monday ... 7 = Sunday
+        int javaDayOfWeek = date.getDayOfWeek().getValue();
         return (byte) (javaDayOfWeek == 7 ? 0 : javaDayOfWeek);
     }
 
@@ -205,11 +205,11 @@ class AppointmentControllerTest {
                 """.formatted(patientId, doctorId, date, start, end);
     }
 
-    /**
-     * Fixture booking helper: books through the ADMIN support path
-     * ({@code POST /api/v1/appointments/admin}) because the default caller in this
-     * test class is the ADMIN fixture. Patient self-booking has its own tests below.
-     */
+
+
+
+
+
     private long postBookingAndReadId(String json) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -219,9 +219,9 @@ class AppointmentControllerTest {
         return ((Number) JsonPath.read(result.getResponse().getContentAsString(), "$.id")).longValue();
     }
 
-    // ------------------------------------------------------------------
-    // 1. Successful creation (JSON serialization / deserialization)
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void createAppointmentReturns201WithLocationHeaderAndJsonBody() throws Exception {
@@ -248,25 +248,25 @@ class AppointmentControllerTest {
         String json = result.getResponse().getContentAsString();
         long appointmentId = ((Number) JsonPath.read(json, "$.id")).longValue();
 
-        // The Location header points at the new resource.
+
         assertThat(result.getResponse().getHeader("Location"))
                 .isEqualTo("/api/v1/appointments/" + appointmentId);
 
-        // The client cannot send a fee; the service snapshots it from the doctor.
+
         Object feeValue = JsonPath.read(json, "$.consultationFeeSnapshot");
         assertThat(feeValue).isInstanceOf(Number.class);
         assertThat(new BigDecimal(String.valueOf(feeValue))).isEqualByComparingTo(TEST_FEE);
 
-        // The appointment and its first status history row are really persisted.
+
         Appointment stored = appointmentRepository.findById(appointmentId).orElseThrow();
         assertThat(stored.getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
         assertThat(stored.getStartTime()).isEqualTo(LocalTime.of(10, 0));
         assertThat(statusHistoryRepository.findByAppointmentId(appointmentId)).hasSize(1);
     }
 
-    // ------------------------------------------------------------------
-    // 2. Request validation failures -> 400
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void createAppointmentReturns400WhenPatientIdIsMissing() throws Exception {
@@ -319,7 +319,7 @@ class AppointmentControllerTest {
         Doctor doctor = createTestDoctor("rest-400-doc@medbook.test", "Rest Gastroenterology");
         Patient patient = createTestPatient("rest-400-pat@medbook.test");
 
-        // Structurally valid for Bean Validation, so the service rule reports the problem.
+
         mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bookingJson(patient.getId(), doctor.getId(), futureDate(), "11:00", "10:00")))
@@ -341,9 +341,9 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.message").value("Request body is missing or malformed"));
     }
 
-    // ------------------------------------------------------------------
-    // 3. Missing resources -> 404
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void createAppointmentReturns404WhenDoctorDoesNotExist() throws Exception {
@@ -399,9 +399,9 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.message").value("Invalid value 'abc' for parameter 'id'"));
     }
 
-    // ------------------------------------------------------------------
-    // 4. Business conflicts -> 409
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void createAppointmentReturns409WhenDoctorIsInactive() throws Exception {
@@ -465,7 +465,7 @@ class AppointmentControllerTest {
         LocalDate date = futureDate();
         createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
 
-        // First booking wins.
+
         postBookingAndReadId(bookingJson(first.getId(), doctor.getId(), date, "10:00", "11:00"));
 
         mockMvc.perform(post("/api/v1/appointments/admin")
@@ -475,13 +475,13 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.message").value(containsString("already has an appointment overlapping")));
 
-        // The rejected booking wrote nothing.
+
         assertThat(appointmentRepository.findByDoctorId(doctor.getId())).hasSize(1);
     }
 
-    // ------------------------------------------------------------------
-    // 5. Retrieval and cancellation
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void getAppointmentReturns200WithTheStoredAppointment() throws Exception {
@@ -515,8 +515,8 @@ class AppointmentControllerTest {
         long appointmentId = postBookingAndReadId(
                 bookingJson(patient.getId(), doctor.getId(), date, "10:00", "11:00"));
 
-        // The owning patient cancels (ADMIN cannot cancel by policy — see
-        // AppointmentOwnershipTest; the default caller here is the ADMIN fixture).
+
+
         String patientToken = createTestToken(String.valueOf(patient.getUser().getId()), "ROLE_PATIENT");
 
         mockMvc.perform(post("/api/v1/appointments/" + appointmentId + "/cancel")
@@ -530,13 +530,13 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.status").value("CANCELLED"))
                 .andExpect(jsonPath("$.cancellationReason").value("Patient asked to reschedule"));
 
-        // The status change is persisted and the audit trail keeps both rows.
+
         Appointment stored = appointmentRepository.findById(appointmentId).orElseThrow();
         assertThat(stored.getStatus()).isEqualTo(AppointmentStatus.CANCELLED);
         assertThat(stored.getCancellationReason()).isEqualTo("Patient asked to reschedule");
         assertThat(statusHistoryRepository.findByAppointmentId(appointmentId)).hasSize(2);
 
-        // A follow-up GET reports the same state.
+
         mockMvc.perform(get("/api/v1/appointments/" + appointmentId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCELLED"));
@@ -566,9 +566,9 @@ class AppointmentControllerTest {
                         .value("cancellationReason must be at most 255 characters"));
     }
 
-    // ------------------------------------------------------------------
-    // 6. GET /appointments/me (authenticated listing)
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void meEndpointReturnsOnlyTheCallingPatientsAppointments() throws Exception {
@@ -617,7 +617,7 @@ class AppointmentControllerTest {
 
     @Test
     void meEndpointRequiresAuthentication() throws Exception {
-        // A MockMvc without the default ADMIN Authorization header: truly anonymous call.
+
         MockMvc anonymous = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .apply(springSecurity())
                 .build();
@@ -627,11 +627,11 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.status").value(401));
     }
 
-    // ------------------------------------------------------------------
-    // 7. Patient self-booking (POST /appointments — identity from the JWT)
-    // ------------------------------------------------------------------
 
-    /** Patient self-booking body: deliberately contains no patientId field. */
+
+
+
+
     private static String selfBookingJson(Long doctorId, LocalDate date, String start, String end) {
         return """
                 {
@@ -665,7 +665,7 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.doctorId").value(doctor.getId().intValue()))
                 .andExpect(jsonPath("$.status").value("SCHEDULED"));
 
-        // The booking landed on the JWT caller's patient profile — not on any other row.
+
         List<Appointment> doctorsAppointments = appointmentRepository.findByDoctorId(doctor.getId());
         assertThat(doctorsAppointments).hasSize(1);
         assertThat(doctorsAppointments.get(0).getPatient().getId()).isEqualTo(patient.getId());
@@ -680,8 +680,8 @@ class AppointmentControllerTest {
         LocalDate date = futureDate();
         createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
 
-        // The body tries to smuggle someone else's patientId in. It must be ignored:
-        // the appointment belongs to the JWT caller, never to the referenced victim.
+
+
         String smuggled = """
                 {
                   "patientId": %s,
@@ -708,7 +708,7 @@ class AppointmentControllerTest {
     void patientSelfBookingValidationFailuresReturn400() throws Exception {
         Patient patient = createTestPatient("rest-self-400-pat@medbook.test");
 
-        // Missing doctorId.
+
         mockMvc.perform(post("/api/v1/appointments")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(patient.getUser(), "ROLE_PATIENT"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -717,7 +717,7 @@ class AppointmentControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors[0].field").value("doctorId"));
 
-        // Past date.
+
         mockMvc.perform(post("/api/v1/appointments")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(patient.getUser(), "ROLE_PATIENT"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -732,14 +732,14 @@ class AppointmentControllerTest {
         LocalDate date = futureDate();
         createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
 
-        // A doctor has no patient profile to book for — self-booking is not a doctor capability.
+
         mockMvc.perform(post("/api/v1/appointments")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(doctor.getUser(), "ROLE_DOCTOR"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(selfBookingJson(doctor.getId(), date, "10:00", "11:00")))
                 .andExpect(status().isForbidden());
 
-        // Admins use the documented support path instead.
+
         mockMvc.perform(post("/api/v1/appointments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(selfBookingJson(doctor.getId(), date, "10:00", "11:00")))

@@ -15,18 +15,18 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integration tests for {@link DoctorRepository} against the real MySQL schema.
- *
- * <p>All tests are {@link Transactional} and rolled back after execution, so no
- * permanent test data is left behind in the development database.</p>
- *
- * <p>Tests demonstrate:
- * - Foreign key relationships (Doctor → User, Doctor → Specialty)
- * - LAZY loading and how to assert on relationships inside a transaction
- * - Derived query methods with nested property traversal
- * - Unique constraint enforcement</p>
- */
+
+
+
+
+
+
+
+
+
+
+
+
 @SpringBootTest
 @Transactional
 class DoctorRepositoryTest {
@@ -46,10 +46,10 @@ class DoctorRepositoryTest {
     @Autowired
     private EntityManager entityManager;
 
-    /**
-     * Helper: creates a test user with the DOCTOR role.
-     * Called at the start of each test that needs a user.
-     */
+
+
+
+
     private User createTestDoctorUser(String email) {
         Role doctorRole = roleRepository.findByName("DOCTOR")
                 .orElseThrow(() -> new IllegalStateException("DOCTOR role not seeded"));
@@ -60,19 +60,19 @@ class DoctorRepositoryTest {
         return userRepository.save(user);
     }
 
-    /**
-     * Helper: creates a test specialty.
-     */
+
+
+
     private Specialty createTestSpecialty(String name) {
-        // Unique suffix: the shared test database may already contain the demo seed data
-        // (real specialties like "Cardiology"), and the name column is unique.
+
+
         return specialtyRepository.save(new Specialty(name + "-" + System.nanoTime(), "Test specialty"));
     }
 
     @Test
     void findAllExecutesAgainstRealSchema() {
-        // No doctors have been created yet; the point is that the query runs
-        // against the mapped `doctors` table without error.
+
+
         assertThat(doctorRepository.findAll()).isNotNull();
     }
 
@@ -108,9 +108,9 @@ class DoctorRepositoryTest {
 
     @Test
     void findBySpecialtyNameTraversesNestedProperty() {
-        // Demonstrates that Spring Data JPA can navigate Doctor.specialty.name
-        // without requiring a manual JPQL query. The derived query method
-        // generates an implicit JOIN.
+
+
+
 
         User user1 = createTestDoctorUser("doctor3@medbook.test");
         User user2 = createTestDoctorUser("doctor4@medbook.test");
@@ -125,8 +125,8 @@ class DoctorRepositoryTest {
         doctorRepository.save(doc2);
         doctorRepository.save(doc3);
 
-        // The fixture specialty's name is unique per run (seed-data safe), so exactly
-        // the two doctors created above match it.
+
+
         List<Doctor> cardiologists = doctorRepository.findBySpecialtyName(cardiology.getName());
 
         assertThat(cardiologists)
@@ -160,7 +160,7 @@ class DoctorRepositoryTest {
 
     @Test
     void findByUserIdReturnsDoctorLinkedToUser() {
-        // user_id is UNIQUE in the doctors table, so this returns at most one result.
+
         User user = createTestDoctorUser("doctor8@medbook.test");
         Specialty specialty = createTestSpecialty("Psychiatry");
 
@@ -175,9 +175,9 @@ class DoctorRepositoryTest {
 
     @Test
     void doctorRelationshipToUserIsNavigable() {
-        // Demonstrates that a Doctor loaded from the repository can navigate
-        // to its User via getUser(). Because the relationship is LAZY, the User
-        // is loaded only when getUser() is called, and only within the transaction.
+
+
+
         User user = createTestDoctorUser("doctor9@medbook.test");
         Specialty specialty = createTestSpecialty("Pediatrics");
 
@@ -185,15 +185,15 @@ class DoctorRepositoryTest {
         Doctor saved = doctorRepository.save(doctor);
         Long doctorId = saved.getId();
 
-        // Clear the persistence context so the next load comes fresh from the DB.
+
         entityManager.clear();
 
-        // Load the doctor. The User is NOT loaded yet (LAZY).
+
         Doctor reloaded = doctorRepository.findById(doctorId).orElseThrow();
 
-        // Call getUser() inside the transaction. LAZY loading kicks in and
-        // the User is fetched. If this were outside a transaction, it would
-        // throw LazyInitializationException.
+
+
+
         User loadedUser = reloaded.getUser();
 
         assertThat(loadedUser).isNotNull();
@@ -203,10 +203,10 @@ class DoctorRepositoryTest {
 
     @Test
     void doctorRelationshipToSpecialtyIsNavigable() {
-        // Demonstrates that a Doctor loaded from the repository can navigate
-        // to its Specialty via getSpecialty(). Because the relationship is LAZY,
-        // the Specialty is loaded only when getSpecialty() is called, and only
-        // within the transaction.
+
+
+
+
         User user = createTestDoctorUser("doctor10@medbook.test");
         Specialty urology = createTestSpecialty("Urology");
 
@@ -218,7 +218,7 @@ class DoctorRepositoryTest {
 
         Doctor reloaded = doctorRepository.findById(doctorId).orElseThrow();
 
-        // Call getSpecialty() inside the transaction. LAZY loading fetches it.
+
         Specialty loadedSpecialty = reloaded.getSpecialty();
 
         assertThat(loadedSpecialty).isNotNull();
@@ -228,7 +228,7 @@ class DoctorRepositoryTest {
 
     @Test
     void savedDoctorIsAssignedTimestampsByDatabaseDefaults() {
-        // created_at and updated_at are NOT NULL with DB defaults.
+
         User user = createTestDoctorUser("doctor11@medbook.test");
         Specialty specialty = createTestSpecialty("Oncology");
 

@@ -23,29 +23,29 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
- * Own-profile management for every authenticated role.
- *
- * <p>All identity comes from {@link CurrentUserProvider} (the JWT subject) — a user ID
- * in the request body or a path parameter is never read, so there is structurally no
- * way to address another user's profile. The response shapes are DTOs
- * ({@link CurrentUserResponse} and its nested records), never JPA entities.</p>
- *
- * <p>Editable/admin-controlled split follows the current application design:</p>
- * <ul>
- * <li><strong>PATIENT</strong> edits the self-service contact/medical fields of their
- *     {@code patients} row (address, emergency contact, insurance, allergies);
- *     {@code date_of_birth} stays registration data, {@code is_active} stays system.</li>
- * <li><strong>DOCTOR</strong> edits exactly {@code bio} and {@code profile_picture_url};
- *     specialty, license, fee and active flag are the admin registry
- *     ({@code DoctorAdminService}).</li>
- * <li><strong>ADMIN</strong> gets the account block only — no patient/doctor profile
- *     exists for the role, and no user management is built here.</li>
- * </ul>
- *
- * <p>Password change re-authenticates the caller (BCrypt verify of the current
- * password) before hashing the new one; plaintext never survives the method.</p>
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @Service
 public class ProfileService {
 
@@ -67,33 +67,33 @@ public class ProfileService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // ------------------------------------------------------------------
-    // Read
-    // ------------------------------------------------------------------
 
-    /**
-     * The authenticated caller's own profile: account block always, plus whichever
-     * role-specific profile row exists.
-     *
-     * @throws InsufficientAuthenticationException when there is no authenticated caller
-     */
+
+
+
+
+
+
+
+
+
     @Transactional(readOnly = true)
     public CurrentUserResponse getCurrentUserProfile() {
         User user = requireCurrentUser();
         return buildResponse(user);
     }
 
-    // ------------------------------------------------------------------
-    // Account fields (every role)
-    // ------------------------------------------------------------------
 
-    /**
-     * Update the caller's own account fields (first name, last name, phone).
-     * Email is deliberately not editable: it is the sign-in identity and the
-     * uniqueness anchor for every lookup.
-     *
-     * @throws InsufficientAuthenticationException when there is no authenticated caller
-     */
+
+
+
+
+
+
+
+
+
+
     @Transactional
     public CurrentUserResponse updateAccount(AccountUpdateRequest request) {
         User user = requireCurrentUser();
@@ -106,18 +106,18 @@ public class ProfileService {
         return buildResponse(saved);
     }
 
-    // ------------------------------------------------------------------
-    // Patient profile
-    // ------------------------------------------------------------------
 
-    /**
-     * Update the caller's own patient profile. The caller must have a patient row
-     * (the one linked to their user); a doctor or admin without one gets 403 rather
-     * than an accidental profile creation.
-     *
-     * @throws AccessDeniedException             when the caller has no patient profile
-     * @throws InsufficientAuthenticationException when there is no authenticated caller
-     */
+
+
+
+
+
+
+
+
+
+
+
     @Transactional
     public CurrentUserResponse updatePatientProfile(PatientProfileUpdateRequest request) {
         User user = requireCurrentUser();
@@ -141,18 +141,18 @@ public class ProfileService {
         return buildResponse(user, saved, null);
     }
 
-    // ------------------------------------------------------------------
-    // Doctor profile
-    // ------------------------------------------------------------------
 
-    /**
-     * Update the caller's own doctor profile — only the doctor-editable slice
-     * (bio + profile picture). Specialty, license, fee and active state are the
-     * admin registry and live only in {@code DoctorAdminService}.
-     *
-     * @throws AccessDeniedException             when the caller has no doctor profile
-     * @throws InsufficientAuthenticationException when there is no authenticated caller
-     */
+
+
+
+
+
+
+
+
+
+
+
     @Transactional
     public CurrentUserResponse updateDoctorProfile(DoctorProfileUpdateRequest request) {
         User user = requireCurrentUser();
@@ -165,21 +165,21 @@ public class ProfileService {
         return buildResponse(user, null, saved);
     }
 
-    // ------------------------------------------------------------------
-    // Password change
-    // ------------------------------------------------------------------
 
-    /**
-     * Change the caller's password after re-authenticating them.
-     *
-     * <p>The current password is verified with BCrypt; a wrong one throws
-     * {@link BadCredentialsException} (401). The new password is stored only as a
-     * BCrypt hash. Statelessness note: existing JWTs stay valid until they expire —
-     * the token model has no revocation, and none is invented here.</p>
-     *
-     * @throws BadCredentialsException            when the current password is wrong (401)
-     * @throws InsufficientAuthenticationException when there is no authenticated caller
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @Transactional
     public void changePassword(ChangePasswordRequest request) {
         User user = requireCurrentUser();
@@ -190,13 +190,13 @@ public class ProfileService {
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
-        // The request record falls out of scope here; its plaintext fields are never
-        // stored or logged anywhere.
+
+
     }
 
-    // ------------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------------
+
+
+
 
     private User requireCurrentUser() {
         Long userId = currentUserProvider.requireCurrentUserId();
@@ -205,10 +205,10 @@ public class ProfileService {
                         "Authenticated account no longer exists"));
     }
 
-    /**
-     * Assemble the response. The doctor lookup uses the fetch-join variant so the
-     * specialty name is readable without extra lazy queries (OSIV is disabled).
-     */
+
+
+
+
     private CurrentUserResponse buildResponse(User user) {
         Patient patient = patientRepository.findByUserId(user.getId()).orElse(null);
         Doctor doctor = doctorRepository.findByUserIdWithSpecialty(user.getId()).orElse(null);

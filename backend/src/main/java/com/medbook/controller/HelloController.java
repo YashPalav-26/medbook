@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-/**
- * Simple REST controller providing a health check endpoint.
- */
+
+
+
 @RestController
 @RequestMapping("/api/v1")
 public class HelloController {

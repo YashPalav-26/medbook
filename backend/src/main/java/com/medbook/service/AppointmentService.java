@@ -27,60 +27,60 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-/**
- * Service (business logic) layer for appointments.
- *
- * <p>This class is the single place where the rules of "booking an appointment" live:
- * who is allowed to book, which time windows are bookable, which existing appointments
- * block a slot, and what gets written to the audit trail. Repositories only read and
- * write rows; they do not decide anything.</p>
- *
- * <p>Both public methods are {@link Transactional}, so all their database work happens
- * inside one database transaction that is committed at the end or rolled back entirely
- * when an exception escapes. That guarantee is what makes "create appointment + create
- * status history" atomic: a half-written booking can never be committed.</p>
- *
- * <p>Booking also takes a pessimistic row lock on the doctor
- * ({@code SELECT ... FOR UPDATE}) before checking for conflicts, so two concurrent
- * bookings for the same doctor cannot both pass the overlap check.</p>
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @Service
 public class AppointmentService {
 
-    /**
-     * MySQL stores {@code day_of_week} as 0 = Sunday ... 6 = Saturday, while Java's
-     * {@link java.time.DayOfWeek#getValue()} returns 1 = Monday ... 7 = Sunday.
-     */
+
+
+
+
     private static final int JAVA_SUNDAY = 7;
 
-    /** Role names exactly as stored in the {@code roles} table (no {@code ROLE_} prefix). */
+
     private static final String ROLE_ADMIN = "ADMIN";
     private static final String ROLE_DOCTOR = "DOCTOR";
     private static final String ROLE_PATIENT = "PATIENT";
 
-    /** Message for a rejected ownership read/write — deliberately does not echo the ID. */
+
     private static final String ACCESS_DENIED_TO_APPOINTMENT =
             "You do not have access to this appointment";
 
-    /**
-     * Status transitions an assigned doctor may perform, enforced server-side.
-     *
-     * <p>The lifecycle (documented in {@code docs/doctor-portal-and-status-lifecycle.md}):</p>
-     * <pre>
-     * SCHEDULED → CONFIRMED            (doctor confirms the visit)
-     * CONFIRMED → COMPLETED            (visit happened)
-     * CONFIRMED → NO_SHOW              (patient did not arrive)
-     * SCHEDULED → CANCELLED            (already implemented, patient/doctor)
-     * CONFIRMED → CANCELLED            (already implemented, patient/doctor)
-     * </pre>
-     *
-     * <p>Terminal states (COMPLETED, CANCELLED, NO_SHOW) map to empty sets: nothing can
-     * follow them, so {@code COMPLETED → CANCELLED}, {@code CANCELLED → CONFIRMED},
-     * {@code NO_SHOW → COMPLETED} and every other backward/edge transition are rejected
-     * with {@link InvalidAppointmentStatusException} (HTTP 409). Patient cancellation is
-     * governed separately by {@link #cancelAppointment(Appointment, User, String)}, whose
-     * rules overlap this map (cancel allowed from SCHEDULED/CONFIRMED only).</p>
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     private static final Map<AppointmentStatus, Set<AppointmentStatus>> DOCTOR_TRANSITIONS = Map.of(
             AppointmentStatus.SCHEDULED, Set.of(AppointmentStatus.CONFIRMED),
             AppointmentStatus.CONFIRMED, Set.of(AppointmentStatus.COMPLETED, AppointmentStatus.NO_SHOW)
@@ -95,12 +95,12 @@ public class AppointmentService {
     private final CurrentUserProvider currentUserProvider;
     private final NotificationService notificationService;
 
-    /**
-     * Used only to flush and clear the persistence context before reloading a written
-     * appointment with its participants fetched. The locking read that precedes a write
-     * deliberately stays lean (it must lock only the appointment row), so the response's
-     * participant names are loaded by a separate non-locking fetch join afterwards.
-     */
+
+
+
+
+
+
     private final EntityManager entityManager;
 
     public AppointmentService(
@@ -125,29 +125,29 @@ public class AppointmentService {
         this.entityManager = entityManager;
     }
 
-    /**
-     * Read one appointment by ID, enforcing ownership for the authenticated caller.
-     *
-     * <p>Authorization rules (documented in {@code docs/appointment-authorization.md}):</p>
-     * <ul>
-     * <li><strong>PATIENT</strong> — only their own appointments;</li>
-     * <li><strong>DOCTOR</strong> — only appointments assigned to them;</li>
-     * <li><strong>ADMIN</strong> — any appointment (administrative support role).</li>
-     * </ul>
-     *
-     * <p>An appointment that exists but is not visible to the caller is rejected with
-     * {@link AppointmentOwnershipException} (HTTP 403) — the caller is authenticated, so
-     * this is a permission problem, not a missing-row problem. A non-existent row stays a
-     * 404 {@link AppointmentNotFoundException}. Both paths are enforced here on the server;
-     * the React UI merely reflects what this method allows.</p>
-     *
-     * @param appointmentId the appointment to read
-     * @return the stored appointment
-     * @throws AppointmentNotFoundException     when no appointment row exists for that ID
-     * @throws AppointmentOwnershipException    when the caller exists but may not see it
-     * @throws org.springframework.security.authentication.InsufficientAuthenticationException
-     *         when there is no authenticated caller
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @Transactional(readOnly = true)
     public Appointment getAppointment(Long appointmentId) {
         User caller = requireCurrentUser();
@@ -161,22 +161,22 @@ public class AppointmentService {
         return appointment;
     }
 
-    /**
-     * All appointments of the authenticated caller, per role.
-     *
-     * <ul>
-     * <li><strong>PATIENT</strong> — the appointments they booked;</li>
-     * <li><strong>DOCTOR</strong> — the appointments assigned to them;</li>
-     * <li><strong>ADMIN</strong> — rejected: a global appointment feed is an
-     *     administrative feature that does not exist yet, so it fails loudly (403)
-     *     instead of silently returning everything.</li>
-     * </ul>
-     *
-     * @return the caller's appointments, newest first
-     * @throws AppointmentOwnershipException when the caller's role has no listing yet (ADMIN)
-     * @throws org.springframework.security.authentication.InsufficientAuthenticationException
-     *         when there is no authenticated caller
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @Transactional(readOnly = true)
     public List<Appointment> getCurrentUserAppointments() {
         User caller = requireCurrentUser();
@@ -191,33 +191,33 @@ public class AppointmentService {
                 "Appointment listing is not available for this account role");
     }
 
-    /**
-     * Book a new appointment for the <strong>authenticated patient</strong> (self-booking).
-     *
-     * <p>This is the entry point for {@code POST /api/v1/appointments} with a
-     * {@link com.medbook.dto.PatientBookingRequest} body — a body that carries no
-     * {@code patientId} at all. The booking patient is resolved from the JWT caller:
-     * {@code users.id} → the patient profile linked to that account. A client cannot
-     * book for someone else because there is simply no field it could influence —
-     * identity is never taken from request data.</p>
-     *
-     * <p>Doctors are rejected (they have no patient profile; booking is not a doctor
-     * capability in this project), admins are pointed at the support path
-     * {@link #createAppointmentForPatient(com.medbook.dto.CreateAppointmentRequest)}.
-     * All slot/availability/conflict validation and the doctor row lock are the same
-     * rules used by every other booking path.</p>
-     *
-     * @param request the self-booking request ({@code doctorId}, date, time window, optional reason)
-     * @return the persisted appointment, with status SCHEDULED
-     * @throws AppointmentOwnershipException when the caller is not a patient (DOCTOR/ADMIN)
-     * @throws IllegalStateException         when the authenticated account has no patient profile
-     * @throws PatientInactiveException      when the caller's patient profile is deactivated
-     * @throws DoctorNotFoundException       when no doctor row exists for {@code doctorId}
-     * @throws DoctorInactiveException       when the doctor exists but is deactivated
-     * @throws IllegalArgumentException      when the date/time window itself is invalid
-     * @throws DoctorUnavailableException    when the window is outside doctor availability
-     * @throws AppointmentConflictException  when the doctor already has a clashing appointment
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @Transactional
     public Appointment createAppointmentForCurrentUser(com.medbook.dto.PatientBookingRequest request) {
         User caller = requireCurrentUser();
@@ -241,20 +241,20 @@ public class AppointmentService {
                 request.reason());
     }
 
-    /**
-     * Book a new appointment for an explicitly named patient — the ADMIN support path.
-     *
-     * <p>Justification for accepting {@code patientId} here (documented in
-     * {@code docs/doctor-discovery-and-booking.md}): administrators operate the clinic
-     * back office, where booking on behalf of a patient who called by phone or cannot
-     * use the app is the entire point. The capability is restricted to the ADMIN role:
-     * patients must use {@link #createAppointmentForCurrentUser}, where their identity
-     * comes from the JWT and no {@code patientId} is accepted; doctors cannot book.</p>
-     *
-     * @param request the support request (includes the target {@code patientId})
-     * @return the persisted appointment, with status SCHEDULED
-     * @throws AppointmentOwnershipException when the caller is not an admin
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @Transactional
     public Appointment createAppointmentForPatient(com.medbook.dto.CreateAppointmentRequest request) {
         User caller = requireCurrentUser();
@@ -272,13 +272,13 @@ public class AppointmentService {
                 null);
     }
 
-    /**
-     * Book a new appointment for a patient by ID without an explicit reason.
-     *
-     * <p>Convenience overload kept for existing internal/test callers; the HTTP
-     * request paths {@link #createAppointmentForCurrentUser} and
-     * {@link #createAppointmentForPatient} provide the reason field.</p>
-     */
+
+
+
+
+
+
+
     @Transactional
     public Appointment createAppointment(
             Long patientId,
@@ -290,37 +290,37 @@ public class AppointmentService {
         return createAppointment(patientId, doctorId, appointmentDate, startTime, endTime, null);
     }
 
-    /**
-     * Core booking routine shared by every path (patient self-booking, admin support,
-     * context-free internal use).
-     *
-     * <p>Business flow (all inside one transaction):</p>
-     * <ol>
-     * <li>lock the doctor row with {@code SELECT ... FOR UPDATE};</li>
-     * <li>verify the doctor exists and is active;</li>
-     * <li>verify the patient exists and is active;</li>
-     * <li>validate the appointment date and time window;</li>
-     * <li>verify the window falls inside the doctor's availability;</li>
-     * <li>verify no existing appointment clashes with the window;</li>
-     * <li>insert the appointment with a snapshot of the consultation fee;</li>
-     * <li>insert the first status history row (SCHEDULED).</li>
-     * </ol>
-     *
-     * @param patientId       the booking patient's ID (already resolved and authorized upstream)
-     * @param doctorId        the booked doctor's ID
-     * @param appointmentDate the clinic visit date
-     * @param startTime       window start time
-     * @param endTime         window end time (exclusive, must be after {@code startTime})
-     * @param reason          optional visit reason stored with the appointment (may be null)
-     * @return the persisted appointment, with status SCHEDULED
-     * @throws DoctorNotFoundException      when no doctor row exists for {@code doctorId}
-     * @throws DoctorInactiveException      when the doctor exists but is deactivated
-     * @throws PatientNotFoundException     when no patient row exists for {@code patientId}
-     * @throws PatientInactiveException     when the patient exists but is deactivated
-     * @throws IllegalArgumentException     when the date/time window itself is invalid
-     * @throws DoctorUnavailableException   when the window is outside doctor availability
-     * @throws AppointmentConflictException when the doctor already has a clashing appointment
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @Transactional
     public Appointment createAppointment(
             Long patientId,
@@ -330,8 +330,8 @@ public class AppointmentService {
             LocalTime endTime,
             String reason
     ) {
-        // 1 + 2. Lock the doctor row, then check the doctor exists and is active.
-        // The lock is held until this transaction commits or rolls back.
+
+
         Doctor doctor = doctorRepository.findByIdForUpdate(doctorId)
                 .orElseThrow(() -> new DoctorNotFoundException(doctorId));
 
@@ -339,7 +339,7 @@ public class AppointmentService {
             throw new DoctorInactiveException(doctorId);
         }
 
-        // 3. Verify the patient exists and is active.
+
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new PatientNotFoundException(patientId));
 
@@ -347,16 +347,16 @@ public class AppointmentService {
             throw new PatientInactiveException(patientId);
         }
 
-        // 4. Validate the requested date and time window.
+
         validateAppointmentWindow(appointmentDate, startTime, endTime);
 
-        // 5. Verify the window is covered by the doctor's availability.
+
         ensureDoctorIsAvailable(doctor, appointmentDate, startTime, endTime);
 
-        // 6. Verify no still-active appointment clashes with the window.
+
         ensureSlotIsFree(doctor, appointmentDate, startTime, endTime);
 
-        // 7. Insert the appointment, snapshotting the consultation fee that applies now.
+
         Appointment appointment = new Appointment(
                 patient,
                 doctor,
@@ -368,41 +368,41 @@ public class AppointmentService {
         appointment.setReason(reason);
         Appointment saved = appointmentRepository.save(appointment);
 
-        // 8. Record the first status history row: the appointment starts as SCHEDULED.
-        // When a JWT caller exists (every HTTP request), they are recorded as the actor;
-        // context-free internal/test callers legitimately produce NULL.
+
+
+
         recordStatusChange(saved, AppointmentStatus.SCHEDULED, "Appointment created",
                 currentUserProvider.currentUserId().flatMap(userRepository::findById).orElse(null));
 
-        // 9. Notify the patient. Same transaction as the booking itself (see
-        // NotificationService): a committed booking always has its notification.
+
+
         notificationService.notifyPatient(saved, NotificationType.APPOINTMENT_CREATED, null);
 
-        // 10. Reload with participants + their accounts fetched, so the REST mapper can
-        // read the display names after this transaction ends.
+
+
         return reloadWithParticipants(saved.getId());
     }
 
-    /**
-     * Cancel one appointment on behalf of the authenticated caller (ownership enforced).
-     *
-     * <p>Rules mirror {@link #getAppointment(Long)}: patients cancel only their own
-     * appointments, doctors only appointments assigned to them, and ADMIN cancellation is
-     * deliberately not supported yet — an administrator silently cancelling a clinic visit
-     * is a policy decision that has not been made, so the request is rejected (403) and
-     * must be performed by the patient or the doctor. Unknown rows stay 404. The history
-     * row records the real caller (never fabricated; never a user ID from the request).</p>
-     *
-     * @param appointmentId      the appointment to cancel
-     * @param cancellationReason why the appointment is cancelled (required)
-     * @return the updated appointment, with status CANCELLED
-     * @throws AppointmentNotFoundException      when the appointment ID does not exist
-     * @throws AppointmentOwnershipException     when the caller may not cancel it
-     * @throws InvalidAppointmentStatusException when the current status cannot become CANCELLED
-     * @throws IllegalArgumentException          when no cancellation reason is supplied
-     * @throws org.springframework.security.authentication.InsufficientAuthenticationException
-     *         when there is no authenticated caller
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @Transactional
     public Appointment cancelAppointmentForCurrentUser(Long appointmentId, String cancellationReason) {
         User caller = requireCurrentUser();
@@ -416,29 +416,29 @@ public class AppointmentService {
         return cancelAppointment(appointment, caller, cancellationReason);
     }
 
-    /**
-     * Cancel an appointment without a security context.
-     *
-     * <p>Kept for internal/test callers that run without authentication (for example the
-     * transactional-behaviour tests). The audit row is written with
-     * {@code changed_by_user_id = NULL} because no caller legitimately exists — a NULL is
-     * never fabricated into a user. HTTP requests must use
-     * {@link #cancelAppointmentForCurrentUser(Long, String)}, which enforces ownership.</p>
-     *
-     * @param appointmentId      the appointment to cancel
-     * @param cancellationReason why the appointment is cancelled (required)
-     * @return the updated appointment, with status CANCELLED
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
     @Transactional
     public Appointment cancelAppointment(Long appointmentId, String cancellationReason) {
         return cancelAppointment(appointmentRepository.findByIdForUpdate(appointmentId)
                 .orElseThrow(() -> new AppointmentNotFoundException(appointmentId)), null, cancellationReason);
     }
 
-    /**
-     * Shared cancellation flow: validate, lock in the status change, audit with the caller
-     * (nullable only when no authenticated caller legitimately exists).
-     */
+
+
+
+
     private Appointment cancelAppointment(Appointment appointment, User caller, String cancellationReason) {
         if (cancellationReason == null || cancellationReason.isBlank()) {
             throw new IllegalArgumentException("Cancellation reason is required");
@@ -461,13 +461,13 @@ public class AppointmentService {
         appointment.setCancellationReason(cancellationReason);
         Appointment saved = appointmentRepository.save(appointment);
 
-        // Audit trail: append the new status, never delete or rewrite history rows.
-        // changedByUser is the real authenticated caller, or NULL when there is none.
+
+
         recordStatusChange(saved, AppointmentStatus.CANCELLED, cancellationReason, caller);
 
-        // Notify the OTHER participant — the actor already knows they cancelled, and
-        // telling them again would just be noise. With no caller (context-free
-        // internal/test path) the patient is notified as if the clinic cancelled.
+
+
+
         if (caller != null
                 && appointment.getPatient().getUser().getId().equals(caller.getId())) {
             notificationService.notifyDoctor(saved, NotificationType.APPOINTMENT_CANCELLED,
@@ -480,66 +480,66 @@ public class AppointmentService {
         return reloadWithParticipants(saved.getId());
     }
 
-    /**
-     * Confirm one appointment (SCHEDULED → CONFIRMED) as the assigned doctor.
-     *
-     * @param appointmentId the appointment to confirm
-     * @return the updated appointment, with status CONFIRMED and {@code confirmed_at} set
-     * @throws AppointmentOwnershipException     when the caller is not the assigned doctor
-     * @throws AppointmentNotFoundException      when the appointment ID does not exist
-     * @throws InvalidAppointmentStatusException when the current status is not SCHEDULED
-     */
+
+
+
+
+
+
+
+
+
     @Transactional
     public Appointment confirmAppointmentForCurrentUser(Long appointmentId) {
         return transitionAppointmentForCurrentUser(
                 appointmentId, AppointmentStatus.CONFIRMED, "Appointment confirmed by doctor");
     }
 
-    /**
-     * Mark one appointment completed (CONFIRMED → COMPLETED) as the assigned doctor.
-     *
-     * @param appointmentId the appointment to complete
-     * @return the updated appointment, with status COMPLETED and {@code completed_at} set
-     * @throws AppointmentOwnershipException     when the caller is not the assigned doctor
-     * @throws AppointmentNotFoundException      when the appointment ID does not exist
-     * @throws InvalidAppointmentStatusException when the current status is not CONFIRMED
-     */
+
+
+
+
+
+
+
+
+
     @Transactional
     public Appointment completeAppointmentForCurrentUser(Long appointmentId) {
         return transitionAppointmentForCurrentUser(
                 appointmentId, AppointmentStatus.COMPLETED, "Visit completed");
     }
 
-    /**
-     * Mark one appointment as a no-show (CONFIRMED → NO_SHOW) as the assigned doctor.
-     *
-     * @param appointmentId the appointment to mark
-     * @return the updated appointment, with status NO_SHOW
-     * @throws AppointmentOwnershipException     when the caller is not the assigned doctor
-     * @throws AppointmentNotFoundException      when the appointment ID does not exist
-     * @throws InvalidAppointmentStatusException when the current status is not CONFIRMED
-     */
+
+
+
+
+
+
+
+
+
     @Transactional
     public Appointment markNoShowForCurrentUser(Long appointmentId) {
         return transitionAppointmentForCurrentUser(
                 appointmentId, AppointmentStatus.NO_SHOW, "Patient marked as no-show by doctor");
     }
 
-    /**
-     * Shared doctor-transition flow: resolve caller, lock, authorize, validate, apply, audit.
-     *
-     * <p>Authorization is a two-layer server-side check, never taken from the request:</p>
-     * <ol>
-     * <li>the caller must hold the DOCTOR role (patients/admins → 403 — this workflow is
-     *     the doctor's, and granting it to others is a product decision, not a default);</li>
-     * <li>the appointment's doctor must be the caller ({@code doctors.user_id = caller.id}).</li>
-     * </ol>
-     *
-     * <p>The row is read with {@code SELECT ... FOR UPDATE} ({@link AppointmentRepository#findByIdForUpdate}),
-     * so two concurrent transitions serialize on the row lock: both may run, but the loser
-     * sees the winner's already-changed status and is rejected by the transition map.
-     * Everything (status update, timestamps, history row) commits atomically.</p>
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     private Appointment transitionAppointmentForCurrentUser(
             Long appointmentId, AppointmentStatus target, String notes) {
         User caller = requireCurrentUser();
@@ -566,28 +566,28 @@ public class AppointmentService {
         applyDoctorTransition(appointment, target);
         Appointment saved = appointmentRepository.save(appointment);
 
-        // Audit trail: the history row records the real authenticated doctor — never a
-        // user ID from the request, never a fabricated identity.
+
+
         recordStatusChange(saved, target, notes, caller);
 
-        // Notify the patient of the doctor's decision (confirmed/completed/no-show),
-        // in the same transaction as the status change itself.
+
+
         notificationService.notifyPatient(saved, toNotificationType(target),
                 NotificationService.actorName(caller));
 
         return reloadWithParticipants(saved.getId());
     }
 
-    /**
-     * Flush pending writes, detach the lean/locked entities and reload the appointment
-     * with {@code patient.user} and {@code doctor.user} initialized via fetch joins.
-     *
-     * <p>Without clearing the persistence context, Hibernate would satisfy the reload from
-     * the first-level cache and leave the user associations as uninitialized lazy proxies;
-     * clearing forces the fetch-joined query to actually populate them. It runs at the very
-     * end of the write methods, after every other database interaction, so nothing else
-     * depends on the detached instances.</p>
-     */
+
+
+
+
+
+
+
+
+
+
     private Appointment reloadWithParticipants(Long appointmentId) {
         entityManager.flush();
         entityManager.clear();
@@ -595,9 +595,9 @@ public class AppointmentService {
                 .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
     }
 
-    /**
-     * The notification type matching a doctor lifecycle transition.
-     */
+
+
+
     private static NotificationType toNotificationType(AppointmentStatus status) {
         return switch (status) {
             case CONFIRMED -> NotificationType.APPOINTMENT_CONFIRMED;
@@ -608,10 +608,10 @@ public class AppointmentService {
         };
     }
 
-    /**
-     * Apply a doctor transition to the entity, stamping the schema's lifecycle columns:
-     * {@code confirmed_at} on entering CONFIRMED, {@code completed_at} on entering COMPLETED.
-     */
+
+
+
+
     private void applyDoctorTransition(Appointment appointment, AppointmentStatus target) {
         appointment.setStatus(target);
         LocalDateTime now = LocalDateTime.now();
@@ -622,16 +622,16 @@ public class AppointmentService {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Private business rules
-    // ------------------------------------------------------------------
 
-    /**
-     * Reject date/time windows that can never be a valid booking.
-     *
-     * <p>These checks need no database access, so they raise plain
-     * {@link IllegalArgumentException}: the request itself is malformed.</p>
-     */
+
+
+
+
+
+
+
+
+
     private void validateAppointmentWindow(LocalDate appointmentDate, LocalTime startTime, LocalTime endTime) {
         if (appointmentDate == null || startTime == null || endTime == null) {
             throw new IllegalArgumentException("Appointment date, start time and end time are required");
@@ -647,10 +647,10 @@ public class AppointmentService {
         }
     }
 
-    /**
-     * Verify the requested window is fully covered by at least one availability slot
-     * of the doctor on that weekday.
-     */
+
+
+
+
     private void ensureDoctorIsAvailable(
             Doctor doctor,
             LocalDate appointmentDate,
@@ -669,23 +669,23 @@ public class AppointmentService {
         }
     }
 
-    /**
-     * Decide whether a single availability slot covers the requested window.
-     *
-     * <p>A slot covers the window when:</p>
-     * <ol>
-     * <li>the requested window is inside the slot's {@code startTime}-{@code endTime}; and</li>
-     * <li>the requested date is inside the slot's effective date range:
-     *     <ul>
-     *     <li>recurring slots repeat every week, bounded by {@code effectiveFrom}
-     *         and/or {@code effectiveUntil} when those columns are set (NULL = no bound);</li>
-     *     <li>non-recurring slots are one-off exceptions, so they match only the single
-     *         date stored in {@code effectiveFrom} (or {@code effectiveUntil} when only
-     *         that column is set).</li>
-     *     </ul>
-     * </li>
-     * </ol>
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     private boolean coversAppointment(
             DoctorAvailability slot,
             LocalDate appointmentDate,
@@ -711,10 +711,10 @@ public class AppointmentService {
         return oneOffDate != null && appointmentDate.equals(oneOffDate);
     }
 
-    /**
-     * Reject the booking when the doctor already has an appointment that clashes.
-     * Cancelled appointments are excluded because they release the slot.
-     */
+
+
+
+
     private void ensureSlotIsFree(
             Doctor doctor,
             LocalDate appointmentDate,
@@ -734,13 +734,13 @@ public class AppointmentService {
         }
     }
 
-    /**
-     * Append one status history row. History is append-only: a status change adds a
-     * record and never removes an earlier one.
-     *
-     * @param changedBy the authenticated user who caused the change, or {@code null} only
-     *                  when no caller legitimately exists (context-free internal/test path)
-     */
+
+
+
+
+
+
+
     private void recordStatusChange(Appointment appointment, AppointmentStatus status, String notes, User changedBy) {
         AppointmentStatusHistory history = new AppointmentStatusHistory(appointment, status);
         history.setNotes(notes);
@@ -748,15 +748,15 @@ public class AppointmentService {
         statusHistoryRepository.save(history);
     }
 
-    // ------------------------------------------------------------------
-    // Caller identity and ownership rules
-    // ------------------------------------------------------------------
 
-    /**
-     * The authenticated user as a row in {@code users}, or an exception when there is no
-     * authenticated caller. The JWT is the only identity source — a user ID supplied in a
-     * request body or path is never trusted for authorization.
-     */
+
+
+
+
+
+
+
+
     private User requireCurrentUser() {
         Long callerId = currentUserProvider.requireCurrentUserId();
         return userRepository.findById(callerId)
@@ -764,16 +764,16 @@ public class AppointmentService {
                         "Authenticated account no longer exists"));
     }
 
-    /**
-     * The ownership matrix, evaluated on the loaded entities.
-     *
-     * <ul>
-     * <li>ADMIN → any appointment (administrative support);</li>
-     * <li>DOCTOR → appointments assigned to that doctor;</li>
-     * <li>PATIENT → appointments booked by that patient;</li>
-     * <li>any other role combination → denied.</li>
-     * </ul>
-     */
+
+
+
+
+
+
+
+
+
+
     private boolean canAccess(User caller, Appointment appointment) {
         if (caller.hasRole(ROLE_ADMIN)) {
             return true;
@@ -787,14 +787,14 @@ public class AppointmentService {
         return false;
     }
 
-    /**
-     * Who may cancel: the same ownership matrix minus ADMIN.
-     *
-     * <p>Cancellation changes a patient's clinic visit, so the project deliberately does
-     * not let an administrator do it yet — the operation is reserved for the patient who
-     * booked (or the assigned doctor). When admin cancellation becomes a product decision,
-     * this is the single place to change.</p>
-     */
+
+
+
+
+
+
+
+
     private boolean canCancel(User caller, Appointment appointment) {
         if (caller.hasRole(ROLE_ADMIN)) {
             return false;
@@ -802,12 +802,12 @@ public class AppointmentService {
         return canAccess(caller, appointment);
     }
 
-    /**
-     * Convert a date's weekday to the MySQL {@code day_of_week} convention used by the
-     * {@code doctor_availability} table: 0 = Sunday ... 6 = Saturday.
-     */
+
+
+
+
     private static byte toMysqlDayOfWeek(LocalDate date) {
-        int javaDayOfWeek = date.getDayOfWeek().getValue(); // 1 = Monday ... 7 = Sunday
+        int javaDayOfWeek = date.getDayOfWeek().getValue();
         return (byte) (javaDayOfWeek == JAVA_SUNDAY ? 0 : javaDayOfWeek);
     }
 }

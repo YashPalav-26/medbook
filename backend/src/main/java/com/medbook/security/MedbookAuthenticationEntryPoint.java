@@ -13,17 +13,17 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-/**
- * Writes the HTTP 401 response for requests that are not authenticated.
- *
- * <p>Two cases reach this point: a protected endpoint was called with no token at all, or
- * the presented Bearer token failed to validate (bad signature, expired, malformed). The
- * response body reuses the same {@link ErrorResponse} shape as the rest of the API instead
- * of Spring's default HTML/text error page.</p>
- *
- * <p>The message deliberately stays generic and never echoes the token, the header, or any
- * internal parsing detail.</p>
- */
+
+
+
+
+
+
+
+
+
+
+
 @Component
 public class MedbookAuthenticationEntryPoint implements AuthenticationEntryPoint {
 

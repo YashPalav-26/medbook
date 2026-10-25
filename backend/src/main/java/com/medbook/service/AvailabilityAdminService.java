@@ -12,22 +12,22 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalTime;
 import java.util.List;
 
-/**
- * ADMIN management of doctor availability windows
- * (create / list for a doctor / update / close).
- *
- * <p>Validation mirrors the {@code doctor_availability} schema and the booking-time
- * rules: weekday 0–6, {@code start < end}, {@code effectiveFrom <= effectiveUntil},
- * and the unique (doctor, day, start, end) constraint surfaced as a friendly 409
- * instead of a database error. Appointment conflict logic deliberately lives in
- * {@code AppointmentService}, not here — this table defines <em>when a doctor
- * could</em> work, not <em>who booked what</em>.</p>
- *
- * <p><strong>The schema has no {@code is_active} column on this table</strong> — so
- * there is no deactivate endpoint. The schema-native equivalent is <em>closing</em>
- * a window: setting {@code effective_until} to today (or a chosen date) stops it
- * applying to future dates while keeping the row's history. No migration needed.</p>
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @Service
 public class AvailabilityAdminService {
 
@@ -40,24 +40,24 @@ public class AvailabilityAdminService {
         this.doctorRepository = doctorRepository;
     }
 
-    /**
-     * Availability windows of one doctor (both open and closed), ordered for display.
-     *
-     * @throws DoctorNotFoundException when the doctor does not exist
-     */
+
+
+
+
+
     @Transactional(readOnly = true)
     public List<DoctorAvailability> listForDoctor(Long doctorId) {
         requireDoctor(doctorId);
         return availabilityRepository.findByDoctorIdOrderByDayOfWeekAscStartTimeAsc(doctorId);
     }
 
-    /**
-     * Add an availability window to a doctor.
-     *
-     * @throws DoctorNotFoundException            when the doctor does not exist (404)
-     * @throws IllegalArgumentException           when day/time/date-range values are invalid (400)
-     * @throws DuplicateAvailabilitySlotException when the exact window already exists (409)
-     */
+
+
+
+
+
+
+
     @Transactional
     public DoctorAvailability create(Long doctorId, AvailabilityCreateRequest request) {
         Doctor doctor = requireDoctor(doctorId);
@@ -78,13 +78,13 @@ public class AvailabilityAdminService {
         return availabilityRepository.save(availability);
     }
 
-    /**
-     * Edit an availability window.
-     *
-     * @throws AvailabilityNotFoundException      when the window ID does not exist (404)
-     * @throws IllegalArgumentException           when values are invalid (400)
-     * @throws DuplicateAvailabilitySlotException when the exact window already exists on another row (409)
-     */
+
+
+
+
+
+
+
     @Transactional
     public DoctorAvailability update(Long id, AvailabilityUpdateRequest request) {
         DoctorAvailability availability = requireAvailability(id);
@@ -106,21 +106,21 @@ public class AvailabilityAdminService {
         return availabilityRepository.save(availability);
     }
 
-    /**
-     * Close a window from today onwards — the schema-native "deactivation".
-     *
-     * <p>The {@code doctor_availability} table has no {@code is_active} column, so a
-     * window is closed by clamping {@code effective_until} to yesterday: the row and
-     * its history remain, but it no longer applies to any date from today forward.
-     * Idempotent: closing an already-closed window succeeds without change.</p>
-     *
-     * <p>A window that starts in the future has never applied to anything, so closing
-     * it removes the row outright — clamping {@code effective_until} below
-     * {@code effective_from} would violate the schema's CHECK constraint. Availability
-     * rows are configuration (nothing references them by FK), so this is safe.</p>
-     *
-     * @throws AvailabilityNotFoundException when the window ID does not exist
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @Transactional
     public DoctorAvailability close(Long id) {
         DoctorAvailability availability = requireAvailability(id);

@@ -18,12 +18,12 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integration tests for {@link DoctorAvailabilityRepository} against the real MySQL schema.
- *
- * <p>All tests are {@link Transactional} and rolled back after execution, so no
- * permanent test data is left behind in the development database.</p>
- */
+
+
+
+
+
+
 @SpringBootTest
 @Transactional
 class DoctorAvailabilityRepositoryTest {
@@ -46,9 +46,9 @@ class DoctorAvailabilityRepositoryTest {
     @Autowired
     private EntityManager entityManager;
 
-    /**
-     * Helper: creates a test user with DOCTOR role.
-     */
+
+
+
     private User createTestDoctorUser(String email) {
         Role doctorRole = roleRepository.findByName("DOCTOR")
                 .orElseThrow(() -> new IllegalStateException("DOCTOR role not seeded"));
@@ -57,18 +57,18 @@ class DoctorAvailabilityRepositoryTest {
         return userRepository.save(user);
     }
 
-    /**
-     * Helper: creates a test specialty.
-     */
+
+
+
     private Specialty createTestSpecialty(String name) {
-        // Unique suffix: the shared test database may already contain the demo seed data
-        // (real specialties like "Cardiology"), and the name column is unique.
+
+
         return specialtyRepository.save(new Specialty(name + "-" + System.nanoTime(), "Test specialty"));
     }
 
-    /**
-     * Helper: creates a test doctor.
-     */
+
+
+
     private Doctor createTestDoctor(String email, String specialtyName) {
         User user = createTestDoctorUser(email);
         Specialty specialty = createTestSpecialty(specialtyName);
@@ -78,8 +78,8 @@ class DoctorAvailabilityRepositoryTest {
 
     @Test
     void findAllExecutesAgainstRealSchema() {
-        // No availability records have been created yet; the point is that the query
-        // executes against the mapped `doctor_availability` table without error.
+
+
         assertThat(availabilityRepository.findAll()).isNotNull();
     }
 
@@ -88,7 +88,7 @@ class DoctorAvailabilityRepositoryTest {
         Doctor doctor = createTestDoctor("doctor1@medbook.test", "Cardiology");
         DoctorAvailability availability = new DoctorAvailability(
                 doctor,
-                (byte) 1, // Monday
+                (byte) 1,
                 LocalTime.of(9, 0),
                 LocalTime.of(12, 0)
         );
@@ -109,19 +109,19 @@ class DoctorAvailabilityRepositoryTest {
     void findByDoctorIdReturnsAllAvailabilityForDoctor() {
         Doctor doctor = createTestDoctor("doctor2@medbook.test", "Dermatology");
 
-        // Create Monday morning slot
+
         DoctorAvailability monday = new DoctorAvailability(
                 doctor, (byte) 1, LocalTime.of(9, 0), LocalTime.of(12, 0)
         );
         availabilityRepository.save(monday);
 
-        // Create Monday afternoon slot
+
         DoctorAvailability mondayPm = new DoctorAvailability(
                 doctor, (byte) 1, LocalTime.of(14, 0), LocalTime.of(17, 0)
         );
         availabilityRepository.save(mondayPm);
 
-        // Create Tuesday slot
+
         DoctorAvailability tuesday = new DoctorAvailability(
                 doctor, (byte) 2, LocalTime.of(10, 0), LocalTime.of(13, 0)
         );
@@ -136,7 +136,7 @@ class DoctorAvailabilityRepositoryTest {
     void findByDoctorIdAndDayOfWeekReturnsCorrectSlots() {
         Doctor doctor = createTestDoctor("doctor3@medbook.test", "Neurology");
 
-        // Monday slots
+
         availabilityRepository.save(new DoctorAvailability(
                 doctor, (byte) 1, LocalTime.of(9, 0), LocalTime.of(12, 0)
         ));
@@ -144,7 +144,7 @@ class DoctorAvailabilityRepositoryTest {
                 doctor, (byte) 1, LocalTime.of(14, 0), LocalTime.of(17, 0)
         ));
 
-        // Tuesday slot
+
         availabilityRepository.save(new DoctorAvailability(
                 doctor, (byte) 2, LocalTime.of(10, 0), LocalTime.of(13, 0)
         ));
@@ -171,7 +171,7 @@ class DoctorAvailabilityRepositoryTest {
 
         DoctorAvailability reloaded = availabilityRepository.findById(availabilityId).orElseThrow();
 
-        // Call getDoctor() inside transaction. LAZY loading fetches it.
+
         Doctor loadedDoctor = reloaded.getDoctor();
 
         assertThat(loadedDoctor).isNotNull();
@@ -230,17 +230,17 @@ class DoctorAvailabilityRepositoryTest {
     void availabilitySupportsVariousDaysOfWeek() {
         Doctor doctor = createTestDoctor("doctor8@medbook.test", "Urology");
 
-        // Sunday (0)
+
         availabilityRepository.save(new DoctorAvailability(
                 doctor, (byte) 0, LocalTime.of(10, 0), LocalTime.of(12, 0)
         ));
 
-        // Wednesday (3)
+
         availabilityRepository.save(new DoctorAvailability(
                 doctor, (byte) 3, LocalTime.of(14, 0), LocalTime.of(18, 0)
         ));
 
-        // Saturday (6)
+
         availabilityRepository.save(new DoctorAvailability(
                 doctor, (byte) 6, LocalTime.of(9, 0), LocalTime.of(13, 0)
         ));
@@ -256,19 +256,19 @@ class DoctorAvailabilityRepositoryTest {
     void availabilitySupportsVariousTimeRanges() {
         Doctor doctor = createTestDoctor("doctor9@medbook.test", "Gastroenterology");
 
-        // Early morning
+
         DoctorAvailability early = new DoctorAvailability(
                 doctor, (byte) 1, LocalTime.of(6, 0), LocalTime.of(9, 0)
         );
         availabilityRepository.save(early);
 
-        // Mid-day
+
         DoctorAvailability midday = new DoctorAvailability(
                 doctor, (byte) 1, LocalTime.of(12, 30), LocalTime.of(14, 30)
         );
         availabilityRepository.save(midday);
 
-        // Evening
+
         DoctorAvailability evening = new DoctorAvailability(
                 doctor, (byte) 1, LocalTime.of(18, 0), LocalTime.of(21, 0)
         );
@@ -307,7 +307,7 @@ class DoctorAvailabilityRepositoryTest {
         Doctor doctor1 = createTestDoctor("doctor11@medbook.test", "Rheumatology");
         Doctor doctor2 = createTestDoctor("doctor12@medbook.test", "Endocrinology");
 
-        // Doctor 1 availability
+
         availabilityRepository.save(new DoctorAvailability(
                 doctor1, (byte) 1, LocalTime.of(9, 0), LocalTime.of(12, 0)
         ));
@@ -315,7 +315,7 @@ class DoctorAvailabilityRepositoryTest {
                 doctor1, (byte) 2, LocalTime.of(14, 0), LocalTime.of(17, 0)
         ));
 
-        // Doctor 2 availability
+
         availabilityRepository.save(new DoctorAvailability(
                 doctor2, (byte) 1, LocalTime.of(10, 0), LocalTime.of(13, 0)
         ));

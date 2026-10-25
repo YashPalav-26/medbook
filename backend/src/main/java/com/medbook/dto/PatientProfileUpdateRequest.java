@@ -4,34 +4,34 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-/**
- * Request body for {@code PUT /api/v1/me/patient-profile}.
- *
- * <p>Field limits and the phone pattern mirror the {@code patients} schema columns
- * exactly (VARCHAR lengths, {@code emergency_contact_phone} same shape as the users
- * table CHECK). {@code dateOfBirth} is deliberately absent: it is medical identity
- * data captured at registration, not a self-service field.</p>
- *
- * <p>Every field is required in the payload, following the project's full-update
- * convention ({@code DoctorUpdateRequest}): the client sends the complete profile
- * form, and an empty string clears the optional column. Constraints are written so
- * a missing field fails validation with 400 instead of silently wiping data —
- * {@code @Size} alone would reject nulls on primitive-wrapper constraints the way
- * this schema's CHECKs would reject missing form values.</p>
- *
- * @param addressLine1           street address, first line (max 255, "" clears)
- * @param addressLine2           street address, second line (max 255, "" clears)
- * @param city                   city (max 100, "" clears)
- * @param stateProvince          state or province (max 50, "" clears)
- * @param postalCode             postal code (max 20, "" clears)
- * @param country                country (max 50, "" clears)
- * @param emergencyContactName   emergency contact's name (max 200, "" clears)
- * @param emergencyContactPhone  emergency contact's phone (digits/spaces/dashes, max 20, "" clears)
- * @param hasInsurance           whether the patient has insurance coverage
- * @param insuranceProvider      insurance company (max 100, "" clears)
- * @param insurancePolicyNumber  policy number (max 50, "" clears)
- * @param allergies              known allergies, free text ("" clears)
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public record PatientProfileUpdateRequest(
 
         @NotNull(message = "addressLine1 is required (send an empty string to clear it)")

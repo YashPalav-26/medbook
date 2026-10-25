@@ -9,25 +9,25 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 
-/**
- * Request body for {@code POST /api/v1/auth/register}.
- *
- * <p>Registration always creates a <strong>patient</strong> account. There is intentionally
- * no {@code role} field: a public request can never choose ADMIN or DOCTOR. Unknown extra
- * fields (for example {@code "role": "ADMIN"}) are ignored by Jackson, never honored.</p>
- *
- * <p>Field limits mirror the schema: {@code email VARCHAR(255)}, names {@code VARCHAR(100)},
- * {@code phone_number VARCHAR(20)} with the same regular expression as the column CHECK
- * constraint, and a password of 8–72 characters (72 is BCrypt's maximum input length).</p>
- *
- * @param email        sign-in email address (unique, stored lower-cased)
- * @param password     plaintext password — only ever passed to the BCrypt encoder, never
- *                     stored, never logged
- * @param firstName    given name
- * @param lastName     family name
- * @param phoneNumber  contact number (same pattern as the schema CHECK constraint)
- * @param dateOfBirth  date of birth for the patient profile (must be in the past)
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public record RegisterRequest(
 
         @NotBlank(message = "email is required")

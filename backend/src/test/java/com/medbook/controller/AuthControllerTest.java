@@ -30,15 +30,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Integration tests for {@link AuthController} and the authentication service.
- *
- * <p>Same approach as the other test layers: full application context, real MySQL, no mocks,
- * {@link Transactional} rollback, so nothing created here stays in the database. MockMvc runs
- * the real security filter chain and the real (test-generated) JWT secret — this context's
- * secret is an ephemeral development secret generated at startup, which is exactly the state
- * the production deployment must avoid.</p>
- */
+
+
+
+
+
+
+
+
+
 @SpringBootTest
 @Transactional
 class AuthControllerTest {
@@ -70,9 +70,9 @@ class AuthControllerTest {
                 .build();
     }
 
-    // ------------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------------
+
+
+
 
     private static String registerJson(String email, String password) {
         return """
@@ -116,9 +116,9 @@ class AuthControllerTest {
         return JsonPath.read(result.getResponse().getContentAsString(), "$.token");
     }
 
-    // ------------------------------------------------------------------
-    // Registration
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void registerReturns201WithTokenUserAndPatientRole() throws Exception {
@@ -134,7 +134,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.user.roles[0]").value("ROLE_PATIENT"))
                 .andReturn();
 
-        // No password hash or internal fields leak into the response.
+
         String body = result.getResponse().getContentAsString();
         assertThat(body).doesNotContain("password");
         assertThat(body).doesNotContain("is_locked");
@@ -147,12 +147,12 @@ class AuthControllerTest {
 
         User stored = userRepository.findByEmail("auth-hash@medbook.test").orElseThrow();
 
-        // The hash is a real BCrypt string, not the plaintext over which it is compared.
+
         assertThat(stored.getPasswordHash()).startsWith("$2");
         assertThat(stored.getPasswordHash()).isNotEqualTo("SecretPass1");
         assertThat(passwordEncoder.matches("SecretPass1", stored.getPasswordHash())).isTrue();
 
-        // A registered patient can immediately book: the profile row exists.
+
         Patient profile = patientRepository.findByUserId(stored.getId()).orElseThrow();
         assertThat(profile.isActive()).isTrue();
     }
@@ -172,7 +172,7 @@ class AuthControllerTest {
 
     @Test
     void publicRegistrationNeverEscalatesToAdmin() throws Exception {
-        // Jackson ignores the unknown "role" field; the service only grants PATIENT.
+
         MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -199,7 +199,7 @@ class AuthControllerTest {
 
     @Test
     void registerRejectsInvalidInput() throws Exception {
-        // Blank email, short password, bad phone, future birth date.
+
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -221,9 +221,9 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.fieldErrors[?(@.field == 'dateOfBirth')]").isNotEmpty());
     }
 
-    // ------------------------------------------------------------------
-    // Login
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void loginReturns200WithTokenAndDecodableClaims() throws Exception {
@@ -238,7 +238,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.user.roles[0]").value("ROLE_PATIENT"))
                 .andReturn();
 
-        // Real decode of a real token: sub, email, roles, iat and exp are present and valid.
+
         String token = JsonPath.read(result.getResponse().getContentAsString(), "$.token");
         User stored = userRepository.findByEmail("auth-login@medbook.test").orElseThrow();
         Jwt jwt = jwtDecoder.decode(token);
@@ -269,7 +269,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson("auth-wrong@medbook.test", "WrongPass99")))
                 .andExpect(status().isUnauthorized())
-                // Same generic message as unknown-email so existence cannot be probed.
+
                 .andExpect(jsonPath("$.message").value("Invalid email or password"));
 
         User stored = userRepository.findByEmail("auth-wrong@medbook.test").orElseThrow();
@@ -278,7 +278,7 @@ class AuthControllerTest {
 
     @Test
     void loginRejectsLockedUserOnlyAfterCredentialsMatch() throws Exception {
-        // Even a wrong password on a locked account only earns the generic message.
+
         createUser("auth-locked@medbook.test", "RightPass99", "PATIENT", true, true);
 
         mockMvc.perform(post("/api/v1/auth/login")

@@ -51,15 +51,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Integration tests for the in-app notification system (Step 25) over real MySQL
- * with real JWTs: the notification CRUD surface ({@code /api/v1/notifications**}),
- * every appointment lifecycle event producing exactly the intended notification,
- * same-transaction behaviour, ownership isolation, and the unread badge count.
- *
- * <p>The class is {@code @Transactional}, so every user, appointment and notification
- * row these tests create is rolled back — no residue.</p>
- */
+
+
+
+
+
+
+
+
+
 @SpringBootTest
 @Transactional
 class NotificationsTest {
@@ -110,7 +110,7 @@ class NotificationsTest {
         Role doctorRole = roleRepository.findByName("DOCTOR")
                 .orElseThrow(() -> new IllegalStateException("DOCTOR role not seeded"));
 
-        // Unique emails: the shared database holds seeded demo data.
+
         String suffix = String.valueOf(System.nanoTime());
         patientUser = new User("notif-pat-" + suffix + "@medbook.test",
                 passwordEncoder.encode(PASSWORD), "Paul", "Patient", "+919111000001");
@@ -127,7 +127,7 @@ class NotificationsTest {
         doctor = doctorRepository.save(new Doctor(doctorUser, specialty,
                 "LIC-NOTIF-" + suffix, 5, new BigDecimal("150.00")));
 
-        // Availability covering a weekday window wide enough for any fixture date.
+
         DoctorAvailability availability = new DoctorAvailability(doctor, (byte) 1,
                 LocalTime.of(8, 0), LocalTime.of(18, 0));
         availabilityRepository.save(availability);
@@ -141,7 +141,7 @@ class NotificationsTest {
                 .build();
     }
 
-    /** Real JWT minted with the application's encoder, as the security filter expects. */
+
     private String createTestToken(String subject, String... roles) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -155,7 +155,7 @@ class NotificationsTest {
                 .getTokenValue();
     }
 
-    /** A fixture appointment on a Monday (covered by the availability window). */
+
     private Appointment createAppointment(AppointmentStatus status) {
         LocalDate nextMonday = LocalDate.now().plusWeeks(2);
         while (nextMonday.getDayOfWeek().getValue() != 1) {
@@ -176,9 +176,9 @@ class NotificationsTest {
         return notificationRepository.save(notification);
     }
 
-    // ==================================================================
-    // 1-3. CREATION, OWNERSHIP, RETRIEVAL
-    // ==================================================================
+
+
+
 
     @Test
     void createdNotificationIsPersistedAndBelongsToItsUser() {
@@ -190,8 +190,8 @@ class NotificationsTest {
         assertThat(stored.getType()).isEqualTo(NotificationType.APPOINTMENT_CREATED);
         assertThat(stored.isRead()).isFalse();
 
-        // created_at is written by MySQL (insertable=false). Flush to reach the database,
-        // then detach everything so the re-read actually hits the row again.
+
+
         notificationRepository.flush();
         entityManager.clear();
         assertThat(notificationRepository.findById(notification.getId()).orElseThrow().getCreatedAt())
@@ -202,13 +202,13 @@ class NotificationsTest {
     void userRetrievesOnlyOwnNotificationsNewestFirst() throws Exception {
         Notification oldest = createNotification(patientUser, NotificationType.APPOINTMENT_CREATED, false);
         Notification newest = createNotification(patientUser, NotificationType.APPOINTMENT_CONFIRMED, false);
-        // Another user's notification — must never appear in the list.
+
         createNotification(doctorUser, NotificationType.APPOINTMENT_CANCELLED, false);
 
-        // created_at has millisecond precision; two rows written in the same millisecond
-        // would make DESC order nondeterministic. Pin distinct timestamps so the
-        // ordering assertion is about the query, not about clock speed. Bulk JPQL
-        // updates bypass the persistence context, so flush + clear afterwards.
+
+
+
+
         jakarta.persistence.Query q = entityManager.createQuery(
                 "UPDATE Notification n SET n.createdAt = :t WHERE n.id = :id");
         q.setParameter("t", java.time.LocalDateTime.now().minusMinutes(10));
@@ -225,15 +225,15 @@ class NotificationsTest {
         String body = result.getResponse().getContentAsString();
         List<Integer> ids = com.jayway.jsonpath.JsonPath.read(body, "$..id");
         assertThat(ids).containsExactly(newest.getId().intValue(), oldest.getId().intValue());
-        // The recipient's account fields never leak through the DTO.
+
         assertThat(body).doesNotContain(patientUser.getEmail());
         assertThat(body).doesNotContain("passwordHash");
     }
 
     @Test
     void userCannotRetrieveAnotherUsersNotifications() throws Exception {
-        // The doctor's notifications exist, but the patient caller can never see them:
-        // the list is JWT-scoped and IDs are validated against the owner.
+
+
         Notification doctorNotification = createNotification(doctorUser, NotificationType.APPOINTMENT_CREATED, false);
 
         mockMvc.perform(get("/api/v1/notifications")
@@ -246,16 +246,16 @@ class NotificationsTest {
                 .andExpect(status().isNotFound());
     }
 
-    // ==================================================================
-    // 5-7. UNREAD COUNT, MARK READ, MARK ALL READ
-    // ==================================================================
+
+
+
 
     @Test
     void unreadCountReflectsOnlyUnreadRowsOfTheCaller() throws Exception {
         createNotification(patientUser, NotificationType.APPOINTMENT_CREATED, false);
         createNotification(patientUser, NotificationType.APPOINTMENT_CONFIRMED, false);
         createNotification(patientUser, NotificationType.APPOINTMENT_COMPLETED, true);
-        createNotification(doctorUser, NotificationType.APPOINTMENT_CREATED, false); // other user: ignored
+        createNotification(doctorUser, NotificationType.APPOINTMENT_CREATED, false);
 
         mockMvc.perform(get("/api/v1/notifications/unread-count"))
                 .andExpect(status().isOk())
@@ -301,9 +301,9 @@ class NotificationsTest {
                 .andExpect(status().isNotFound());
     }
 
-    // ==================================================================
-    // 8-12. APPOINTMENT LIFECYCLE EVENTS CREATE NOTIFICATIONS
-    // ==================================================================
+
+
+
 
     @Test
     void bookingCreatesNotificationForPatient() throws Exception {
@@ -323,8 +323,8 @@ class NotificationsTest {
         long appointmentId = ((Number) com.jayway.jsonpath.JsonPath
                 .read(bookingResult.getResponse().getContentAsString(), "$.id")).longValue();
 
-        // The booking transaction is still open (test-managed), so detach all entities;
-        // the GET's MockMvc transaction then reads created_at straight from the row.
+
+
         entityManager.clear();
 
         mockMvc.perform(get("/api/v1/notifications"))
@@ -388,9 +388,9 @@ class NotificationsTest {
                         .content("{\"cancellationReason\":\"cannot make it\"}"))
                 .andExpect(status().isOk());
 
-        // The patient (the actor) gets no notification...
+
         assertThat(notificationRepository.findByUserIdOrderByCreatedAtDesc(patientUser.getId())).isEmpty();
-        // ...the doctor (the other participant) gets exactly one.
+
         List<Notification> doctorNotifications =
                 notificationRepository.findByUserIdOrderByCreatedAtDesc(doctorUser.getId());
         assertThat(doctorNotifications).hasSize(1);
@@ -426,14 +426,14 @@ class NotificationsTest {
         assertThat(doctorNotifications.get(0).getType()).isEqualTo(NotificationType.APPOINTMENT_CANCELLED);
     }
 
-    // ==================================================================
-    // 13-14. TRANSACTION BEHAVIOUR + NO DUPLICATES
-    // ==================================================================
+
+
+
 
     @Test
     void failedBookingLeavesNoNotificationResidue() throws Exception {
-        // An invalid request (start after end → 400) rolls back everything atomically;
-        // the notification INSERT joins the same transaction, so nothing survives.
+
+
         LocalDate nextMonday = LocalDate.now().plusWeeks(2);
         while (nextMonday.getDayOfWeek().getValue() != 1) {
             nextMonday = nextMonday.plusDays(1);
@@ -448,8 +448,8 @@ class NotificationsTest {
 
         assertThat(notificationRepository.findByUserIdOrderByCreatedAtDesc(patientUser.getId())).isEmpty();
 
-        // A valid booking afterwards produces exactly one notification — no residue
-        // from the failed attempt, no duplicates.
+
+
         mockMvc.perform(post("/api/v1/appointments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -465,8 +465,8 @@ class NotificationsTest {
 
     @Test
     void invalidTransitionFails409AndCreatesNoNotification() throws Exception {
-        // Double-confirm: the second attempt hits 409 before any notification is written,
-        // so a rejected retry can never accumulate a duplicate.
+
+
         Appointment appointment = createAppointment(AppointmentStatus.SCHEDULED);
         String confirmUrl = "/api/v1/appointments/" + appointment.getId() + "/confirm";
 
@@ -483,9 +483,9 @@ class NotificationsTest {
                 .hasSize(1);
     }
 
-    // ==================================================================
-    // 15 + ANONYMOUS
-    // ==================================================================
+
+
+
 
     @Test
     void anonymousCallerIsUnauthorized() throws Exception {

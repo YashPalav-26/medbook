@@ -10,24 +10,24 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Spring Security {@link UserDetails} adapter over the existing {@link User} entity.
- *
- * <p>Field mapping (schema columns → Spring Security concepts):</p>
- * <ul>
- * <li>{@code email} → {@link #getUsername()},</li>
- * <li>{@code password_hash} → {@link #getPassword()} (already a BCrypt hash — the plaintext
- *     password is never stored or exposed),</li>
- * <li>{@code is_active} → {@link #isEnabled()},</li>
- * <li>{@code is_locked} → inverted into {@link #isAccountNonLocked()},</li>
- * <li>{@code roles} (ADMIN/DOCTOR/PATIENT) → authorities with the {@code ROLE_} prefix
- *     ({@code ROLE_ADMIN} etc.), the Spring Security convention that {@code hasRole("ADMIN")}
- *     and {@code hasAnyRole(...)} understand.</li>
- * </ul>
- *
- * <p>The wrapped entity stays reachable via {@link #getUser()} so callers that already hold
- * a transaction can read additional fields without a second lookup.</p>
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public class MedbookUserDetails implements UserDetails {
 
     private final User user;

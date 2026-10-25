@@ -12,33 +12,33 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-/**
- * Creates the signed JWTs that clients present as {@code Authorization: Bearer ...}.
- *
- * <p>Claims are deliberately small and non-sensitive:</p>
- * <ul>
- * <li>{@code iss} — {@code "medbook"}, identifies who issued the token,</li>
- * <li>{@code sub} — the user ID (the stable primary key, not an editable field),</li>
- * <li>{@code email} — the sign-in identity,</li>
- * <li>{@code roles} — Spring Security authorities with the {@code ROLE_} prefix
- *     (for example {@code "ROLE_PATIENT"}),</li>
- * <li>{@code iat} / {@code exp} — issued-at and expiration; the lifetime comes from
- *     configuration ({@code JWT_EXPIRATION_MINUTES}, default 60).</li>
- * </ul>
- *
- * <p>A JWT is only base64-encoded, <strong>not encrypted</strong>: never put the password
- * hash, contact details, or anything else sensitive into a claim.</p>
- *
- * <p>The signing key is HMAC (HS256) and comes from configuration; it is never embedded in
- * source code or committed files.</p>
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @Service
 public class JwtService {
 
-    /** Name of the JWT claim carrying the user's Spring Security authorities. */
+
     public static final String ROLES_CLAIM = "roles";
 
-    /** Identifies tokens issued by this backend. */
+
     public static final String ISSUER = "medbook";
 
     private final JwtEncoder jwtEncoder;
@@ -49,12 +49,12 @@ public class JwtService {
         this.expirationMinutes = properties.getExpirationMinutes();
     }
 
-    /**
-     * Issue a signed token for an authenticated user.
-     *
-     * @param user the persisted user the token represents
-     * @return the compact JWT string (header.payload.signature)
-     */
+
+
+
+
+
+
     public String generateToken(User user) {
         Instant now = Instant.now();
 

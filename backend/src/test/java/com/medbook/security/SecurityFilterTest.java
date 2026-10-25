@@ -49,15 +49,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Integration tests for the HTTP security boundary: the real filter chain decoded by the
- * real {@code JwtDecoder}.
- *
- * <p>Every assertion below goes through the actual Bearer-token processing — no fabricated
- * security context, no mocked filter. Where a token needs to be made, it is made with the
- * application's own {@code JwtEncoder} (same secret, same conventions), except in the test
- * that deliberately signs with a different key.</p>
- */
+
+
+
+
+
+
+
+
+
 @SpringBootTest
 @Transactional
 class SecurityFilterTest {
@@ -91,11 +91,11 @@ class SecurityFilterTest {
 
     private MockMvc mockMvc;
 
-    /**
-     * Real user row backing the synthetic tokens. Since ownership authorization the
-     * service resolves the JWT {@code sub} against {@code users}, so filter-level tests
-     * mint tokens for a caller that actually exists (rolled back with the transaction).
-     */
+
+
+
+
+
     private User callerUser;
 
     @BeforeEach
@@ -108,9 +108,9 @@ class SecurityFilterTest {
         SecurityContextHolder.clearContext();
     }
 
-    // ------------------------------------------------------------------
-    // Token minting
-    // ------------------------------------------------------------------
+
+
+
 
     private String mintToken(String subject, String email, List<String> roles,
                              Instant issuedAt, Instant expiresAt) {
@@ -127,7 +127,7 @@ class SecurityFilterTest {
                 .getTokenValue();
     }
 
-    /** A valid one-hour token for the real fixture caller, carrying the given business roles. */
+
     private String validToken(String... roles) {
         Instant now = Instant.now();
         return mintToken(String.valueOf(callerUser.getId()), callerUser.getEmail(),
@@ -138,9 +138,9 @@ class SecurityFilterTest {
         return "Bearer " + token;
     }
 
-    // ------------------------------------------------------------------
-    // Unauthenticated access
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void protectedAppointmentEndpointWithoutTokenReturns401Json() throws Exception {
@@ -165,13 +165,13 @@ class SecurityFilterTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ \"email\": \"nobody@medbook.test\", \"password\": \"x\" }"))
                 .andExpect(status().isUnauthorized())
-                // Reaching the login service (not the security fence) proves the endpoint is public.
+
                 .andExpect(jsonPath("$.message").value("Invalid email or password"));
     }
 
-    // ------------------------------------------------------------------
-    // Token handling
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void garbageTokenReturns401JsonWithoutLeakingInternals() throws Exception {
@@ -202,7 +202,7 @@ class SecurityFilterTest {
 
     @Test
     void forgedTokenWithWrongSignatureReturns401() throws Exception {
-        // Signed by a different key than the application's secret.
+
         javax.crypto.SecretKey otherKey = new javax.crypto.spec.SecretKeySpec(
                 "unrelated-test-signing-key-forgery-attempt".getBytes(java.nio.charset.StandardCharsets.UTF_8),
                 "HmacSHA256");
@@ -231,25 +231,25 @@ class SecurityFilterTest {
 
     @Test
     void malformedAuthorizationHeaderIsRejected() throws Exception {
-        // Wrong scheme: the Bearer resolver ignores it, so the request is anonymous.
+
         mockMvc.perform(get("/api/v1/appointments/1")
                         .header(HttpHeaders.AUTHORIZATION, "Token " + validToken("ROLE_PATIENT")))
                 .andExpect(status().isUnauthorized());
 
-        // Empty bearer value: no usable token either.
+
         mockMvc.perform(get("/api/v1/appointments/1")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer "))
                 .andExpect(status().isUnauthorized());
     }
 
-    // ------------------------------------------------------------------
-    // Authenticated access and role behaviour
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void validPatientTokenReachesProtectedEndpoints() throws Exception {
-        // 404 here is the proof of acceptance: the request passed the security layer and
-        // reached the service, which simply has no row with that ID.
+
+
         mockMvc.perform(get("/api/v1/appointments/987654321")
                         .header(HttpHeaders.AUTHORIZATION, bearer(validToken("ROLE_PATIENT"))))
                 .andExpect(status().isNotFound())
@@ -258,8 +258,8 @@ class SecurityFilterTest {
 
     @Test
     void tokenForUnknownUserIsRejectedByOwnershipCheck() throws Exception {
-        // A syntactically valid token whose subject has no user row: the security fence
-        // lets it through (role claim present), then ownership authorization rejects it.
+
+
         Instant now = Instant.now();
         String ghost = mintToken("999999999", "ghost@medbook.test", List.of("ROLE_PATIENT"),
                 now, now.plus(1, ChronoUnit.HOURS));
@@ -287,7 +287,7 @@ class SecurityFilterTest {
 
     @Test
     void tokenWithoutBusinessRoleIsForbidden() throws Exception {
-        // Authenticated (signature valid) but authorized for nothing: 403, not 401.
+
         mockMvc.perform(get("/api/v1/appointments/1")
                         .header(HttpHeaders.AUTHORIZATION, bearer(validToken())))
                 .andExpect(status().isForbidden())
@@ -297,9 +297,9 @@ class SecurityFilterTest {
                         .value("You do not have permission to access this resource"));
     }
 
-    // ------------------------------------------------------------------
-    // Authenticated-user retrieval (Part G)
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void currentUserProviderReadsTheJwtCaller() {
@@ -309,8 +309,8 @@ class SecurityFilterTest {
                 Map.of("alg", "HS256"), claims);
         assertThat(jwt.getSubject()).isEqualTo("2");
 
-        // The two-argument constructor marks the token authenticated, exactly like the
-        // real filter does after validating a Bearer token.
+
+
         SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt,
                 java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_PATIENT"))));
 
@@ -329,9 +329,9 @@ class SecurityFilterTest {
                 .isInstanceOf(InsufficientAuthenticationException.class);
     }
 
-    // ------------------------------------------------------------------
-    // End-to-end: token -> booking
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void registeredPatientTokenCanBookAnAppointment() throws Exception {
@@ -374,7 +374,7 @@ class SecurityFilterTest {
         availability.setRecurring(true);
         availabilityRepository.save(availability);
 
-        // The full protected flow: register -> bearer token -> book.
+
         mockMvc.perform(post("/api/v1/appointments")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -391,8 +391,8 @@ class SecurityFilterTest {
                 .andExpect(jsonPath("$.patientId").value(patientId))
                 .andExpect(jsonPath("$.status").value("SCHEDULED"));
 
-        // Registering the patient through the public endpoint created the usable profile,
-        // linked to the registered user account.
+
+
         User registeredUser = userRepository.findByEmail("filter-book@medbook.test").orElseThrow();
         Patient profile = patientRepository.findByUserId(registeredUser.getId()).orElseThrow();
         assertThat(profile.getId()).isEqualTo(patientId);

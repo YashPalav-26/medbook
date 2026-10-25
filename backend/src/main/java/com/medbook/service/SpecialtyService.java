@@ -7,15 +7,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
- * Read-only specialty discovery for the booking flow.
- *
- * <p>Behind {@code GET /api/v1/specialties}. Specialties are reference data managed
- * administratively — there is no CRUD here (and none is planned for this step).
- * The service simply decides <em>which</em> specialties a patient may see:
- * active ones only, alphabetically, so the booking dropdown never offers a
- * retired specialty.</p>
- */
+
+
+
+
+
+
+
+
+
 @Service
 public class SpecialtyService {
 
@@ -25,11 +25,11 @@ public class SpecialtyService {
         this.specialtyRepository = specialtyRepository;
     }
 
-    /**
-     * All active specialties, alphabetically.
-     *
-     * @return active specialties mapped to {@link SpecialtyResponse}
-     */
+
+
+
+
+
     @Transactional(readOnly = true)
     public List<SpecialtyResponse> listActiveSpecialties() {
         return specialtyRepository.findByActiveTrueOrderByNameAsc().stream()

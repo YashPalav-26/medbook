@@ -44,15 +44,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Integration tests for the own-profile API ({@code /api/v1/me/**}) over real MySQL
- * with real JWTs: current-user reads, patient/doctor profile updates, the
- * editable/admin-controlled field split, and the authenticated password change.
- *
- * <p>The class is {@code @Transactional}, so every fixture row is rolled back — no
- * residue. Password-change fixtures mint a REAL BCrypt hash so the wrong-password
- * path is exercised against genuine encoder behaviour.</p>
- */
+
+
+
+
+
+
+
+
+
 @SpringBootTest
 @Transactional
 class MeProfileTest {
@@ -100,7 +100,7 @@ class MeProfileTest {
         specialty = specialtyRepository.save(
                 new Specialty("Profile Spec-" + System.nanoTime(), "test"));
 
-        // Admin with a real BCrypt hash so password change flows are authentic.
+
         User admin = new User("me-admin-" + System.nanoTime() + "@medbook.test",
                 passwordEncoder.encode(PLAINTEXT_PASSWORD), "Ada", "Admin", "+919998880001");
         admin.addRole(adminRole);
@@ -113,7 +113,7 @@ class MeProfileTest {
                 .build();
     }
 
-    /** Real JWT minted with the application's encoder, as the security filter expects. */
+
     private String createTestToken(String subject, String... roles) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -152,9 +152,9 @@ class MeProfileTest {
         return doctorRepository.save(doctor);
     }
 
-    // ==================================================================
-    // CURRENT USER READ
-    // ==================================================================
+
+
+
 
     @Test
     void authenticatedPatientReadsOwnProfile() throws Exception {
@@ -170,7 +170,7 @@ class MeProfileTest {
                 .andExpect(jsonPath("$.patient.patientId").value(patient.getId()))
                 .andExpect(jsonPath("$.patient.dateOfBirth").value("1990-05-15"))
                 .andExpect(jsonPath("$.doctor").doesNotExist())
-                // Security internals are never serialized.
+
                 .andExpect(jsonPath("$.passwordHash").doesNotExist())
                 .andExpect(jsonPath("$.failedLoginAttempts").doesNotExist())
                 .andExpect(jsonPath("$.locked").doesNotExist());
@@ -213,14 +213,14 @@ class MeProfileTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // ==================================================================
-    // PATIENT PROFILE UPDATE
-    // ==================================================================
 
-    /**
-     * The patient-profile update is a full-form PUT (project convention): every field
-     * is required, "" clears. Helper builds a complete valid payload with overrides.
-     */
+
+
+
+
+
+
+
     private String patientProfileJson(String... overrides) {
         StringBuilder json = new StringBuilder();
         java.util.LinkedHashMap<String, String> fields = new java.util.LinkedHashMap<>();
@@ -278,12 +278,12 @@ class MeProfileTest {
                 .andExpect(jsonPath("$.patient.hasInsurance").value(true))
                 .andExpect(jsonPath("$.patient.allergies").value("Peanuts, latex"));
 
-        // Persisted, not just echoed.
+
         Patient reloaded = patientRepository.findById(patient.getId()).orElseThrow();
         assertThat(reloaded.getCity()).isEqualTo("Mumbai");
         assertThat(reloaded.getEmergencyContactPhone()).isEqualTo("+91 98200 11222");
         assertThat(reloaded.hasInsurance()).isTrue();
-        // Registration data stays untouched.
+
         assertThat(reloaded.getDateOfBirth()).isEqualTo(LocalDate.of(1990, 5, 15));
     }
 
@@ -312,9 +312,9 @@ class MeProfileTest {
                 .andExpect(status().isForbidden());
     }
 
-    // ==================================================================
-    // DOCTOR PROFILE UPDATE + ADMIN-CONTROLLED PROTECTION
-    // ==================================================================
+
+
+
 
     @Test
     void doctorUpdatesOwnBioAndPicture() throws Exception {
@@ -346,8 +346,8 @@ class MeProfileTest {
         String originalLicense = doctor.getMedicalLicenseNumber();
         Long originalSpecialtyId = doctor.getSpecialty().getId();
 
-        // The update type has no fee/license/specialty fields — but prove a hostile
-        // payload carrying them changes nothing.
+
+
         mockMvc.perform(put("/api/v1/me/doctor-profile")
                         .header(HttpHeaders.AUTHORIZATION,
                                 "Bearer " + tokenFor(doctor.getUser(), "ROLE_DOCTOR"))
@@ -383,9 +383,9 @@ class MeProfileTest {
                 .andExpect(status().isForbidden());
     }
 
-    // ==================================================================
-    // CROSS-USER PROTECTION
-    // ==================================================================
+
+
+
 
     @Test
     void patientProfileUpdateTouchesOnlyTheCallersOwnRow() throws Exception {
@@ -399,8 +399,8 @@ class MeProfileTest {
                         .content(patientProfileJson("city", "CallerCity")))
                 .andExpect(status().isOk());
 
-        // The other patient's row is untouched — there is no ID parameter to misuse,
-        // and the lookup keys on the JWT subject alone.
+
+
         assertThat(patientRepository.findById(other.getId()).orElseThrow().getCity())
                 .isNotEqualTo("CallerCity");
     }
@@ -421,9 +421,9 @@ class MeProfileTest {
                 .isEqualTo("Original bio");
     }
 
-    // ==================================================================
-    // ACCOUNT UPDATE (name/phone, every role)
-    // ==================================================================
+
+
+
 
     @Test
     void accountUpdateChangesNameAndPhone() throws Exception {
@@ -447,7 +447,7 @@ class MeProfileTest {
 
         User reloaded = userRepository.findById(patient.getUser().getId()).orElseThrow();
         assertThat(reloaded.getFirstName()).isEqualTo("Jonathan");
-        // Email is the sign-in identity and stays fixed.
+
         assertThat(reloaded.getEmail()).isEqualTo(patient.getUser().getEmail());
     }
 
@@ -464,9 +464,9 @@ class MeProfileTest {
                 .andExpect(jsonPath("$.fieldErrors[0].field").value("phoneNumber"));
     }
 
-    // ==================================================================
-    // PASSWORD CHANGE
-    // ==================================================================
+
+
+
 
     @Test
     void passwordChangeWithCorrectCurrentPasswordSucceeds() throws Exception {
@@ -484,12 +484,12 @@ class MeProfileTest {
                                 """.formatted(PLAINTEXT_PASSWORD, NEW_PASSWORD)))
                 .andExpect(status().isNoContent());
 
-        // The new hash verifies against the new password and is a real BCrypt hash.
+
         User reloaded = userRepository.findById(userId).orElseThrow();
         assertThat(passwordEncoder.matches(NEW_PASSWORD, reloaded.getPasswordHash())).isTrue();
         assertThat(passwordEncoder.matches(PLAINTEXT_PASSWORD, reloaded.getPasswordHash())).isFalse();
         assertThat(reloaded.getPasswordHash()).startsWith("$2");
-        // The plaintext new password appears nowhere in storage.
+
         assertThat(reloaded.getPasswordHash()).doesNotContain(NEW_PASSWORD);
     }
 
@@ -510,7 +510,7 @@ class MeProfileTest {
                                 """.formatted(NEW_PASSWORD)))
                 .andExpect(status().isUnauthorized());
 
-        // Nothing changed.
+
         User reloaded = userRepository.findById(patient.getUser().getId()).orElseThrow();
         assertThat(reloaded.getPasswordHash()).isEqualTo(originalHash);
     }
@@ -558,7 +558,7 @@ class MeProfileTest {
 
     @Test
     void passwordChangeDoesNotAffectExistingAppointments() throws Exception {
-        // The appointment stays intact and untouched by the account change.
+
         Patient patient = createPatientWithProfile("me-pat13-" + System.nanoTime() + "@medbook.test");
         Doctor doctor = createDoctorWithProfile("me-doc7-" + System.nanoTime() + "@medbook.test");
         Appointment appointment = appointmentRepository.save(new Appointment(

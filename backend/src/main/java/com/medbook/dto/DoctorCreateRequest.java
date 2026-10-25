@@ -13,26 +13,26 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
-/**
- * Body of {@code POST /api/v1/admin/doctors} — create a doctor with their login account.
- *
- * <p>One request creates three linked rows inside a single transaction:
- * the {@code users} row (hashed password, never stored in plain text), the
- * {@code DOCTOR} role assignment, and the {@code doctors} profile. The role is
- * fixed to DOCTOR on the server — this API cannot mint an ADMIN.</p>
- *
- * @param email              login email (unique across users)
- * @param password           plain-text password from the admin form; only its BCrypt hash is stored
- * @param firstName          doctor's first name
- * @param lastName           doctor's last name
- * @param phoneNumber        contact phone (schema allows {@code +}, digits, spaces, dashes)
- * @param specialtyId        specialty this doctor practises (must exist)
- * @param medicalLicenseNumber unique license number (unique across doctors)
- * @param yearsExperience    years of practice (0–80, schema CHECK)
- * @param bio                optional professional biography
- * @param consultationFee    fee in currency units (>= 0)
- * @param profilePictureUrl  optional avatar URL (max 500 chars)
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public record DoctorCreateRequest(
 
         @NotBlank(message = "email is required")

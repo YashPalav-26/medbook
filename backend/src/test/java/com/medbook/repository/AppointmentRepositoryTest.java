@@ -21,12 +21,12 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integration tests for {@link AppointmentRepository} against the real MySQL schema.
- *
- * <p>All tests are {@link Transactional} and rolled back after execution, so no
- * permanent test data is left behind in the development database.</p>
- */
+
+
+
+
+
+
 @SpringBootTest
 @Transactional
 class AppointmentRepositoryTest {
@@ -55,9 +55,9 @@ class AppointmentRepositoryTest {
     @Autowired
     private EntityManager entityManager;
 
-    /**
-     * Helper: creates a test user with DOCTOR role.
-     */
+
+
+
     private User createTestDoctorUser(String email) {
         Role doctorRole = roleRepository.findByName("DOCTOR")
                 .orElseThrow(() -> new IllegalStateException("DOCTOR role not seeded"));
@@ -66,9 +66,9 @@ class AppointmentRepositoryTest {
         return userRepository.save(user);
     }
 
-    /**
-     * Helper: creates a test user with PATIENT role.
-     */
+
+
+
     private User createTestPatientUser(String email) {
         Role patientRole = roleRepository.findByName("PATIENT")
                 .orElseThrow(() -> new IllegalStateException("PATIENT role not seeded"));
@@ -77,18 +77,18 @@ class AppointmentRepositoryTest {
         return userRepository.save(user);
     }
 
-    /**
-     * Helper: creates a test specialty.
-     */
+
+
+
     private Specialty createTestSpecialty(String name) {
-        // Unique suffix: the shared test database may already contain the demo seed data
-        // (real specialties like "Cardiology"), and the name column is unique.
+
+
         return specialtyRepository.save(new Specialty(name + "-" + System.nanoTime(), "Test specialty"));
     }
 
-    /**
-     * Helper: creates a test doctor.
-     */
+
+
+
     private Doctor createTestDoctor(String email, String specialtyName) {
         User user = createTestDoctorUser(email);
         Specialty specialty = createTestSpecialty(specialtyName);
@@ -96,9 +96,9 @@ class AppointmentRepositoryTest {
         return doctorRepository.save(doctor);
     }
 
-    /**
-     * Helper: creates a test patient.
-     */
+
+
+
     private Patient createTestPatient(String email) {
         User user = createTestPatientUser(email);
         return patientRepository.save(new Patient(user, java.time.LocalDate.of(1990, 1, 1)));
@@ -106,8 +106,8 @@ class AppointmentRepositoryTest {
 
     @Test
     void findAllExecutesAgainstRealSchema() {
-        // No appointment records have been created yet; the point is that the query
-        // executes against the mapped `appointments` table without error.
+
+
         assertThat(appointmentRepository.findAll()).isNotNull();
     }
 
@@ -144,7 +144,7 @@ class AppointmentRepositoryTest {
         Doctor doctor = createTestDoctor("doctor2@medbook.test", "Dermatology");
         Patient patient = createTestPatient("patient2@medbook.test");
 
-        // Create first appointment
+
         appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 15),
@@ -152,7 +152,7 @@ class AppointmentRepositoryTest {
                 new BigDecimal("500.00")
         ));
 
-        // Create second appointment
+
         appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 16),
@@ -160,7 +160,7 @@ class AppointmentRepositoryTest {
                 new BigDecimal("500.00")
         ));
 
-        // Create appointment with different doctor
+
         Doctor otherDoctor = createTestDoctor("doctor3@medbook.test", "Neurology");
         Patient otherPatient = createTestPatient("patient3@medbook.test");
         appointmentRepository.save(new Appointment(
@@ -180,7 +180,7 @@ class AppointmentRepositoryTest {
         Doctor doctor = createTestDoctor("doctor4@medbook.test", "Pediatrics");
         Patient patient = createTestPatient("patient4@medbook.test");
 
-        // Create first appointment
+
         appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 15),
@@ -188,7 +188,7 @@ class AppointmentRepositoryTest {
                 new BigDecimal("400.00")
         ));
 
-        // Create second appointment
+
         appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 16),
@@ -196,7 +196,7 @@ class AppointmentRepositoryTest {
                 new BigDecimal("400.00")
         ));
 
-        // Create appointment for different patient
+
         Patient otherPatient = createTestPatient("patient5@medbook.test");
         appointmentRepository.save(new Appointment(
                 otherPatient, doctor,
@@ -215,7 +215,7 @@ class AppointmentRepositoryTest {
         Doctor doctor = createTestDoctor("doctor5@medbook.test", "Psychiatry");
         Patient patient = createTestPatient("patient6@medbook.test");
 
-        // Create scheduled appointment
+
         Appointment scheduled = appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 15),
@@ -223,7 +223,7 @@ class AppointmentRepositoryTest {
                 new BigDecimal("500.00")
         ));
 
-        // Create confirmed appointment
+
         Appointment confirmed = appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 16),
@@ -233,7 +233,7 @@ class AppointmentRepositoryTest {
         confirmed.setStatus(AppointmentStatus.CONFIRMED);
         appointmentRepository.save(confirmed);
 
-        // Create cancelled appointment
+
         Appointment cancelled = appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 17),
@@ -248,8 +248,8 @@ class AppointmentRepositoryTest {
         List<Appointment> confirmedAppointments = appointmentRepository.findByStatus(AppointmentStatus.CONFIRMED);
         List<Appointment> cancelledAppointments = appointmentRepository.findByStatus(AppointmentStatus.CANCELLED);
 
-        // Relative assertions: the shared test database may already hold committed rows,
-        // so only this test's own fixtures are asserted on, by ID.
+
+
         assertThat(scheduledAppointments)
                 .extracting(Appointment::getId)
                 .contains(scheduled.getId())
@@ -271,7 +271,7 @@ class AppointmentRepositoryTest {
         Doctor doctor = createTestDoctor("doctor6@medbook.test", "Ophthalmology");
         Patient patient = createTestPatient("patient7@medbook.test");
 
-        // Appointment on Oct 15
+
         appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 15),
@@ -279,7 +279,7 @@ class AppointmentRepositoryTest {
                 new BigDecimal("500.00")
         ));
 
-        // Appointment on Oct 16
+
         appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 16),
@@ -303,7 +303,7 @@ class AppointmentRepositoryTest {
         Doctor doctor = createTestDoctor("doctor7@medbook.test", "Gastroenterology");
         Patient patient = createTestPatient("patient8@medbook.test");
 
-        // Appointment on Oct 15
+
         appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 15),
@@ -311,7 +311,7 @@ class AppointmentRepositoryTest {
                 new BigDecimal("500.00")
         ));
 
-        // Appointment on Oct 16
+
         appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 16),
@@ -363,7 +363,7 @@ class AppointmentRepositoryTest {
         entityManager.flush();
         entityManager.refresh(saved);
 
-        // Create status history record
+
         AppointmentStatusHistory history = new AppointmentStatusHistory(
                 saved, AppointmentStatus.CONFIRMED
         );
@@ -373,7 +373,7 @@ class AppointmentRepositoryTest {
         entityManager.flush();
         entityManager.refresh(saved);
 
-        // Reload appointment and check history
+
         Appointment reloaded = appointmentRepository.findById(saved.getId()).orElseThrow();
         List<AppointmentStatusHistory> historyList = reloaded.getStatusHistory();
 
@@ -398,12 +398,12 @@ class AppointmentRepositoryTest {
         entityManager.flush();
         entityManager.refresh(saved);
 
-        // Clear persistence context to test lazy loading
+
         entityManager.clear();
 
         Appointment reloaded = appointmentRepository.findById(saved.getId()).orElseThrow();
 
-        // Call getDoctor() inside transaction. LAZY loading fetches it.
+
         Doctor loadedDoctor = reloaded.getDoctor();
 
         assertThat(loadedDoctor).isNotNull();
@@ -430,7 +430,7 @@ class AppointmentRepositoryTest {
 
         Appointment reloaded = appointmentRepository.findById(saved.getId()).orElseThrow();
 
-        // Call getPatient() inside transaction. LAZY loading fetches it.
+
         Patient loadedPatient = reloaded.getPatient();
 
         assertThat(loadedPatient).isNotNull();
@@ -485,7 +485,7 @@ class AppointmentRepositoryTest {
         Patient patient1 = createTestPatient("patient15@medbook.test");
         Patient patient2 = createTestPatient("patient16@medbook.test");
 
-        // Doctor 1 appointments
+
         appointmentRepository.save(new Appointment(
                 patient1, doctor1,
                 LocalDate.of(2026, 10, 15),
@@ -499,7 +499,7 @@ class AppointmentRepositoryTest {
                 new BigDecimal("500.00")
         ));
 
-        // Doctor 2 appointments
+
         appointmentRepository.save(new Appointment(
                 patient1, doctor2,
                 LocalDate.of(2026, 10, 15),
@@ -571,12 +571,12 @@ class AppointmentRepositoryTest {
         Appointment saved = appointmentRepository.save(appointment);
         Long appointmentId = saved.getId();
 
-        // Create multiple status history records
+
         statusHistoryRepository.save(new AppointmentStatusHistory(saved, AppointmentStatus.SCHEDULED));
         statusHistoryRepository.save(new AppointmentStatusHistory(saved, AppointmentStatus.CONFIRMED));
         statusHistoryRepository.save(new AppointmentStatusHistory(saved, AppointmentStatus.COMPLETED));
 
-        // Test findByAppointmentId
+
         List<AppointmentStatusHistory> history = statusHistoryRepository.findByAppointmentId(appointmentId);
 
         assertThat(history).hasSize(3);
@@ -597,7 +597,7 @@ class AppointmentRepositoryTest {
         Appointment saved = appointmentRepository.save(appointment);
         Long appointmentId = saved.getId();
 
-        // Create multiple status history records with notes to track order
+
         statusHistoryRepository.save(new AppointmentStatusHistory(saved, AppointmentStatus.SCHEDULED));
         AppointmentStatusHistory confirmed = new AppointmentStatusHistory(saved, AppointmentStatus.CONFIRMED);
         confirmed.setNotes("Confirmed by doctor");
@@ -607,7 +607,7 @@ class AppointmentRepositoryTest {
         completed.setNotes("Consultation done");
         statusHistoryRepository.save(completed);
 
-        // Test findByAppointmentIdOrderByChangedAtAsc
+
         List<AppointmentStatusHistory> history = statusHistoryRepository.findByAppointmentIdOrderByChangedAtAsc(appointmentId);
 
         assertThat(history).hasSize(3);

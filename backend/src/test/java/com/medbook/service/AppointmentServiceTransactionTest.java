@@ -45,17 +45,17 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/**
- * Transaction and locking tests for {@link AppointmentService}.
- *
- * <p><strong>Why this class is not {@code @Transactional}:</strong> the tests in
- * {@link AppointmentServiceTest} run inside one test transaction that is always rolled
- * back, which is fast but hides what the database really does. These tests need real
- * transaction boundaries: real commits, a real rollback after a failure, and two
- * simultaneous database transactions for the lock test. Because of that, fixtures are
- * committed in {@link #setUp()} and every row created here is deleted again in
- * {@link #tearDown()}, so no test data stays in the database.</p>
- */
+
+
+
+
+
+
+
+
+
+
+
 @SpringBootTest
 class AppointmentServiceTransactionTest {
 
@@ -103,8 +103,8 @@ class AppointmentServiceTransactionTest {
     void setUp() {
         transactionTemplate = new TransactionTemplate(transactionManager);
 
-        // Fixtures are committed on purpose: the service opens its own transaction for
-        // each call, and another transaction can only see committed rows.
+
+
         transactionTemplate.executeWithoutResult(status -> {
             Specialty specialty = specialtyRepository.save(
                     new Specialty("Transaction Test Specialty", "Test specialty"));
@@ -132,7 +132,7 @@ class AppointmentServiceTransactionTest {
 
     @AfterEach
     void tearDown() {
-        // Delete in foreign-key order: history -> appointments -> availability -> profiles.
+
         if (doctorId != null) {
             deleteAppointmentsOfDoctor();
             availabilityRepository.deleteAll(availabilityRepository.findByDoctorId(doctorId));
@@ -172,9 +172,9 @@ class AppointmentServiceTransactionTest {
         return (byte) (javaDayOfWeek == 7 ? 0 : javaDayOfWeek);
     }
 
-    // ------------------------------------------------------------------
-    // Real commits
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void createAppointmentCommitsAppointmentAndStatusHistory() {
@@ -183,7 +183,7 @@ class AppointmentServiceTransactionTest {
 
         assertThat(created.getId()).isNotNull();
 
-        // Fresh reads in their own transactions prove the rows are really committed.
+
         List<Appointment> persisted = appointmentRepository.findByDoctorId(doctorId);
         assertThat(persisted).hasSize(1);
         assertThat(persisted.get(0).getId()).isEqualTo(created.getId());
@@ -202,7 +202,7 @@ class AppointmentServiceTransactionTest {
 
         appointmentService.cancelAppointment(created.getId(), "Committed cancellation");
 
-        // The commit also proves the cancellation_reason CHECK constraint is satisfied.
+
         Appointment reloaded = appointmentRepository.findById(created.getId()).orElseThrow();
         assertThat(reloaded.getStatus()).isEqualTo(AppointmentStatus.CANCELLED);
         assertThat(reloaded.getCancellationReason()).isEqualTo("Committed cancellation");
@@ -214,23 +214,23 @@ class AppointmentServiceTransactionTest {
                 .containsExactlyInAnyOrder(AppointmentStatus.SCHEDULED, AppointmentStatus.CANCELLED);
     }
 
-    // ------------------------------------------------------------------
-    // Real rollbacks
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void createAppointmentRollsBackWhenTheTransactionFailsAfterCreation() {
         LocalTime start = LocalTime.of(11, 0);
         LocalTime end = LocalTime.of(12, 0);
 
-        // The service joins this transaction, inserts the appointment and its history row,
-        // and then the surrounding transaction fails on purpose.
+
+
         assertThatThrownBy(() -> transactionTemplate.executeWithoutResult(status -> {
             appointmentService.createAppointment(patientId, doctorId, appointmentDate, start, end);
             throw new IllegalStateException("simulated failure after the appointment was inserted");
         })).isInstanceOf(IllegalStateException.class);
 
-        // Because the inserts ran inside the rolled-back transaction, nothing is left.
+
         assertThat(appointmentRepository.findByDoctorId(doctorId)).isEmpty();
         assertThat(appointmentRepository.findConflictingAppointments(
                 doctorId, appointmentDate, start, end, AppointmentStatus.CANCELLED)).isEmpty();
@@ -241,7 +241,7 @@ class AppointmentServiceTransactionTest {
         appointmentService.createAppointment(
                 patientId, doctorId, appointmentDate, LocalTime.of(10, 0), LocalTime.of(11, 0));
 
-        // Real transaction, real conflict, real rollback.
+
         assertThatThrownBy(() -> appointmentService.createAppointment(
                 patientId, doctorId, appointmentDate, LocalTime.of(10, 30), LocalTime.of(11, 30)))
                 .isInstanceOf(AppointmentConflictException.class);
@@ -251,9 +251,9 @@ class AppointmentServiceTransactionTest {
         assertThat(statusHistoryRepository.findByAppointmentId(persisted.get(0).getId())).hasSize(1);
     }
 
-    // ------------------------------------------------------------------
-    // Transaction / lock configuration
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void appointmentServiceMethodsAreTransactional() throws Exception {
@@ -261,8 +261,8 @@ class AppointmentServiceTransactionTest {
                 "createAppointment", Long.class, Long.class, LocalDate.class, LocalTime.class, LocalTime.class);
         Method cancel = AppointmentService.class.getMethod("cancelAppointment", Long.class, String.class);
 
-        // Without @Transactional the service could not open a transaction on its own,
-        // and findByIdForUpdate would fail with TransactionRequiredException.
+
+
         assertThat(create.isAnnotationPresent(Transactional.class)).isTrue();
         assertThat(cancel.isAnnotationPresent(Transactional.class)).isTrue();
     }
@@ -292,7 +292,7 @@ class AppointmentServiceTransactionTest {
 
         ExecutorService executor = Executors.newFixedThreadPool(2);
         try {
-            // Transaction 1: takes the doctor row lock and holds it.
+
             Future<?> lockHolder = executor.submit(() -> transactionTemplate.executeWithoutResult(status -> {
                 doctorRepository.findByIdForUpdate(doctorId).orElseThrow();
                 lockAcquired.countDown();
@@ -303,7 +303,7 @@ class AppointmentServiceTransactionTest {
                     .as("first transaction must acquire the doctor row lock")
                     .isTrue();
 
-            // Transaction 2: tries to lock the same row while transaction 1 still holds it.
+
             Future<?> blocked = executor.submit(() -> {
                 try {
                     transactionTemplate.executeWithoutResult(
@@ -314,7 +314,7 @@ class AppointmentServiceTransactionTest {
                 }
             });
 
-            // If SELECT ... FOR UPDATE were missing, transaction 2 would finish immediately.
+
             Thread.sleep(700);
             assertThat(secondTransactionFinished.get())
                     .as("second transaction must be blocked while the first one holds the row lock")

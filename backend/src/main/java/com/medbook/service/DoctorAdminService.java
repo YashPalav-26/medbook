@@ -16,20 +16,20 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 
-/**
- * ADMIN management of doctors (create with login account / list / update / deactivate).
- *
- * <p><strong>Doctor creation is one atomic transaction</strong> over three writes:
- * the {@code users} row (BCrypt-hashed password), the {@code DOCTOR} role
- * assignment, and the {@code doctors} profile. If any step fails — duplicate email,
- * unknown specialty, duplicate license — the whole operation rolls back, so the
- * database can never hold a user without a doctor profile or vice versa.</p>
- *
- * <p>Security invariants: the created account always receives the DOCTOR role
- * (this API can never mint an ADMIN), the password exists only as a hash, and
- * responses are DTOs ({@link com.medbook.dto.DoctorAdminResponse}) so no security
- * internal can leak.</p>
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @Service
 public class DoctorAdminService {
 
@@ -51,31 +51,31 @@ public class DoctorAdminService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    /**
-     * Every doctor, active and inactive.
-     */
+
+
+
     @Transactional(readOnly = true)
     public List<Doctor> listAll() {
         return doctorRepository.findAllWithUserAndSpecialty();
     }
 
-    /**
-     * One doctor by ID.
-     *
-     * @throws DoctorNotFoundException when the ID does not exist
-     */
+
+
+
+
+
     @Transactional(readOnly = true)
     public Doctor get(Long id) {
         return requireDoctor(id);
     }
 
-    /**
-     * Create a doctor together with their login account and DOCTOR role.
-     *
-     * @throws com.medbook.service.EmailAlreadyRegisteredException when the email is taken (409)
-     * @throws DuplicateLicenseNumberException                     when the license is taken (409)
-     * @throws SpecialtyNotFoundException                          when the specialty does not exist (404)
-     */
+
+
+
+
+
+
+
     @Transactional
     public Doctor create(DoctorCreateRequest request) {
         String normalizedEmail = request.email().trim().toLowerCase(java.util.Locale.ROOT);
@@ -88,7 +88,7 @@ public class DoctorAdminService {
         var specialty = specialtyRepository.findById(request.specialtyId())
                 .orElseThrow(() -> new SpecialtyNotFoundException(request.specialtyId()));
 
-        // 1. The login account. Only the BCrypt hash of the password is ever stored.
+
         User user = new User(normalizedEmail, passwordEncoder.encode(request.password()),
                 request.firstName().trim(), request.lastName().trim(), request.phoneNumber().trim());
         Role doctorRole = roleRepository.findByName("DOCTOR")
@@ -96,7 +96,7 @@ public class DoctorAdminService {
         user.addRole(doctorRole);
         User savedUser = userRepository.save(user);
 
-        // 2. The professional profile, linked to the new account.
+
         Doctor doctor = new Doctor(savedUser, specialty, request.medicalLicenseNumber().trim(),
                 request.yearsExperience(), request.consultationFee());
         doctor.setBio(request.bio());
@@ -104,15 +104,15 @@ public class DoctorAdminService {
         return doctorRepository.save(doctor);
     }
 
-    /**
-     * Update a doctor's profile fields. Credentials (email/password) and the linked
-     * user's name/phone are account management, not profile management, so they are
-     * not touched here.
-     *
-     * @throws DoctorNotFoundException          when the ID does not exist
-     * @throws DuplicateLicenseNumberException  when another doctor already uses the license
-     * @throws SpecialtyNotFoundException       when the new specialty does not exist
-     */
+
+
+
+
+
+
+
+
+
     @Transactional
     public Doctor update(Long id, DoctorUpdateRequest request) {
         Doctor doctor = requireDoctor(id);
@@ -131,13 +131,13 @@ public class DoctorAdminService {
         return doctorRepository.save(doctor);
     }
 
-    /**
-     * Deactivate a doctor's profile ({@code doctors.is_active = false}). The doctor
-     * stops appearing in booking discovery; nothing is deleted and existing
-     * appointments keep their references.
-     *
-     * @throws DoctorNotFoundException when the ID does not exist
-     */
+
+
+
+
+
+
+
     @Transactional
     public Doctor deactivate(Long id) {
         Doctor doctor = requireDoctor(id);

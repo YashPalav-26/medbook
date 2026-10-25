@@ -24,27 +24,27 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-/**
- * Development/test-only demo data seeder.
- *
- * <p>Runs only when explicitly enabled via {@code medbook.demo.seed=true} (environment
- * variable {@code MEDBOOK_DEMO_SEED=true}) or the {@code dev} Spring profile, which
- * {@code application-dev.properties} maps onto that flag. It never runs in production
- * where the flag is absent.</p>
- *
- * <p>It seeds just enough data to make the Patient, Doctor and Admin experiences
- * immediately testable on a fresh database:</p>
- * <ul>
- * <li>the demo Admin, Doctor and Patient accounts (with the stored credentials documented
- *     in {@code docs/demo-accounts.md});</li>
- * <li>two specialties, a Doctor profile and a full week of availability;</li>
- * <li>a Patient profile and a few realistic appointments (created through
- *     {@link AppointmentService} so the status history and notifications are consistent).</li>
- * </ul>
- *
- * <p>All steps are idempotent: re-running against an already-seeded database creates
- * nothing twice.</p>
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 @ConditionalOnProperty(name = "medbook.demo.seed", havingValue = "true")
@@ -52,8 +52,8 @@ public class DemoDataSeeder implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DemoDataSeeder.class);
 
-    // Development-only credentials. Obviously fake and deliberately committed so any
-    // developer gets the same, documented logins. Never use these outside development.
+
+
     static final String ADMIN_EMAIL = "admin@medbook.test";
     static final String ADMIN_PASSWORD = "Admin@123";
 
@@ -138,7 +138,7 @@ public class DemoDataSeeder implements ApplicationRunner {
                 .orElseGet(() -> patientRepository.save(new Patient(user, LocalDate.of(1990, 1, 1))));
     }
 
-    /** A demo clinic open every day 09:00–17:00, so seeded appointments work on any date. */
+
     private void ensureAvailability(Doctor doctor) {
         if (!availabilityRepository.findByDoctorId(doctor.getId()).isEmpty()) {
             return;

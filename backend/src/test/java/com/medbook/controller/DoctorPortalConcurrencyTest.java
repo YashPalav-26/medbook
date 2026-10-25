@@ -49,19 +49,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
-/**
- * Concurrency test for the doctor status transitions (Step 21) over real MySQL.
- *
- * <p><strong>Why this class is not {@code @Transactional}:</strong> the two confirming
- * requests run on worker threads, which can never see the uncommitted rows of a test
- * transaction. Following the {@link com.medbook.service.AppointmentServiceTransactionTest}
- * pattern, fixtures are committed on purpose and every row created here is deleted again,
- * so no test data stays in the database.</p>
- *
- * <p>The race itself proves the pessimistic row lock: exactly one of the two simultaneous
- * confirm requests may win (200); the loser must observe the winner's status and be
- * rejected with 409 — never two CONFIRMED audit rows.</p>
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 @SpringBootTest
 class DoctorPortalConcurrencyTest {
 
@@ -148,7 +148,7 @@ class DoctorPortalConcurrencyTest {
 
     @AfterEach
     void tearDown() {
-        // FK-safe cleanup of everything committed by this class.
+
         tx.executeWithoutResult(status -> {
             statusHistoryRepository.findAll().stream()
                     .filter(h -> h.getAppointment() != null
@@ -168,7 +168,7 @@ class DoctorPortalConcurrencyTest {
         });
     }
 
-    /** Real JWT minted with the application's encoder, as the security filter expects. */
+
     private String tokenFor(Long userId, String role) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -184,7 +184,7 @@ class DoctorPortalConcurrencyTest {
 
     @Test
     void concurrentTransitionsSerializeOnRowLock() throws Exception {
-        // Fixture committed outside any test transaction so the worker threads see it.
+
         Long appointmentId = tx.execute(status -> {
             Appointment appointment = appointmentRepository.save(new Appointment(
                     patientRepository.findById(patientId).orElseThrow(),
@@ -212,13 +212,13 @@ class DoctorPortalConcurrencyTest {
         int status2 = f2.get();
         pool.shutdown();
 
-        // One request wins with 200; the loser observes the winner's status and gets 409.
+
         assertThat(List.of(status1, status2)).containsExactlyInAnyOrder(200, 409);
 
         assertThat(appointmentRepository.findById(appointmentId).orElseThrow().getStatus())
                 .isEqualTo(AppointmentStatus.CONFIRMED);
 
-        // Exactly one CONFIRMED audit row: the loser wrote nothing.
+
         long confirmedRows = statusHistoryRepository.findByAppointmentId(appointmentId).stream()
                 .filter(h -> h.getStatus() == AppointmentStatus.CONFIRMED)
                 .count();

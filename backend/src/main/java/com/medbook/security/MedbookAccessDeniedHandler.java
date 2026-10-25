@@ -12,14 +12,14 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-/**
- * Writes the HTTP 403 response for <em>authenticated</em> requests that lack the required
- * role — for example a token without any of the ADMIN/DOCTOR/PATIENT authorities calling an
- * appointment endpoint.
- *
- * <p>401 means "we do not know who you are"; 403 means "we know who you are, but your roles
- * do not allow this". The body reuses the standard {@link ErrorResponse} shape.</p>
- */
+
+
+
+
+
+
+
+
 @Component
 public class MedbookAccessDeniedHandler implements AccessDeniedHandler {
 

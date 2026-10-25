@@ -53,15 +53,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Integration tests for the ADMIN management API (specialties, doctors, availability)
- * over real MySQL with real JWTs.
- *
- * <p>The class is {@code @Transactional}, so every user, doctor, specialty and
- * availability row these tests create is rolled back — no residue (Part R #23).
- * The authorization matrix (anonymous 401 / patient 403 / doctor 403 / admin allowed)
- * is exercised against every endpoint group.</p>
- */
+
+
+
+
+
+
+
+
+
 @SpringBootTest
 @Transactional
 class AdminManagementTest {
@@ -105,13 +105,13 @@ class AdminManagementTest {
 
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .apply(springSecurity())
-                // Default caller is the ADMIN fixture (project convention); tests that
-                // exercise other roles override the header explicitly.
+
+
                 .defaultRequest(get("/").header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .build();
     }
 
-    /** Real JWT minted with the application's encoder, as the security filter expects. */
+
     private String createTestToken(String subject, String... roles) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -152,9 +152,9 @@ class AdminManagementTest {
                 new BigDecimal("100.00")));
     }
 
-    // ==================================================================
-    // PATIENTS (read-only admin list)
-    // ==================================================================
+
+
+
 
     @Test
     void adminListsPatientsWithAccountLinkage() throws Exception {
@@ -176,8 +176,8 @@ class AdminManagementTest {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 
-        // DTO-only serialization: no hash, no date-of-birth of OTHER patients beyond the
-        // intentionally exposed one, and no raw user id reference.
+
+
         assertThat(body).doesNotContain("passwordHash");
         assertThat(body).doesNotContain("$2a$");
         assertThat(body).contains(patient.getUser().getEmail());
@@ -203,9 +203,9 @@ class AdminManagementTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // ==================================================================
-    // SPECIALTIES
-    // ==================================================================
+
+
+
 
     @Test
     void adminCreatesSpecialtyAndItAppearsInList() throws Exception {
@@ -217,7 +217,7 @@ class AdminManagementTest {
                 .andExpect(jsonPath("$.name").value("Admin Cardio"))
                 .andExpect(jsonPath("$.description").value("created by test"));
 
-        // Present in the admin list (no second insert — the class rolls back).
+
         mockMvc.perform(get("/api/v1/admin/specialties")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isOk())
@@ -254,11 +254,11 @@ class AdminManagementTest {
         mockMvc.perform(patch("/api/v1/admin/specialties/" + specialty.getId() + "/deactivate"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Retire Me"))
-                // The DTO has no active field, so assert on the entity through the repository.
+
                 .andDo(result -> assertThat(specialtyRepository.findById(specialty.getId()).orElseThrow().isActive())
                         .isFalse());
 
-        // Public discovery no longer lists it.
+
         mockMvc.perform(get("/api/v1/specialties")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isOk())
@@ -285,7 +285,7 @@ class AdminManagementTest {
 
     @Test
     void anonymousCannotManageSpecialties() throws Exception {
-        // A MockMvc without the default ADMIN header: truly anonymous call.
+
         MockMvc anonymous = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .apply(springSecurity())
                 .build();
@@ -294,9 +294,9 @@ class AdminManagementTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // ==================================================================
-    // DOCTORS
-    // ==================================================================
+
+
+
 
     private String doctorCreateJson(String email, String license, Long specialtyId) {
         return """
@@ -333,14 +333,14 @@ class AdminManagementTest {
 
         long doctorId = ((Number) JsonPath.read(result.getResponse().getContentAsString(), "$.id")).longValue();
 
-        // The linked user exists with the DOCTOR role and a hashed password.
+
         User linked = userRepository.findByEmail("house@medbook.test").orElseThrow();
         assertThat(linked.hasRole("DOCTOR")).isTrue();
         assertThat(linked.hasRole("ADMIN")).isFalse();
         assertThat(linked.getPasswordHash()).isNotEqualTo("Doctor#Pass1");
         assertThat(linked.getPasswordHash()).startsWith("$2");
 
-        // Profile fields survived the round trip.
+
         DoctorAdminResponse adminView = DoctorAdminResponse.from(doctorRepository.findByIdWithUserAndSpecialty(doctorId).orElseThrow());
         assertThat(adminView.medicalLicenseNumber()).isEqualTo("LIC-HOUSE-1");
         assertThat(adminView.consultationFee().compareTo(new BigDecimal("250.00"))).isZero();
@@ -356,8 +356,8 @@ class AdminManagementTest {
                         .content(doctorCreateJson("login-doc@medbook.test", "LIC-LOGIN-1", specialty.getId())))
                 .andExpect(status().isCreated());
 
-        // The complete admin-to-doctor chain: account created by an admin, then used to
-        // sign in through the public login endpoint with the DOCTOR role in the token.
+
+
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"login-doc@medbook.test\",\"password\":\"Doctor#Pass1\"}"))
@@ -377,7 +377,7 @@ class AdminManagementTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("An account with this email address already exists"));
 
-        // Rollback check: no doctor row exists for the rejected request.
+
         assertThat(doctorRepository.findByMedicalLicenseNumber("LIC-DUP-EMAIL")).isEmpty();
     }
 
@@ -392,7 +392,7 @@ class AdminManagementTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value(containsString("already exists")));
 
-        // The user for the rejected creation was never committed.
+
         assertThat(userRepository.findByEmail("newdoc@medbook.test")).isEmpty();
     }
 
@@ -435,7 +435,7 @@ class AdminManagementTest {
 
         assertThat(doctorRepository.findById(doctor.getId()).orElseThrow().isActive()).isFalse();
 
-        // The public discovery API (active doctors only) no longer offers them.
+
         String body = mockMvc.perform(get("/api/v1/doctors")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isOk())
@@ -475,9 +475,9 @@ class AdminManagementTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // ==================================================================
-    // AVAILABILITY
-    // ==================================================================
+
+
+
 
     @Test
     void adminCreatesAvailabilityForDoctor() throws Exception {
@@ -590,7 +590,7 @@ class AdminManagementTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.effectiveUntil").value(LocalDate.now().minusDays(1).toString()));
 
-        // The public availability API (date-filtered) no longer reports the closed window.
+
         LocalDate nextMonday = LocalDate.now().plusDays(((8 - LocalDate.now().getDayOfWeek().getValue()) % 7) + 7);
         mockMvc.perform(get("/api/v1/doctors/" + doctor.getId() + "/availability?date=" + nextMonday)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
@@ -625,9 +625,9 @@ class AdminManagementTest {
                 .andExpect(status().isForbidden());
     }
 
-    // ==================================================================
-    // ADMINISTRATORS (admin account management)
-    // ==================================================================
+
+
+
 
     private String adminCreateJson(String email) {
         return """
@@ -648,7 +648,7 @@ class AdminManagementTest {
                 .andExpect(jsonPath("$[?(@.id == " + adminUser.getId() + ")]").exists())
                 .andReturn().getResponse().getContentAsString();
 
-        // DTO-only serialization: no hash, no plaintext, no password-ish field at all.
+
         assertThat(body).doesNotContain("password");
         assertThat(body).doesNotContain("passwordHash");
         assertThat(body).doesNotContain("$2a$");
@@ -669,7 +669,7 @@ class AdminManagementTest {
                 .andExpect(jsonPath("$.roles[0]").value("ADMIN"))
                 .andReturn();
 
-        // The linked user exists with exactly the ADMIN role and a BCrypt hash.
+
         User linked = userRepository.findByEmail("newadmin@medbook.test").orElseThrow();
         assertThat(linked.hasRole("ADMIN")).isTrue();
         assertThat(linked.hasRole("DOCTOR")).isFalse();
@@ -685,8 +685,8 @@ class AdminManagementTest {
                         .content(adminCreateJson("login-admin@medbook.test")))
                 .andExpect(status().isCreated());
 
-        // The complete admin-to-admin chain: account created by an admin, then used to
-        // sign in through the public login endpoint with the ADMIN role in the token.
+
+
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"login-admin@medbook.test\",\"password\":\"Admin#Pass1\"}"))
@@ -721,7 +721,7 @@ class AdminManagementTest {
                                 """))
                 .andExpect(status().isBadRequest());
 
-        // Nothing was created.
+
         assertThat(userRepository.findByEmail("shortpw@medbook.test")).isEmpty();
     }
 
@@ -799,8 +799,8 @@ class AdminManagementTest {
 
     @Test
     void adminCreationRequestCarriesNoTrustedRoleField() throws Exception {
-        // Even if a client sends a "role" field, the DTO has no such component, so it
-        // is ignored and the server-side fixed ADMIN assignment stands.
+
+
         mockMvc.perform(post("/api/v1/admin/admins")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -820,14 +820,14 @@ class AdminManagementTest {
         assertThat(linked.hasRole("DOCTOR")).isFalse();
     }
 
-    // ==================================================================
-    // TRANSACTIONS / RESIDUE
-    // ==================================================================
+
+
+
 
     @Test
     void failedDoctorCreationLeavesNoUserAndNoDoctorRows() throws Exception {
         Specialty specialty = createSpecialty("Admin Tx Spec");
-        // Valid account data + a license that will conflict mid-transaction.
+
         Doctor existing = createDoctor("tx-existing@medbook.test", specialty);
         String conflictingLicense = existing.getMedicalLicenseNumber();
 
@@ -836,7 +836,7 @@ class AdminManagementTest {
                         .content(doctorCreateJson("txnewdoc@medbook.test", conflictingLicense, specialty.getId())))
                 .andExpect(status().isConflict());
 
-        // The user row created inside the failed transaction must be gone (rollback).
+
         assertThat(userRepository.findByEmail("txnewdoc@medbook.test")).isEmpty();
         assertThat(doctorRepository.findByMedicalLicenseNumber(conflictingLicense))
                 .map(Doctor::getId)
@@ -845,8 +845,8 @@ class AdminManagementTest {
 
     @Test
     void doctorLifecycleKeepsExistingAppointmentBehaviourIntact() throws Exception {
-        // A booked appointment with a doctor who is later deactivated: the existing
-        // appointment must keep working (references are preserved, never deleted).
+
+
         Specialty specialty = createSpecialty("Admin Lifecycle Spec");
         Doctor doctor = createDoctor("lifecycle-doc@medbook.test", specialty);
 
@@ -867,15 +867,15 @@ class AdminManagementTest {
                 patient, doctor, date, LocalTime.of(10, 0), LocalTime.of(10, 30),
                 doctor.getConsultationFee()));
 
-        // Deactivate the doctor through the admin API.
+
         mockMvc.perform(patch("/api/v1/admin/doctors/" + doctor.getId() + "/deactivate"))
                 .andExpect(status().isOk());
 
-        // The existing appointment is untouched and keeps its doctor reference.
+
         Appointment stored = appointmentRepository.findById(appointment.getId()).orElseThrow();
         assertThat(stored.getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
         assertThat(stored.getDoctor().getId()).isEqualTo(doctor.getId());
-        // No history rows were fabricated by the deactivation.
+
         assertThat(statusHistoryRepository.findByAppointmentId(appointment.getId())).isEmpty();
     }
 }

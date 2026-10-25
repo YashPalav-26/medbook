@@ -11,20 +11,20 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
-/**
- * Body of {@code PUT /api/v1/admin/doctors/{id}} — edit a doctor's profile.
- *
- * <p>Login credentials (email, password) and the linked user's name/phone are
- * deliberately out of scope for this endpoint: they belong to account management,
- * not profile management. Deactivation is a separate PATCH.</p>
- *
- * @param specialtyId       new specialty (must exist)
- * @param medicalLicenseNumber new license number (unique)
- * @param yearsExperience   years of practice (0–80)
- * @param bio               optional biography
- * @param consultationFee   fee (>= 0)
- * @param profilePictureUrl optional avatar URL
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public record DoctorUpdateRequest(
 
         @NotNull(message = "specialtyId is required")

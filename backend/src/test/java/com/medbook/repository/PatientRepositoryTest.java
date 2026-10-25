@@ -13,12 +13,12 @@ import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integration tests for {@link PatientRepository} against the real MySQL schema.
- *
- * <p>All tests are {@link Transactional} and rolled back after execution, so no
- * permanent test data is left behind in the development database.</p>
- */
+
+
+
+
+
+
 @SpringBootTest
 @Transactional
 class PatientRepositoryTest {
@@ -35,9 +35,9 @@ class PatientRepositoryTest {
     @Autowired
     private EntityManager entityManager;
 
-    /**
-     * Helper: creates a test user with the PATIENT role.
-     */
+
+
+
     private User createTestPatientUser(String email) {
         Role patientRole = roleRepository.findByName("PATIENT")
                 .orElseThrow(() -> new IllegalStateException("PATIENT role not seeded"));
@@ -50,8 +50,8 @@ class PatientRepositoryTest {
 
     @Test
     void findAllExecutesAgainstRealSchema() {
-        // No patients have been created via application code yet; the point is
-        // that the query executes against the mapped `patients` table without error.
+
+
         assertThat(patientRepository.findAll()).isNotNull();
     }
 
@@ -109,9 +109,9 @@ class PatientRepositoryTest {
 
     @Test
     void patientRelationshipToUserIsNavigable() {
-        // Demonstrates that a Patient loaded from the repository can navigate
-        // to its User via getUser(). Because the relationship is LAZY, the User
-        // is loaded only when getUser() is called, and only within the transaction.
+
+
+
         User user = createTestPatientUser("patient5@medbook.test");
         Patient patient = new Patient(user, LocalDate.of(2000, 1, 1));
         Patient saved = patientRepository.save(patient);
@@ -121,7 +121,7 @@ class PatientRepositoryTest {
 
         Patient reloaded = patientRepository.findById(patientId).orElseThrow();
 
-        // Call getUser() inside the transaction. LAZY loading fetches it.
+
         User loadedUser = reloaded.getUser();
 
         assertThat(loadedUser).isNotNull();

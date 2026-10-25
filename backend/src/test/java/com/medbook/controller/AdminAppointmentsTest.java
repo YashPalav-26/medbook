@@ -48,14 +48,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Integration tests for the ADMIN appointment management API
- * (list with filters, detail with history, overview, audited cancellation)
- * over real MySQL with real JWTs.
- *
- * <p>The class is {@code @Transactional}, so every user, doctor, appointment and
- * history row these tests create is rolled back — no residue (Part P #12).</p>
- */
+
+
+
+
+
+
+
+
 @SpringBootTest
 @Transactional
 class AdminAppointmentsTest {
@@ -114,7 +114,7 @@ class AdminAppointmentsTest {
         patientMary = createPatient("adminappt-mary@medbook.test", "Mary", "Sue");
     }
 
-    /** Real JWT minted with the application's encoder, as the security filter expects. */
+
     private String createTestToken(String subject, String... roles) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -163,9 +163,9 @@ class AdminAppointmentsTest {
         return appointmentRepository.save(appointment);
     }
 
-    // ==================================================================
-    // AUTHORIZATION MATRIX
-    // ==================================================================
+
+
+
 
     @Test
     void adminCanListAppointments() throws Exception {
@@ -209,9 +209,9 @@ class AdminAppointmentsTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // ==================================================================
-    // LISTING + FILTERS
-    // ==================================================================
+
+
+
 
     @Test
     void listReturnsCorrectPatientAndDoctorInformation() throws Exception {
@@ -329,16 +329,16 @@ class AdminAppointmentsTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // ==================================================================
-    // DETAIL + HISTORY
-    // ==================================================================
+
+
+
 
     @Test
     void detailReturnsAppointmentWithParticipantsAndHistory() throws Exception {
         Appointment appointment = createAppointment(patientJohn, doctorA, LocalDate.now().plusDays(3),
                 LocalTime.of(10, 0), AppointmentStatus.CONFIRMED);
 
-        // Repository fixtures bypass the service, so the first audit row is written here.
+
         AppointmentStatusHistory history = new AppointmentStatusHistory(appointment, AppointmentStatus.CONFIRMED);
         history.setNotes("Appointment created");
         statusHistoryRepository.save(history);
@@ -372,7 +372,7 @@ class AdminAppointmentsTest {
                 .andExpect(jsonPath("$.history[0].changedByName").value("Ada Admin"))
                 .andReturn().getResponse().getContentAsString();
 
-        // Admin-safe fields only: the raw user ID, email and password hash never appear.
+
         assertThat(body).doesNotContain(adminUser.getEmail());
         assertThat(body).doesNotContain("passwordHash");
         assertThat(body).doesNotContain("\"changedByUserId\"");
@@ -385,14 +385,14 @@ class AdminAppointmentsTest {
                 .andExpect(jsonPath("$.message", containsString("999999999")));
     }
 
-    // ==================================================================
-    // OVERVIEW (dashboard metrics)
-    // ==================================================================
+
+
+
 
     @Test
     void overviewReportsRealPerStatusCountsIncludingToday() throws Exception {
-        // Baseline before the fixtures, so assertions are relative, not absolute
-        // (the shared database may already hold committed rows).
+
+
         MvcResult before = mockMvc.perform(get("/api/v1/admin/appointments/overview"))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -401,7 +401,7 @@ class AdminAppointmentsTest {
         long totalBefore = ((Number) JsonPath.read(before.getResponse().getContentAsString(),
                 "$.totalAppointments")).longValue();
 
-        // Two extra SCHEDULED fixtures, one of them today.
+
         createAppointment(patientJohn, doctorA, LocalDate.now(), LocalTime.of(15, 0),
                 AppointmentStatus.SCHEDULED);
         createAppointment(patientJohn, doctorA, LocalDate.now().plusDays(3), LocalTime.of(9, 0),
@@ -419,28 +419,28 @@ class AdminAppointmentsTest {
         assertThat(scheduledAfter).isEqualTo(scheduledBefore + 2);
         assertThat(totalAfter).isEqualTo(totalBefore + 2);
 
-        // All five statuses are always present with explicit zeros.
+
         java.util.Map<String, Object> statusCounts = com.jayway.jsonpath.JsonPath.parse(body)
                 .read("$.statusCounts", java.util.Map.class);
         assertThat(statusCounts.keySet()).containsExactlyInAnyOrder(
                 "SCHEDULED", "CONFIRMED", "COMPLETED", "CANCELLED", "NO_SHOW");
 
-        // todayAppointments counts this date, whatever statuses exist on it.
+
         LocalDate today = LocalDate.now();
         mockMvc.perform(get("/api/v1/admin/appointments").param("date", today.toString()))
                 .andExpect(status().isOk())
                 .andExpect(result -> {
                     List<Integer> todaysIds = JsonPath.read(result.getResponse().getContentAsString(), "$..id");
-                    assertThat(todayCount).isGreaterThanOrEqualTo(todaysIds.size() - 1); // -1: fixture added after
+                    assertThat(todayCount).isGreaterThanOrEqualTo(todaysIds.size() - 1);
                 });
 
-        // The overview echoes the date the "today" figure refers to.
+
         assertThat(JsonPath.<String>read(body, "$.today")).isEqualTo(today.toString());
     }
 
-    // ==================================================================
-    // ADMIN CANCELLATION (the explicitly implemented support action)
-    // ==================================================================
+
+
+
 
     @Test
     void adminCancelsScheduledAppointmentWithReason() throws Exception {
@@ -523,7 +523,7 @@ class AdminAppointmentsTest {
                         .content("{}"))
                 .andExpect(status().isBadRequest());
 
-        // The appointment is untouched by the failed attempts.
+
         assertThat(appointmentRepository.findById(appointment.getId()).orElseThrow().getStatus())
                 .isEqualTo(AppointmentStatus.SCHEDULED);
     }
@@ -538,8 +538,8 @@ class AdminAppointmentsTest {
 
     @Test
     void adminCancellationDoesNotCreateResidueOnRollback() throws Exception {
-        // A request that fails mid-way (409 on an already-cancelled appointment) must not
-        // have written any history row — the transaction rolled back atomically.
+
+
         Appointment appointment = createAppointment(patientJohn, doctorA, LocalDate.now().plusDays(3),
                 LocalTime.of(10, 0), AppointmentStatus.CANCELLED);
 
@@ -553,8 +553,8 @@ class AdminAppointmentsTest {
 
     @Test
     void existingPatientCancelEndpointStillRejectsAdmins() throws Exception {
-        // Policy boundary preserved: the general-purpose cancel endpoint remains closed to
-        // admins; they use the explicit, audited admin route instead.
+
+
         Appointment appointment = createAppointment(patientJohn, doctorA, LocalDate.now().plusDays(3),
                 LocalTime.of(10, 0), AppointmentStatus.SCHEDULED);
 

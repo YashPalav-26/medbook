@@ -1,12 +1,12 @@
--- V2: Create notifications table (Step 25 — in-app notification system)
--- Additive only: V1 is never modified. A notification is a persistent, user-specific
--- message about an appointment lifecycle event (created/confirmed/cancelled/completed/
--- no-show), shown in the signed-in user's notification bell.
 
--- ============================================================================
--- Table: notifications
--- Purpose: In-app notifications for the authenticated user
--- ============================================================================
+
+
+
+
+
+
+
+
 CREATE TABLE notifications (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT UNSIGNED NOT NULL,

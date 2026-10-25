@@ -12,14 +12,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integration tests for {@link BootstrapAccountService} against the real database.
- *
- * <p>{@code @Transactional} keeps every account created here rolled back, so the suite
- * leaves no residue. The tests pin the two security properties that matter: the password
- * is only ever stored as a BCrypt hash, and an account receives exactly the role it was
- * asked for and nothing else.</p>
- */
+
+
+
+
+
+
+
+
 @SpringBootTest
 @Transactional
 class BootstrapAccountServiceTest {
@@ -47,12 +47,12 @@ class BootstrapAccountServiceTest {
         User created = accountService.ensureUser(email, "SecretPass1", "Boot", "Strap",
                 "+10000000010", BootstrapAccountService.ROLE_ADMIN).orElseThrow();
 
-        // The stored hash is real BCrypt and not the plaintext.
+
         assertThat(created.getPasswordHash()).startsWith("$2");
         assertThat(created.getPasswordHash()).isNotEqualTo("SecretPass1");
         assertThat(passwordEncoder.matches("SecretPass1", created.getPasswordHash())).isTrue();
 
-        // Exactly the ADMIN role — the bootstrap can never mint something broader.
+
         assertThat(created.getRoles()).extracting(Role::getName).containsExactly("ADMIN");
         assertThat(created.hasRole("DOCTOR")).isFalse();
         assertThat(created.hasRole("PATIENT")).isFalse();
@@ -78,7 +78,7 @@ class BootstrapAccountServiceTest {
         User second = accountService.ensureUser(email, "AnotherPass1", "Idem", "Potent",
                 "+10000000012", BootstrapAccountService.ROLE_ADMIN).orElseThrow();
 
-        // Same existing account returned; the second password is never applied.
+
         assertThat(second.getId()).isEqualTo(first.getId());
         assertThat(passwordEncoder.matches("SecretPass1", second.getPasswordHash())).isTrue();
     }
@@ -88,15 +88,15 @@ class BootstrapAccountServiceTest {
         accountService.ensureUser(uniqueEmail("bootstrap-exists"), "SecretPass1", "Exists", "Check",
                 "+10000000013", BootstrapAccountService.ROLE_ADMIN);
 
-        // The inserted admin is visible inside this transaction.
+
         assertThat(accountService.adminExists()).isTrue();
     }
 
     @Test
     void anExistingAdminIsReturnedUntouchedByALaterBootstrapCall() {
-        // Pin the acceptance criteria: restart with the same configured credentials
-        // must not duplicate the account, must not overwrite the password, and must
-        // not duplicate the role — the existing row comes back exactly as it was.
+
+
+
         String email = uniqueEmail("bootstrap-nooverwrite");
         User original = accountService.ensureUser(email, "OriginalPass1", "Origin", "Al",
                 "+10000000014", BootstrapAccountService.ROLE_ADMIN).orElseThrow();
@@ -118,8 +118,8 @@ class BootstrapAccountServiceTest {
 
     @Test
     void emailLookupIsCaseInsensitiveForTheConfiguredAccount() {
-        // ensureUser normalizes emails to lower case, so a differently-cased
-        // configuration (or data-entry) still resolves to the same single account.
+
+
         String email = uniqueEmail("bootstrap-case");
         User created = accountService.ensureUser(email, "SecretPass1", "Case", "Check",
                 "+10000000015", BootstrapAccountService.ROLE_ADMIN).orElseThrow();

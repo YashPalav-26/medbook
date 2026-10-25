@@ -1,22 +1,22 @@
--- V1: Create MedBook Database Schema
--- This migration creates the complete V1 schema for MedBook clinic appointment management system
--- Timezone: Clinic appointments in Asia/Kolkata, system timestamps in UTC
--- Charset: utf8mb4 for international character support
 
--- ============================================================================
--- Table 1: roles
--- Purpose: Role definitions for RBAC
--- ============================================================================
+
+
+
+
+
+
+
+
 CREATE TABLE roles (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
     description VARCHAR(255)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================================
--- Table 2: users
--- Purpose: Authentication and account management
--- ============================================================================
+
+
+
+
 CREATE TABLE users (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -35,10 +35,10 @@ CREATE TABLE users (
     INDEX idx_users_phone (phone_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================================
--- Table 3: user_roles
--- Purpose: Many-to-many relationship between users and roles
--- ============================================================================
+
+
+
+
 CREATE TABLE user_roles (
     user_id BIGINT UNSIGNED NOT NULL,
     role_id BIGINT UNSIGNED NOT NULL,
@@ -49,10 +49,10 @@ CREATE TABLE user_roles (
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================================
--- Table 4: specialties
--- Purpose: Medical specialties for doctor categorization
--- ============================================================================
+
+
+
+
 CREATE TABLE specialties (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
@@ -61,10 +61,10 @@ CREATE TABLE specialties (
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================================
--- Table 5: doctors
--- Purpose: Doctor professional and profile information
--- ============================================================================
+
+
+
+
 CREATE TABLE doctors (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT UNSIGNED NOT NULL UNIQUE,
@@ -86,10 +86,10 @@ CREATE TABLE doctors (
     CHECK (years_experience BETWEEN 0 AND 80)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================================
--- Table 6: patients
--- Purpose: Patient profile and medical information
--- ============================================================================
+
+
+
+
 CREATE TABLE patients (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT UNSIGNED NOT NULL UNIQUE,
@@ -115,10 +115,10 @@ CREATE TABLE patients (
     CHECK (has_insurance = FALSE OR (insurance_provider IS NOT NULL AND insurance_policy_number IS NOT NULL))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================================
--- Table 7: doctor_availability
--- Purpose: Weekly availability windows for doctors
--- ============================================================================
+
+
+
+
 CREATE TABLE doctor_availability (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     doctor_id BIGINT UNSIGNED NOT NULL,
@@ -139,10 +139,10 @@ CREATE TABLE doctor_availability (
     CHECK (effective_from <= effective_until)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================================
--- Table 8: appointments
--- Purpose: Appointment booking and scheduling
--- ============================================================================
+
+
+
+
 CREATE TABLE appointments (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     patient_id BIGINT UNSIGNED NOT NULL,
@@ -173,10 +173,10 @@ CREATE TABLE appointments (
     CHECK (consultation_fee_snapshot >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================================
--- Table 9: appointment_status_history
--- Purpose: Audit trail for appointment status changes
--- ============================================================================
+
+
+
+
 CREATE TABLE appointment_status_history (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     appointment_id BIGINT UNSIGNED NOT NULL,
@@ -194,9 +194,9 @@ CREATE TABLE appointment_status_history (
     CHECK (status IN ('SCHEDULED','CONFIRMED','COMPLETED','CANCELLED','NO_SHOW'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================================
--- Seed Data: Roles
--- ============================================================================
+
+
+
 INSERT INTO roles (id, name, description) VALUES
     (1, 'ADMIN', 'Administrator with full system access'),
     (2, 'DOCTOR', 'Healthcare provider'),

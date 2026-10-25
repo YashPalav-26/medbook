@@ -39,18 +39,18 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/**
- * Service-layer tests for appointment ownership authorization (Step 17).
- *
- * <p>These tests run against the real MySQL database and the real security context
- * mechanics: the caller is represented exactly as the JWT filter would represent them —
- * a {@link JwtAuthenticationToken} in the {@code SecurityContextHolder} whose subject is
- * the user's ID. No user ID is ever passed through method parameters, mirroring the HTTP
- * contract.</p>
- *
- * <p>The class is {@link Transactional}, so every user, patient, doctor, specialty and
- * appointment created here is rolled back afterwards — the tests leave no residue.</p>
- */
+
+
+
+
+
+
+
+
+
+
+
+
 @SpringBootTest
 @Transactional
 class AppointmentOwnershipTest {
@@ -101,8 +101,8 @@ class AppointmentOwnershipTest {
         patientBUser = createUser("PATIENT", "owner-b@medbook.test", "Patient", "OwnerB", "+919900000002");
         doctorAUser = createUser("DOCTOR", "doc-a@medbook.test", "Doctor", "OwnerA", "+919900000003");
         doctorBUser = createUser("DOCTOR", "doc-b@medbook.test", "Doctor", "OwnerB", "+919900000004");
-        // Unique email: the shared test database may already contain the demo seed data
-        // (which includes its own admin@medbook.test), and the email column is unique.
+
+
         adminUser = createUser("ADMIN", "admin-own@" + System.nanoTime() + "medbook.test", "Admin", "User", "+919900000005");
 
         patientA = patientRepository.save(new Patient(patientAUser, LocalDate.of(1990, 1, 1)));
@@ -121,9 +121,9 @@ class AppointmentOwnershipTest {
         SecurityContextHolder.clearContext();
     }
 
-    // ------------------------------------------------------------------
-    // Fixtures and helpers
-    // ------------------------------------------------------------------
+
+
+
 
     private User createUser(String roleName, String email, String first, String last, String phone) {
         Role role = roleRepository.findByName(roleName)
@@ -133,10 +133,10 @@ class AppointmentOwnershipTest {
         return userRepository.save(user);
     }
 
-    /**
-     * Act as the given user: install the same authentication the real JWT filter would
-     * install for that user's token (subject = user ID).
-     */
+
+
+
+
     private void loginAs(User user, String... roles) {
         Map<String, Object> claims = Map.of(
                 "sub", String.valueOf(user.getId()),
@@ -181,9 +181,9 @@ class AppointmentOwnershipTest {
                 patient.getId(), doctor.getId(), date, start, end);
     }
 
-    // ------------------------------------------------------------------
-    // Patient ownership
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void patientCanRetrieveOwnAppointment() {
@@ -219,9 +219,9 @@ class AppointmentOwnershipTest {
                 statusHistoryRepository.findByAppointmentIdOrderByChangedAtAsc(owned.getId());
         assertThat(history).hasSize(2);
         assertThat(history.get(0).getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
-        assertThat(history.get(0).getChangedByUser()).isNull(); // booked without an HTTP caller in this test
+        assertThat(history.get(0).getChangedByUser()).isNull();
         assertThat(history.get(1).getStatus()).isEqualTo(AppointmentStatus.CANCELLED);
-        // The audit row points at the real authenticated caller, never a fabricated user.
+
         assertThat(history.get(1).getChangedByUser()).isNotNull();
         assertThat(history.get(1).getChangedByUser().getId()).isEqualTo(patientAUser.getId());
     }
@@ -235,15 +235,15 @@ class AppointmentOwnershipTest {
                 ownedByA.getId(), "Not my appointment"))
                 .isInstanceOf(AppointmentOwnershipException.class);
 
-        // The rejected cancellation changed nothing: status and history are untouched.
+
         Appointment reloaded = appointmentRepository.findById(ownedByA.getId()).orElseThrow();
         assertThat(reloaded.getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
         assertThat(statusHistoryRepository.findByAppointmentId(ownedByA.getId())).hasSize(1);
     }
 
-    // ------------------------------------------------------------------
-    // Doctor ownership
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void doctorCanRetrieveAppointmentsAssignedToThem() {
@@ -288,9 +288,9 @@ class AppointmentOwnershipTest {
         assertThat(mine).extracting(Appointment::getId).containsExactly(assignedToA.getId());
     }
 
-    // ------------------------------------------------------------------
-    // Admin behaviour (explicitly defined)
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void adminCanReadAnyAppointmentForSupport() {
@@ -324,9 +324,9 @@ class AppointmentOwnershipTest {
                 .hasMessage("Appointment listing is not available for this account role");
     }
 
-    // ------------------------------------------------------------------
-    // GET /appointments/me semantics
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void patientMeListingReturnsOnlyOwnAppointments() {
@@ -350,15 +350,15 @@ class AppointmentOwnershipTest {
                 .isInstanceOf(org.springframework.security.authentication.InsufficientAuthenticationException.class);
     }
 
-    // ------------------------------------------------------------------
-    // Identity edge cases
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void accessIsRejectedWhenTheTokenUserNoLongerExists() {
         Appointment ownedByA = bookAppointment(patientA, doctorA);
 
-        // Valid-shaped JWT whose subject has no user row (e.g. account deleted after issue).
+
         Map<String, Object> claims = Map.of("sub", "999999999", "email", "ghost@medbook.test",
                 "roles", List.of("ROLE_PATIENT"));
         Jwt jwt = new Jwt("ghost-token", Instant.now(), Instant.now().plus(1, ChronoUnit.HOURS),
@@ -382,9 +382,9 @@ class AppointmentOwnershipTest {
                 .isInstanceOf(org.springframework.security.authentication.InsufficientAuthenticationException.class);
     }
 
-    // ------------------------------------------------------------------
-    // History caller tracking (changed_by_user_id)
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void creationHistoryRecordsTheAuthenticatedCaller() {
@@ -400,8 +400,8 @@ class AppointmentOwnershipTest {
 
     @Test
     void creationHistoryWithoutCallerLegitimatelyStaysNull() {
-        // No security context (context-free internal/test path): NULL is correct and must
-        // not be fabricated into a user.
+
+
         Appointment created = bookAppointment(patientA, doctorA);
 
         List<AppointmentStatusHistory> history =
@@ -410,9 +410,9 @@ class AppointmentOwnershipTest {
         assertThat(history.get(0).getChangedByUser()).isNull();
     }
 
-    // ------------------------------------------------------------------
-    // No cross-user leakage
-    // ------------------------------------------------------------------
+
+
+
 
     @Test
     void noCrossUserLeakageAcrossReadListAndCancel() {

@@ -46,20 +46,20 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Integration tests for the doctor appointment lifecycle (Step 21) over real MySQL
- * with real JWTs.
- *
- * <p>Exercised matrix: doctor confirms/completes/no-shows their own appointments;
- * wrong doctor, patients, admins and anonymous callers are rejected; invalid
- * transitions (complete a SCHEDULED appointment, act on CANCELLED/COMPLETED ones)
- * fail with 409; every successful transition appends an audit row whose
- * {@code changed_by_user_id} is the real authenticated doctor. Concurrency is
- * covered in {@link DoctorPortalConcurrencyTest}, which needs real committed rows.</p>
- *     * <p>The class is {@code @Transactional}, so every fixture row is rolled back — no test residue.
-     * The concurrency test is the exception: its requests run on other threads that cannot see
-     * the uncommitted test transaction, so it commits its own fixture and removes it explicitly.</p>
-     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @SpringBootTest
 @Transactional
 class DoctorPortalTest {
@@ -123,7 +123,7 @@ class DoctorPortalTest {
                 .build();
     }
 
-    /** Real JWT minted with the application's encoder, as the security filter expects. */
+
     private String tokenFor(User user, String role) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -145,11 +145,11 @@ class DoctorPortalTest {
                 new BigDecimal("150.00")));
     }
 
-    /**
-     * A future SCHEDULED appointment with doctor A, mirroring what the booking service
-     * persists over HTTP — including the initial SCHEDULED audit row (with a NULL actor,
-     * since repository fixtures have no authenticated caller).
-     */
+
+
+
+
+
     private Appointment createScheduledAppointment() {
         LocalDate date = LocalDate.now().plusDays(7);
 
@@ -161,9 +161,9 @@ class DoctorPortalTest {
         return appointment;
     }
 
-    // ==================================================================
-    // HAPPY PATH
-    // ==================================================================
+
+
+
 
     @Test
     void doctorConfirmsOwnScheduledAppointment() throws Exception {
@@ -208,9 +208,9 @@ class DoctorPortalTest {
                 .andExpect(jsonPath("$.status").value("NO_SHOW"));
     }
 
-    // ==================================================================
-    // AUTHORIZATION
-    // ==================================================================
+
+
+
 
     @Test
     void wrongDoctorGets403() throws Exception {
@@ -239,7 +239,7 @@ class DoctorPortalTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden());
 
-        // Nothing changed.
+
         assertThat(appointmentRepository.findById(appointment.getId()).orElseThrow().getStatus())
                 .isEqualTo(AppointmentStatus.SCHEDULED);
     }
@@ -274,9 +274,9 @@ class DoctorPortalTest {
                 .andExpect(status().isNotFound());
     }
 
-    // ==================================================================
-    // TRANSITION RULES
-    // ==================================================================
+
+
+
 
     @Test
     void doctorCannotCompleteScheduledAppointment() throws Exception {
@@ -352,43 +352,43 @@ class DoctorPortalTest {
                 .andExpect(status().isConflict());
     }
 
-    // ==================================================================
-    // HISTORY / AUDIT
-    // ==================================================================
+
+
+
 
     @Test
     void everySuccessfulTransitionAppendsHistoryWithRealDoctor() throws Exception {
         Appointment appointment = createScheduledAppointment();
 
-        // SCHEDULED → CONFIRMED
+
         mockMvc.perform(post("/api/v1/appointments/" + appointment.getId() + "/confirm")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
-        // CONFIRMED → COMPLETED
+
         mockMvc.perform(post("/api/v1/appointments/" + appointment.getId() + "/complete")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        // Sort by insertion ID: rows written within the same second share changed_at.
+
         List<AppointmentStatusHistory> history = statusHistoryRepository.findByAppointmentId(appointment.getId())
                 .stream()
                 .sorted(Comparator.comparing(AppointmentStatusHistory::getId))
                 .toList();
-        assertThat(history).hasSize(3); // initial SCHEDULED + CONFIRMED + COMPLETED
+        assertThat(history).hasSize(3);
 
         assertThat(history.get(0).getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
         assertThat(history.get(1).getStatus()).isEqualTo(AppointmentStatus.CONFIRMED);
         assertThat(history.get(2).getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
 
-        // changed_by_user_id is the real doctor for both HTTP transitions; the initial
-        // SCHEDULED row (created by the repository save, no JWT in this thread) is NULL.
+
+
         assertThat(history.get(1).getChangedByUser().getId()).isEqualTo(doctorA.getUser().getId());
         assertThat(history.get(2).getChangedByUser().getId()).isEqualTo(doctorA.getUser().getId());
         assertThat(history.get(0).getChangedByUser()).isNull();
 
-        // Failed transitions must not add rows. Doctor B is rejected with 403 before the
-        // status is even examined — ownership is verified first, so a non-owner cannot
-        // use the error to learn whether an appointment is cancellable.
+
+
+
         Appointment cancelled = createScheduledAppointment();
         cancelled.setStatus(AppointmentStatus.CANCELLED);
         cancelled.setCancellationReason("off");
