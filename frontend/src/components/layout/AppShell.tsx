@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import Drawer from '@mui/material/Drawer';
 import { useAuth } from '../../hooks/useAuth';
 import { Brand } from '../ui/Brand';
 import { Button } from '../ui/Button';
 import { NotificationBell } from './NotificationBell';
 import {
   LayoutDashboard, CalendarPlus, CalendarDays, ShieldCheck, Stethoscope,
-  CalendarClock, Tags, CalendarSearch, UserRound, Menu, X, LogOut,
+  CalendarClock, Tags, CalendarSearch, UserRound, Menu, LogOut, Users,
 } from 'lucide-react';
 
 /**
@@ -42,6 +43,8 @@ function useNavSections(): { patient: NavItem[]; doctor: NavItem[]; admin: NavIt
       { to: '/admin/appointments', label: 'Appointments', icon: <CalendarSearch className="h-4 w-4" /> },
       { to: '/admin/specialties', label: 'Specialties', icon: <Tags className="h-4 w-4" /> },
       { to: '/admin/doctors', label: 'Doctors', icon: <Stethoscope className="h-4 w-4" /> },
+      { to: '/admin/patients', label: 'Patients', icon: <Users className="h-4 w-4" /> },
+      { to: '/admin/admins', label: 'Admins', icon: <ShieldCheck className="h-4 w-4" /> },
       { to: '/admin/availability', label: 'Availability', icon: <CalendarClock className="h-4 w-4" /> },
       { to: '/profile', label: 'My Profile', icon: <UserRound className="h-4 w-4" /> },
     ],
@@ -84,7 +87,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       <div className="px-5 py-5">
-        <Brand to="/dashboard" />
+        <Brand to="/dashboard" onClick={onNavigate} />
       </div>
       <nav aria-label="Main navigation" className="flex-1 space-y-6 overflow-y-auto px-3 pb-6">
         {isDoctor && !isAdmin && (
@@ -93,7 +96,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             <NavLinks items={doctor} onNavigate={onNavigate} />
           </div>
         )}
-        {!isDoctor && (isPatient || isAdmin) && (
+        {/* Patient navigation only for accounts that actually hold PATIENT —
+            an admin-only account would get 403s from the booking and
+            appointment endpoints behind these links. */}
+        {!isDoctor && isPatient && (
           <div>
             <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-ink-400">Care</p>
             <NavLinks items={patient} onNavigate={onNavigate} />
@@ -129,32 +135,35 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
 
   return (
     <div className="min-h-screen bg-ink-50">
+      {/* Keyboard users land here first and can jump past the whole sidebar. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-field focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
+      >
+        Skip to main content
+      </a>
+
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-ink-100 bg-white lg:block">
         <SidebarContent />
       </aside>
 
-      {/* Mobile drawer */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setDrawerOpen(false)}>
-          <div className="absolute inset-0 bg-ink-950/40" />
-          <aside
-            className="animate-rise absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-white shadow-modal"
-            onClick={(e) => e.stopPropagation()}
-            aria-label="Navigation drawer"
-          >
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(false)}
-              aria-label="Close navigation"
-              className="absolute right-3 top-4 text-ink-400 hover:text-ink-600"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <SidebarContent onNavigate={() => setDrawerOpen(false)} />
-          </aside>
-        </div>
-      )}
+      {/* Mobile drawer — MUI Drawer (focus trap, Escape, backdrop, swipe-out) */}
+      <Drawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        aria-label="Navigation drawer"
+        sx={{
+          display: { lg: 'none' },
+          '& .MuiDrawer-paper': {
+            width: 'min(18rem, 85vw)',
+            borderRadius: '0 14px 14px 0',
+            backgroundImage: 'none',
+          },
+        }}
+      >
+        <SidebarContent onNavigate={() => setDrawerOpen(false)} />
+      </Drawer>
 
       {/* Content column */}
       <div className="lg:pl-64">
@@ -186,7 +195,13 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
             </div>
           </div>
         </header>
-        <main className="animate-fade mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="animate-fade mx-auto w-full max-w-5xl px-4 py-8 focus:outline-none sm:px-6 lg:px-8"
+        >
+          {children}
+        </main>
       </div>
     </div>
   );
