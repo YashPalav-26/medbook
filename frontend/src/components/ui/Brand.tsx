@@ -8,7 +8,16 @@ import { Link } from 'react-router-dom';
  * assets), sized by font size so it scales from sidebar to mobile header.
  * `to` renders it as a link; omit for a static mark (e.g. inside the sidebar).
  */
-export function Brand({ to, compact = false }: { to?: string; compact?: boolean }) {
+export function Brand({
+  to,
+  compact = false,
+  onClick,
+}: {
+  to?: string;
+  compact?: boolean;
+  /** Optional click handler — the mobile drawer uses it to close itself. */
+  onClick?: () => void;
+}) {
   const mark = (
     <span className="inline-flex items-center gap-2.5">
       <span
@@ -32,7 +41,7 @@ export function Brand({ to, compact = false }: { to?: string; compact?: boolean 
 
   if (to) {
     return (
-      <Link to={to} aria-label="MedBook home" className="inline-flex items-center rounded-field">
+      <Link to={to} onClick={onClick} aria-label="MedBook home" className="inline-flex items-center rounded-field">
         {mark}
       </Link>
     );
