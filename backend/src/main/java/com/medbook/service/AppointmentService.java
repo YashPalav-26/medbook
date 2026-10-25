@@ -15,6 +15,7 @@ import com.medbook.repository.DoctorRepository;
 import com.medbook.repository.PatientRepository;
 import com.medbook.repository.UserRepository;
 import com.medbook.security.CurrentUserProvider;
+import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -94,6 +95,14 @@ public class AppointmentService {
     private final CurrentUserProvider currentUserProvider;
     private final NotificationService notificationService;
 
+    /**
+     * Used only to flush and clear the persistence context before reloading a written
+     * appointment with its participants fetched. The locking read that precedes a write
+     * deliberately stays lean (it must lock only the appointment row), so the response's
+     * participant names are loaded by a separate non-locking fetch join afterwards.
+     */
+    private final EntityManager entityManager;
+
     public AppointmentService(
             AppointmentRepository appointmentRepository,
             AppointmentStatusHistoryRepository statusHistoryRepository,
@@ -102,7 +111,8 @@ public class AppointmentService {
             DoctorAvailabilityRepository availabilityRepository,
             UserRepository userRepository,
             CurrentUserProvider currentUserProvider,
-            NotificationService notificationService
+            NotificationService notificationService,
+            EntityManager entityManager
     ) {
         this.appointmentRepository = appointmentRepository;
         this.statusHistoryRepository = statusHistoryRepository;
@@ -112,6 +122,7 @@ public class AppointmentService {
         this.userRepository = userRepository;
         this.currentUserProvider = currentUserProvider;
         this.notificationService = notificationService;
+        this.entityManager = entityManager;
     }
 
     /**
@@ -367,7 +378,9 @@ public class AppointmentService {
         // NotificationService): a committed booking always has its notification.
         notificationService.notifyPatient(saved, NotificationType.APPOINTMENT_CREATED, null);
 
-        return saved;
+        // 10. Reload with participants + their accounts fetched, so the REST mapper can
+        // read the display names after this transaction ends.
+        return reloadWithParticipants(saved.getId());
     }
 
     /**
@@ -464,7 +477,7 @@ public class AppointmentService {
                     NotificationService.actorName(caller));
         }
 
-        return saved;
+        return reloadWithParticipants(saved.getId());
     }
 
     /**
@@ -562,7 +575,24 @@ public class AppointmentService {
         notificationService.notifyPatient(saved, toNotificationType(target),
                 NotificationService.actorName(caller));
 
-        return saved;
+        return reloadWithParticipants(saved.getId());
+    }
+
+    /**
+     * Flush pending writes, detach the lean/locked entities and reload the appointment
+     * with {@code patient.user} and {@code doctor.user} initialized via fetch joins.
+     *
+     * <p>Without clearing the persistence context, Hibernate would satisfy the reload from
+     * the first-level cache and leave the user associations as uninitialized lazy proxies;
+     * clearing forces the fetch-joined query to actually populate them. It runs at the very
+     * end of the write methods, after every other database interaction, so nothing else
+     * depends on the detached instances.</p>
+     */
+    private Appointment reloadWithParticipants(Long appointmentId) {
+        entityManager.flush();
+        entityManager.clear();
+        return appointmentRepository.findByIdWithPatientAndDoctor(appointmentId)
+                .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
     }
 
     /**
