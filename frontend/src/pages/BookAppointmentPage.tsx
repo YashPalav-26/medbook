@@ -147,7 +147,7 @@ export function BookAppointmentPage() {
     <AppShell title="Book an Appointment">
       <Stepper current={step} />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
         {/* Step 1 — specialty and doctor */}
         <section aria-labelledby="step-doctor">
           <h2 id="step-doctor" className="mb-4 flex items-center gap-2 font-medium text-ink-900">
@@ -237,7 +237,8 @@ export function BookAppointmentPage() {
             <Clock className="h-5 w-5 text-brand-600" aria-hidden="true" />
             Pick a date and time
           </h2>
-          <Card className="space-y-4 p-5">              <Input
+          <Card className="flex flex-col gap-4 p-5">
+            <Input
               label="Appointment date"
               type="date"
               min={todayIso()}
