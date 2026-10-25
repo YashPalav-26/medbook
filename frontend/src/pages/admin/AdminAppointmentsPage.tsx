@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { z } from 'zod';
 import { useAdminAppointments, useAdminDoctors, useAdminPatients } from '../../hooks/useAdmin';
 import { useCreateAppointmentForPatient } from '../../hooks/useAppointment';
@@ -9,13 +9,22 @@ import { toApiError } from '../../api/client';
 import { AppShell } from '../../components/layout/AppShell';
 import { PageHeader } from '../../components/admin/AdminUi';
 import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
+import { Card, LinkCard } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Modal } from '../../components/ui/Modal';
-import { useToast } from '../../components/ui/Toast';
-import { StatusBadge, EmptyState, ErrorBox, Skeleton } from '../../components/ui/Feedback';
-import { CalendarSearch, CalendarPlus, IndianRupee, XCircle, Loader2 } from 'lucide-react';
+import { toast } from '../../lib/toast';
+import { StatusBadge, EmptyState, ErrorBox, Skeleton, Spinner } from '../../components/ui/Feedback';
+import { formatDate, todayIso } from '../../lib/dates';
+import { formatCurrency } from '../../lib/format';
+import { CalendarSearch, CalendarPlus, DollarSign, XCircle } from 'lucide-react';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
 import type { AdminAppointmentResponse, AppointmentStatus } from '../../types/appointment';
 
 const bookingSchema = z.object({
@@ -55,17 +64,11 @@ function humanizeStatus(status: string): string {
 }
 
 function AppointmentCards({ appointments }: { appointments: AdminAppointmentResponse[] }) {
-  const navigate = useNavigate();
   return (
     <ul className="space-y-3 md:hidden">
       {appointments.map((appointment) => (
         <li key={appointment.id}>
-          <Card
-            hover
-            onClick={() => navigate(`/admin/appointments/${appointment.id}`)}
-            className="p-4"
-            aria-label={`Appointment #${appointment.id}`}
-          >
+          <LinkCard to={`/admin/appointments/${appointment.id}`} className="p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <p className="font-medium text-ink-900">Appointment #{appointment.id}</p>
@@ -76,10 +79,10 @@ function AppointmentCards({ appointments }: { appointments: AdminAppointmentResp
               <StatusBadge status={appointment.status} />
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-ink-700">
-              <p>{appointment.appointmentDate}</p>
+              <p>{formatDate(appointment.appointmentDate)}</p>
               <p>{appointment.startTime} – {appointment.endTime}</p>
               <p>{appointment.specialty}</p>
-              <p className="text-right">${appointment.consultationFeeSnapshot.toFixed(2)}</p>
+              <p className="text-right">{formatCurrency(appointment.consultationFeeSnapshot)}</p>
             </div>
             {appointment.cancellationReason && (
               <p className="mt-2 flex items-start gap-2 rounded-field bg-danger-100/60 p-2 text-sm text-danger-700">
@@ -87,7 +90,7 @@ function AppointmentCards({ appointments }: { appointments: AdminAppointmentResp
                 {appointment.cancellationReason}
               </p>
             )}
-          </Card>
+          </LinkCard>
         </li>
       ))}
     </ul>
@@ -117,7 +120,7 @@ function BookForPatientModal({
   const doctorsQuery = useDoctors(specialtyId);
   const availabilityQuery = useDoctorAvailability(doctorId, form.appointmentDate ?? null);
   const bookingMutation = useCreateAppointmentForPatient();
-  const toast = useToast();
+  // Toasts come from the Sonner-based facade (lib/toast) — no provider needed.
 
   const setField = (field: keyof BookingFormData, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -226,7 +229,7 @@ function BookForPatientModal({
             label="Date"
             type="date"
             value={form.appointmentDate ?? ''}
-            min={new Date().toISOString().slice(0, 10)}
+            min={todayIso()}
             onChange={(e) => setField('appointmentDate', e.target.value)}
             error={errors.appointmentDate}
           />
@@ -253,12 +256,12 @@ function BookForPatientModal({
           ) : availabilityQuery.data && availabilityQuery.data.length > 0 ? (
             <p className="rounded-field border border-success-200 bg-success-100/60 p-3 text-sm text-success-700">
               {availabilityQuery.data.length} window{availabilityQuery.data.length > 1 ? 's' : ''} open
-              for this doctor on {form.appointmentDate}.
+              for this doctor on {formatDate(form.appointmentDate ?? '')}.
             </p>
           ) : (
             <p className="rounded-field border border-warning-100 bg-warning-100/60 p-3 text-sm text-warning-700">
-              No availability windows for this doctor on {form.appointmentDate}. The booking will be
-              rejected unless the window exists.
+              No availability windows for this doctor on {formatDate(form.appointmentDate ?? '')}. The booking
+              will be rejected unless the window exists.
             </p>
           )
         )}
@@ -269,9 +272,9 @@ function BookForPatientModal({
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
           <Button type="submit" disabled={bookingMutation.isPending}>
             {bookingMutation.isPending ? (
-              <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Booking…</span>
+              <span className="flex items-center gap-2"><Spinner className="text-white" /> Booking…</span>
             ) : (
-              <span className="flex items-center gap-2"><CalendarPlus className="h-4 w-4" /> Book Appointment</span>
+              <span className="flex items-center gap-2"><CalendarPlus className="h-4 w-4" aria-hidden="true" /> Book Appointment</span>
             )}
           </Button>
         </div>
@@ -310,7 +313,7 @@ export function AdminAppointmentsPage() {
     <AppShell>
       <div className="mx-auto max-w-5xl">
         <PageHeader
-          icon={<CalendarSearch className="w-8 h-8 text-blue-600" />}
+          icon={<CalendarSearch className="h-6 w-6 text-brand-600" />}
           title="Appointments"
           description="Every visit booked in the clinic. Filter, open one for details and its status history."
         />
@@ -408,38 +411,38 @@ export function AdminAppointmentsPage() {
 
             {/* Desktop table */}
             <Card className="hidden md:block p-6">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-gray-500 border-b border-gray-200">
-                      <th className="py-2 pr-4 font-medium">ID</th>
-                      <th className="py-2 pr-4 font-medium">Patient</th>
-                      <th className="py-2 pr-4 font-medium">Doctor</th>
-                      <th className="py-2 pr-4 font-medium">Specialty</th>
-                      <th className="py-2 pr-4 font-medium">Date</th>
-                      <th className="py-2 pr-4 font-medium">Time</th>
-                      <th className="py-2 pr-4 font-medium">Status</th>
-                      <th className="py-2 pr-4 font-medium">Fee</th>
-                      <th className="py-2 font-medium text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <TableContainer component={Paper} className="!bg-transparent !shadow-none">
+                <Table size="small" aria-label="Clinic appointments">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>ID</TableCell>
+                      <TableCell>Patient</TableCell>
+                      <TableCell>Doctor</TableCell>
+                      <TableCell>Specialty</TableCell>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Time</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Fee</TableCell>
+                      <TableCell align="right">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
                     {rows.map((appointment) => (
-                      <tr key={appointment.id} className="border-b border-gray-100 last:border-0">
-                        <td className="py-3 pr-4 text-gray-900">#{appointment.id}</td>
-                        <td className="py-3 pr-4 text-gray-900">{appointment.patientName}</td>
-                        <td className="py-3 pr-4 text-gray-900">Dr. {appointment.doctorName}</td>
-                        <td className="py-3 pr-4 text-gray-600">{appointment.specialty}</td>
-                        <td className="py-3 pr-4 text-gray-600">{appointment.appointmentDate}</td>
-                        <td className="py-3 pr-4 text-gray-600">{appointment.startTime}–{appointment.endTime}</td>
-                        <td className="py-3 pr-4"><StatusBadge status={appointment.status} /></td>
-                        <td className="py-3 pr-4">
-                          <span className="inline-flex items-center gap-1 text-gray-600">
-                            <IndianRupee className="h-3.5 w-3.5" aria-hidden="true" />
-                            {appointment.consultationFeeSnapshot.toFixed(2)}
+                      <TableRow key={appointment.id} hover>
+                        <TableCell className="text-ink-900">#{appointment.id}</TableCell>
+                        <TableCell className="text-ink-900">{appointment.patientName}</TableCell>
+                        <TableCell className="text-ink-900">Dr. {appointment.doctorName}</TableCell>
+                        <TableCell className="text-ink-600">{appointment.specialty}</TableCell>
+                        <TableCell className="text-ink-600">{formatDate(appointment.appointmentDate)}</TableCell>
+                        <TableCell className="text-ink-600">{appointment.startTime}–{appointment.endTime}</TableCell>
+                        <TableCell><StatusBadge status={appointment.status} /></TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center gap-1 text-ink-600">
+                            <DollarSign className="h-3.5 w-3.5" aria-hidden="true" />
+                            {formatCurrency(appointment.consultationFeeSnapshot)}
                           </span>
-                        </td>
-                        <td className="py-3 text-right">
+                        </TableCell>
+                        <TableCell align="right">
                           <Link
                             to={`/admin/appointments/${appointment.id}`}
                             className="font-medium text-brand-700 hover:underline"
@@ -447,12 +450,12 @@ export function AdminAppointmentsPage() {
                           >
                             View
                           </Link>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Card>
 
             {/* Mobile cards */}
