@@ -67,7 +67,7 @@ export function DoctorDashboardPage() {
               <h3 className="font-medium text-ink-900">Today&rsquo;s appointments</h3>
               <Link
                 to="/doctor/appointments"
-                className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline"
+                className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:text-brand-800 hover:underline"
               >
                 View all
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
