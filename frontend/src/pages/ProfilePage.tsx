@@ -11,7 +11,11 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 
 import { ErrorBox, Skeleton, EmptyState } from '../components/ui/Feedback';
-import { useToast } from '../components/ui/Toast';
+import { toast } from '../lib/toast';
+import { formatDate } from '../lib/dates';
+import { formatCurrency } from '../lib/format';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
 import {
   UserRound, Lock, Pencil, CheckCircle2, X, Eye, EyeOff, Save, Phone, Mail,
   Stethoscope, HeartPulse, ShieldCheck,
@@ -110,35 +114,28 @@ function PasswordInput({
   autoComplete?: string;
 }) {
   const [visible, setVisible] = useState(false);
-  const inputId = `pw-${registration.name}`;
   return (
-    <div className="relative">
-      <label htmlFor={inputId} className="mb-1 block text-sm font-medium text-ink-700">
-        {label}
-      </label>
-      <input
-        id={inputId}
-        type={visible ? 'text' : 'password'}
-        autoComplete={autoComplete}
-        aria-invalid={error ? true : undefined}
-        name={registration.name}
-        ref={registration.ref}
-        onChange={registration.onChange}
-        onBlur={registration.onBlur}
-        className={`w-full rounded-field border bg-white px-3 py-2 pr-10 text-ink-900 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 ${
-          error ? 'border-danger-600' : 'border-ink-200'
-        }`}
-      />
-      {error && <p className="mt-1 text-sm text-danger-700">{error}</p>}
-      <button
-        type="button"
-        onClick={() => setVisible((v) => !v)}
-        aria-label={visible ? 'Hide password' : 'Show password'}
-        className="absolute right-2 top-9 p-1 text-ink-400 hover:text-ink-600"
-      >
-        {visible ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
-      </button>
-    </div>
+    <Input
+      label={label}
+      type={visible ? 'text' : 'password'}
+      autoComplete={autoComplete}
+      error={error}
+      {...registration}
+      endAdornment={
+        <InputAdornment position="end">
+          <IconButton
+            size="small"
+            edge="end"
+            onClick={() => setVisible((v) => !v)}
+            aria-label={visible ? 'Hide password' : 'Show password'}
+          >
+            {visible
+              ? <EyeOff className="h-4 w-4" aria-hidden="true" />
+              : <Eye className="h-4 w-4" aria-hidden="true" />}
+          </IconButton>
+        </InputAdornment>
+      }
+    />
   );
 }
 
@@ -198,7 +195,7 @@ function FormActions({ onCancel, saving, onCancelLabel = 'Cancel' }: { onCancel:
 // ------------------------------------------------------------------
 
 export function ProfilePage() {
-  const toast = useToast();
+  // Toasts come from the Sonner-based facade (lib/toast) — no provider needed.
   const { data: profile, isLoading, isError, error, refetch } = useMyProfile();
 
   const isPatient = Boolean(profile?.patient);
@@ -441,7 +438,7 @@ export function ProfilePage() {
               </form>
             ) : (
               <dl>
-                <InfoRow label="Date of birth" value={profile.patient.dateOfBirth} />
+                <InfoRow label="Date of birth" value={formatDate(profile.patient.dateOfBirth)} />
                 <InfoRow
                   label="Address"
                   value={
@@ -483,21 +480,14 @@ export function ProfilePage() {
             />
             {editingDoctor ? (
               <form onSubmit={doctorForm.handleSubmit(onDoctorSubmit)} className="space-y-4">
-                <div>
-                  <label htmlFor="doctor-bio" className="mb-1 block text-sm font-medium text-ink-700">
-                    Bio
-                  </label>
-                  <textarea
-                    id="doctor-bio"
-                    rows={4}
-                    {...doctorForm.register('bio')}
-                    className="w-full rounded-field border border-ink-200 bg-white px-3 py-2 text-ink-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/40"
-                    placeholder="Tell patients about your practice"
-                  />
-                  {doctorForm.formState.errors.bio && (
-                    <p className="mt-1 text-sm text-danger-700">{doctorForm.formState.errors.bio.message}</p>
-                  )}
-                </div>
+                <Input
+                  label="Bio"
+                  multiline
+                  minRows={4}
+                  placeholder="Tell patients about your practice"
+                  {...doctorForm.register('bio')}
+                  error={doctorForm.formState.errors.bio?.message}
+                />
                 <Input label="Profile picture URL" {...doctorForm.register('profilePictureUrl')} error={doctorForm.formState.errors.profilePictureUrl?.message} placeholder="https://…" />
                 {doctorError && <ErrorBox message={doctorError.message} />}
                 <FormActions onCancel={() => setEditingDoctor(false)} saving={updateDoctor.isPending} />
@@ -507,7 +497,7 @@ export function ProfilePage() {
                 <InfoRow label="Bio" value={profile.doctor.bio || '—'} />
                 <InfoRow label="Specialty (managed by clinic administration)" value={profile.doctor.specialtyName} />
                 <InfoRow label="Medical license (managed by clinic administration)" value={profile.doctor.medicalLicenseNumber} />
-                <InfoRow label="Consultation fee (managed by clinic administration)" value={`$${profile.doctor.consultationFee.toFixed(2)}`} />
+                <InfoRow label="Consultation fee (managed by clinic administration)" value={formatCurrency(profile.doctor.consultationFee)} />
                 <InfoRow label="Status (managed by clinic administration)" value={profile.doctor.active ? 'Active' : 'Inactive'} />
               </dl>
             )}
