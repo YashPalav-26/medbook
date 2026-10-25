@@ -8,9 +8,18 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
-import { PageHeader, ActiveBadge, EmptyState, ErrorBox } from '../../components/admin/AdminUi';
+import { PageHeader, ActiveBadge, EmptyState, ErrorBox, Spinner } from '../../components/admin/AdminUi';
 import { toApiError } from '../../api/client';
-import { Stethoscope, PlusCircle, Loader2, Ban, Pencil } from 'lucide-react';
+import { Stethoscope, PlusCircle, Ban, Pencil } from 'lucide-react';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import type { SpecialtyResponse } from '../../types/appointment';
 
 const specialtySchema = z.object({
@@ -95,7 +104,7 @@ export function SpecialtiesAdminPage() {
     <AppShell>
       <div>
         <PageHeader
-          icon={<Stethoscope className="w-8 h-8 text-blue-600" />}
+          icon={<Stethoscope className="h-6 w-6 text-brand-600" />}
           title="Manage Specialties"
           description="Create, rename or retire the medical specialties offered for booking."
         />
@@ -116,47 +125,51 @@ export function SpecialtiesAdminPage() {
             <ErrorBox message={toApiError(specialtiesQuery.error).message} />
           ) : specialties.length === 0 ? (
             <EmptyState
-              icon={<Stethoscope className="w-8 h-8 text-gray-400" />}
+              icon={<Stethoscope className="h-6 w-6 text-ink-300" />}
               message="No specialties yet. Create the first one so doctors can be assigned."
             />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-gray-500 border-b border-gray-200">
-                    <th className="py-2 pr-4 font-medium">Name</th>
-                    <th className="py-2 pr-4 font-medium">Description</th>
-                    <th className="py-2 pr-4 font-medium">Status</th>
-                    <th className="py-2 font-medium text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <TableContainer component={Paper} className="overflow-x-auto !bg-transparent !shadow-none">
+              <Table size="small" aria-label="Specialties">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Description</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {specialties.map((specialty) => (
-                    <tr key={specialty.id} className="border-b border-gray-100 last:border-0">
-                      <td className="py-3 pr-4 font-medium text-gray-900">{specialty.name}</td>
-                      <td className="py-3 pr-4 text-gray-600">{specialty.description ?? '—'}</td>
-                      <td className="py-3 pr-4"><ActiveBadge active={specialty.active} /></td>
-                      <td className="py-3 text-right whitespace-nowrap">
-                        <Button variant="outline" className="mr-2 !py-1.5 !px-3 text-sm" onClick={() => openEdit(specialty)} aria-label={`Edit ${specialty.name}`}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
+                    <TableRow key={specialty.id} hover>
+                      <TableCell className="!font-medium text-ink-900">{specialty.name}</TableCell>
+                      <TableCell className="text-ink-600">{specialty.description ?? '—'}</TableCell>
+                      <TableCell><ActiveBadge active={specialty.active} /></TableCell>
+                      <TableCell align="right" className="whitespace-nowrap">
+                        <Tooltip title={`Edit ${specialty.name}`}>
+                          <IconButton size="small" onClick={() => openEdit(specialty)} aria-label={`Edit ${specialty.name}`}>
+                            <Pencil className="w-4 h-4" />
+                          </IconButton>
+                        </Tooltip>
                         {specialty.active && (
-                          <Button
-                            variant="outline"
-                            className="!py-1.5 !px-3 text-sm text-red-600 hover:bg-red-50"
-                            onClick={() => deactivate(specialty)}
-                            disabled={deactivateMutation.isPending}
-                            aria-label={`Deactivate ${specialty.name}`}
-                          >
-                            <Ban className="w-4 h-4" />
-                          </Button>
+                          <Tooltip title={`Deactivate ${specialty.name}`}>
+                            <IconButton
+                              size="small"
+                              onClick={() => deactivate(specialty)}
+                              disabled={deactivateMutation.isPending}
+                              aria-label={`Deactivate ${specialty.name}`}
+                              className="text-danger-700 hover:bg-danger-100"
+                            >
+                              <Ban className="w-4 h-4" />
+                            </IconButton>
+                          </Tooltip>
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
+            </TableContainer>
           )}
         </Card>
 
@@ -179,7 +192,7 @@ export function SpecialtiesAdminPage() {
               <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                 {createMutation.isPending || updateMutation.isPending ? (
-                  <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Saving...</span>
+                  <span className="flex items-center gap-2"><Spinner className="text-white" /> Saving...</span>
                 ) : editing ? 'Save Changes' : 'Create Specialty'}
               </Button>
             </div>
