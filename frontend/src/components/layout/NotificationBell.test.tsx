@@ -86,8 +86,11 @@ describe('NotificationBell — rendering', () => {
     mockedApi.getUnreadNotificationCount.mockResolvedValue(3);
     renderBell();
 
+    // MUI Badge renders its span before the count resolves (hidden/empty at 0);
+    // wait for the count, then assert the visible badge content.
     const badge = await screen.findByTestId('unread-badge');
-    expect(badge).toHaveTextContent('3');
+    await waitFor(() => expect(badge).toHaveTextContent('3'));
+    expect(badge).not.toHaveClass('MuiBadge-invisible');
     expect(screen.getByRole('button', { name: /3 unread/i })).toBeInTheDocument();
   });
 
@@ -166,13 +169,14 @@ describe('NotificationBell — interactions', () => {
     renderBell();
 
     const badge = await screen.findByTestId('unread-badge');
-    expect(badge).toHaveTextContent('2');
+    await waitFor(() => expect(badge).toHaveTextContent('2'));
 
     await user.click(screen.getByRole('button', { name: /notifications/i }));
     await user.click(await screen.findByTestId('mark-all-read'));
 
     await waitFor(() => expect(mockedApi.markAllNotificationsRead).toHaveBeenCalled());
-    await waitFor(() => expect(screen.queryByTestId('unread-badge')).not.toBeInTheDocument());
+    // The badge span stays mounted but becomes invisible (and empty) at 0 unread.
+    await waitFor(() => expect(badge).toHaveClass('MuiBadge-invisible'));
     // Every row is now marked read.
     await waitFor(() => {
       screen.getAllByTestId('notification-item').forEach((item) => {
