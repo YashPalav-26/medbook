@@ -211,7 +211,7 @@ export function DoctorsAdminPage() {
                               onClick={() => deactivate(doctor)}
                               disabled={deactivateMutation.isPending}
                               aria-label={`Deactivate Dr. ${doctor.lastName}`}
-                              className="text-danger-700 hover:bg-danger-100"
+                              color="error"
                             >
                               <Ban className="w-4 h-4" />
                             </IconButton>
@@ -229,7 +229,7 @@ export function DoctorsAdminPage() {
 
       {modalOpen && !editing && (
         <Modal title="New Doctor" onClose={() => setModalOpen(false)}>
-          <form onSubmit={createForm.handleSubmit(submitCreate)} className="space-y-4">
+          <form onSubmit={createForm.handleSubmit(submitCreate)} className="flex flex-col gap-4">
             <p className="text-sm text-ink-600 bg-info-100/60 border border-info-100 rounded-field p-3">
               Creating a doctor also creates their <strong>login account</strong> with the
               DOCTOR role. They will sign in with the email and password you set here.
@@ -265,7 +265,7 @@ export function DoctorsAdminPage() {
 
       {modalOpen && editing && (
         <Modal title={`Edit Dr. ${editing.lastName}`} onClose={() => setModalOpen(false)}>
-          <form onSubmit={editForm.handleSubmit(submitEdit)} className="space-y-4">
+          <form onSubmit={editForm.handleSubmit(submitEdit)} className="flex flex-col gap-4">
             <p className="text-sm text-ink-600">
               Editing the profile of <strong>Dr. {editing.firstName} {editing.lastName}</strong>
               {' '}({editing.email}). Login credentials are managed separately, not here.
