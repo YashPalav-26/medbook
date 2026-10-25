@@ -133,14 +133,18 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
      *
      * <p>{@code JOIN FETCH} is used because both relationships are mapped
      * {@code FetchType.LAZY} and Open Session In View is disabled
-     * ({@code spring.jpa.open-in-view=false}). Fetching them here means the caller can
-     * safely read the participants' IDs after the transaction has ended, which is what
-     * the REST response mapper needs.</p>
+     * ({@code spring.jpa.open-in-view=false}). Fetching them — and their user accounts,
+     * whose names the response carries — here means the caller can safely read the
+     * participants after the transaction has ended, which is what the REST response
+     * mapper needs.</p>
      *
      * @param id the appointment's ID
-     * @return the appointment with patient and doctor initialized, or empty when not found
+     * @return the appointment with patient, doctor and their accounts initialized, or empty when not found
      */
-    @Query("SELECT a FROM Appointment a JOIN FETCH a.patient JOIN FETCH a.doctor WHERE a.id = :id")
+    @Query("SELECT a FROM Appointment a " +
+           "JOIN FETCH a.patient p JOIN FETCH p.user " +
+           "JOIN FETCH a.doctor d JOIN FETCH d.user " +
+           "WHERE a.id = :id")
     Optional<Appointment> findByIdWithPatientAndDoctor(@Param("id") Long id);
 
     /**
@@ -153,10 +157,12 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
      *
      * @param id        the appointment's ID
      * @param patientId the patient's ID (the owning side, not the user's ID)
-     * @return the appointment with patient and doctor initialized, or empty when not owned
+     * @return the appointment with patient, doctor and their accounts initialized, or empty when not owned
      */
-    @Query("SELECT a FROM Appointment a JOIN FETCH a.patient JOIN FETCH a.doctor " +
-           "WHERE a.id = :id AND a.patient.id = :patientId")
+    @Query("SELECT a FROM Appointment a " +
+           "JOIN FETCH a.patient p JOIN FETCH p.user " +
+           "JOIN FETCH a.doctor d JOIN FETCH d.user " +
+           "WHERE a.id = :id AND p.id = :patientId")
     Optional<Appointment> findByIdAndPatientIdWithParticipants(
             @Param("id") Long id, @Param("patientId") Long patientId);
 
@@ -166,10 +172,12 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
      *
      * @param id       the appointment's ID
      * @param doctorId the doctor's ID (the assigned side, not the user's ID)
-     * @return the appointment with patient and doctor initialized, or empty when not assigned
+     * @return the appointment with patient, doctor and their accounts initialized, or empty when not assigned
      */
-    @Query("SELECT a FROM Appointment a JOIN FETCH a.patient JOIN FETCH a.doctor " +
-           "WHERE a.id = :id AND a.doctor.id = :doctorId")
+    @Query("SELECT a FROM Appointment a " +
+           "JOIN FETCH a.patient p JOIN FETCH p.user " +
+           "JOIN FETCH a.doctor d JOIN FETCH d.user " +
+           "WHERE a.id = :id AND d.id = :doctorId")
     Optional<Appointment> findByIdAndDoctorIdWithParticipants(
             @Param("id") Long id, @Param("doctorId") Long doctorId);
 
@@ -183,7 +191,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
      * @param userId the owning patient's user ID
      * @return the patient's appointments, newest first
      */
-    @Query("SELECT a FROM Appointment a JOIN FETCH a.patient p JOIN FETCH a.doctor " +
+    @Query("SELECT a FROM Appointment a " +
+           "JOIN FETCH a.patient p JOIN FETCH p.user " +
+           "JOIN FETCH a.doctor d JOIN FETCH d.user " +
            "WHERE p.user.id = :userId ORDER BY a.appointmentDate DESC, a.startTime DESC")
     List<Appointment> findAllByPatientUserId(@Param("userId") Long userId);
 
@@ -193,7 +203,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
      * @param userId the assigned doctor's user ID
      * @return the doctor's appointments, newest first
      */
-    @Query("SELECT a FROM Appointment a JOIN FETCH a.patient JOIN FETCH a.doctor d " +
+    @Query("SELECT a FROM Appointment a " +
+           "JOIN FETCH a.patient p JOIN FETCH p.user " +
+           "JOIN FETCH a.doctor d JOIN FETCH d.user " +
            "WHERE d.user.id = :userId ORDER BY a.appointmentDate DESC, a.startTime DESC")
     List<Appointment> findAllByDoctorUserId(@Param("userId") Long userId);
 
