@@ -110,5 +110,7 @@ export { SkeletonLine as Skeleton };
 
 /** Small inline spinner for buttons and inline waits (MUI CircularProgress). */
 export function Spinner({ className = '' }: { className?: string }) {
-  return <CircularProgress size={16} className={className} aria-hidden="true" />;
+  // `inherit` makes the ring take the surrounding button's label colour — inside
+  // a solid teal button that is white, without per-call-site colour classes.
+  return <CircularProgress size={16} color="inherit" className={className} aria-hidden="true" />;
 }
