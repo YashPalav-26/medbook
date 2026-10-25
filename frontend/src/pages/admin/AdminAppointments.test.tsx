@@ -3,12 +3,14 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
 import { AdminAppointmentsPage } from './AdminAppointmentsPage';
 import { AdminAppointmentDetailPage } from './AdminAppointmentDetailPage';
 import { AdminDashboardPage } from './AdminDashboardPage';
-import { ToastProvider } from '../../components/ui/Toast';
 import * as adminApi from '../../api/adminApi';
 import * as appointmentApi from '../../api/appointmentApi';
+import { pickFromSelect } from '../../test/mui';
+import { formatDate } from '../../lib/dates';
 import type { AdminAppointmentResponse, AdminAppointmentDetailResponse } from '../../types/appointment';
 
 // The pages under test call the real API module; every test controls what it returns.
@@ -111,8 +113,9 @@ function renderWithRoutes(ui: React.ReactElement, initialPath: string) {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <MemoryRouter initialEntries={[initialPath]}>
+      <MemoryRouter initialEntries={[initialPath]}>
+          {/* Sonner's Toaster stands in for the one App.tsx mounts. */}
+          <Toaster position="bottom-right" />
           <Routes>
             <Route path="/admin/appointments" element={ui} />
             <Route path="/admin/appointments/:id" element={ui} />
@@ -120,7 +123,6 @@ function renderWithRoutes(ui: React.ReactElement, initialPath: string) {
             <Route path="*" element={<div>NOT FOUND</div>} />
           </Routes>
         </MemoryRouter>
-      </ToastProvider>
     </QueryClientProvider>,
   );
 }
@@ -168,7 +170,9 @@ beforeEach(() => {
   mockedAppointmentApi.createAppointmentForPatient.mockResolvedValue({
     id: 9001,
     patientId: 11,
+    patientName: 'John Reed',
     doctorId: 21,
+    doctorName: 'Sarah Wells',
     appointmentDate: '2026-09-28',
     startTime: '10:00',
     endTime: '10:30',
@@ -209,10 +213,10 @@ describe('AdminAppointmentsPage', () => {
     expect(within(body).getByText('Mary Sue')).toBeInTheDocument();
     expect(within(body).getByText('Dr. Sarah Wells')).toBeInTheDocument();
     expect(within(body).getAllByText('Cardiology')).toHaveLength(1);
-    expect(within(body).getByText('2026-09-28')).toBeInTheDocument();
-    // StatusBadge renders the raw enum name (NO_SHOW → "NO SHOW"), never re-cased.
-    expect(within(body).getAllByText('SCHEDULED')).toHaveLength(1);
-    expect(within(body).getAllByText('CANCELLED')).toHaveLength(1);
+    expect(within(body).getByText(formatDate('2026-09-28'))).toBeInTheDocument();
+    // Status chips render humanized labels through MUI Chip (never color alone).
+    expect(within(body).getAllByText('Scheduled')).toHaveLength(1);
+    expect(within(body).getAllByText('Cancelled')).toHaveLength(1);
   });
 
   it('shows a loading skeleton first', async () => {
@@ -236,11 +240,14 @@ describe('AdminAppointmentsPage', () => {
   });
 
   it('sends the date filter to the backend', async () => {
-    const user = userEvent.setup();
     renderWithRoutes(<AdminAppointmentsPage />, '/admin/appointments');
     await screen.findByText('John Reed');
 
-    await user.type(screen.getByLabelText('Filter by date'), '2026-09-28');
+    // fireEvent.change: userEvent.type does not commit into a controlled
+    // <input type="date"> under jsdom (the suite uses this idiom elsewhere too).
+    fireEvent.change(screen.getByLabelText('Filter by date'), {
+      target: { value: '2026-09-28' },
+    });
 
     await waitFor(() =>
       expect(mockedApi.listAdminAppointments).toHaveBeenCalledWith(
@@ -254,7 +261,8 @@ describe('AdminAppointmentsPage', () => {
     renderWithRoutes(<AdminAppointmentsPage />, '/admin/appointments');
     await screen.findByText('John Reed');
 
-    await user.selectOptions(screen.getByLabelText('Filter by status'), 'CONFIRMED');
+    // The status filter's items are humanized like the page's own option labels.
+    await pickFromSelect(user, screen, 'Filter by status', 'CONFIRMED');
 
     await waitFor(() =>
       expect(mockedApi.listAdminAppointments).toHaveBeenCalledWith(
@@ -268,10 +276,7 @@ describe('AdminAppointmentsPage', () => {
     renderWithRoutes(<AdminAppointmentsPage />, '/admin/appointments');
     await screen.findByText('John Reed');
 
-    await user.selectOptions(
-      await screen.findByLabelText('Filter by doctor'),
-      await screen.findByRole('option', { name: /Dr. Sarah Wells/ }),
-    );
+    await pickFromSelect(user, screen, 'Filter by doctor', /Dr\. Sarah Wells/);
 
     await waitFor(() =>
       expect(mockedApi.listAdminAppointments).toHaveBeenCalledWith(
@@ -285,7 +290,9 @@ describe('AdminAppointmentsPage', () => {
     renderWithRoutes(<AdminAppointmentsPage />, '/admin/appointments');
     await screen.findByText('John Reed');
 
-    await user.type(screen.getByLabelText('Filter by date'), '2026-09-28');
+    fireEvent.change(screen.getByLabelText('Filter by date'), {
+      target: { value: '2026-09-28' },
+    });
     await waitFor(() =>
       expect(mockedApi.listAdminAppointments).toHaveBeenCalledWith(
         expect.objectContaining({ date: '2026-09-28' }),
@@ -356,9 +363,9 @@ describe('AdminAppointmentDetailPage', () => {
     renderWithRoutes(<AdminAppointmentDetailPage />, '/admin/appointments/101');
 
     expect(await screen.findByText('Status history')).toBeInTheDocument();
-    // Timeline entries render the raw status names through StatusBadge.
-    expect(screen.getAllByText('SCHEDULED').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('CONFIRMED').length).toBeGreaterThan(0);
+    // Timeline entries render humanized status chips through StatusBadge.
+    expect(screen.getAllByText('Scheduled').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Confirmed').length).toBeGreaterThan(0);
     expect(screen.getByText('Appointment created')).toBeInTheDocument();
     expect(screen.getByText(/by John Reed/)).toBeInTheDocument();
     expect(screen.getByText(/by Dr Sarah Wells/)).toBeInTheDocument();
@@ -461,23 +468,23 @@ describe('AdminDashboardPage (real metrics)', () => {
     // The two big figures — scoped by their unique supporting captions because bare
     // numbers ("2") also occur in the per-status list.
     expect(await screen.findByText('appointments booked')).toBeInTheDocument();
-    expect(screen.getByText('appointments all-time')).toBeInTheDocument();
+    expect(screen.getByText('appointments booked')).toBeInTheDocument();
     const bigNumbers = screen
       .getAllByText(/^(2|7)$/)
       .filter((el) => el.className.includes('font-display'));
     expect(bigNumbers.map((el) => el.textContent)).toEqual(expect.arrayContaining(['2', '7']));
-    expect(screen.getByText('Today (2026-09-25)')).toBeInTheDocument();
+    expect(screen.getByText(formatDate('2026-09-25'))).toBeInTheDocument();
   });
 
   it('shows the per-status breakdown', async () => {
     renderWithRoutes(<AdminDashboardPage />, '/admin');
 
     const section = screen.getByLabelText('Clinic overview');
-    await within(section).findByText('appointments all-time');
-    // StatusBadge shows the raw enum name; the count sits in the same list item.
-    expect(within(section).getByText('SCHEDULED').closest('li')).toHaveTextContent('3');
-    expect(within(section).getByText('CONFIRMED').closest('li')).toHaveTextContent('1');
-    expect(within(section).getByText('NO SHOW').closest('li')).toHaveTextContent('0');
+    await within(section).findByText('appointments booked');
+    // Status chips show humanized labels; the count sits in the same list item.
+    expect(within(section).getByText('Scheduled').closest('li')).toHaveTextContent('3');
+    expect(within(section).getByText('Confirmed').closest('li')).toHaveTextContent('1');
+    expect(within(section).getByText('No show').closest('li')).toHaveTextContent('0');
   });
 
   it('shows an error box when the overview cannot be loaded', async () => {
@@ -518,13 +525,12 @@ describe('AdminAppointmentsPage — book for a patient (support path)', () => {
     await user.click(screen.getByRole('button', { name: /book for a patient/i }));
     const dialog = await screen.findByRole('dialog', { name: /book for a patient/i });
 
-    // Wait for the async patient list to render its option before changing the select.
-    await within(dialog).findByText(/John Reed \(john@medbook\.test\)/);
-    fireEvent.change(within(dialog).getByLabelText('Patient'), { target: { value: '11' } });
-    fireEvent.change(within(dialog).getByLabelText('Specialty'), { target: { value: '10' } });
+    // MUI renders the open listbox in a body-level portal: pickFromSelect
+    // waits for the async options itself (no pre-wait inside the dialog DOM).
+    await pickFromSelect(user, within(dialog), 'Patient', /John Reed \(john@medbook\.test\)/);
+    await pickFromSelect(user, within(dialog), 'Specialty', 'Cardiology');
     // Doctor options arrive after the specialty is chosen.
-    await within(dialog).findByText('Dr. Sarah Wells');
-    fireEvent.change(within(dialog).getByLabelText('Doctor'), { target: { value: '21' } });
+    await pickFromSelect(user, within(dialog), 'Doctor', /Dr\. Sarah Wells/);
     fireEvent.change(within(dialog).getByLabelText('Date'), { target: { value: '2026-09-28' } });
     fireEvent.change(within(dialog).getByLabelText('Start'), { target: { value: '10:00' } });
     fireEvent.change(within(dialog).getByLabelText('End'), { target: { value: '10:30' } });
@@ -554,11 +560,9 @@ describe('AdminAppointmentsPage — book for a patient (support path)', () => {
     await user.click(screen.getByRole('button', { name: /book for a patient/i }));
     const dialog = await screen.findByRole('dialog', { name: /book for a patient/i });
 
-    await within(dialog).findByText(/John Reed \(john@medbook\.test\)/);
-    fireEvent.change(within(dialog).getByLabelText('Patient'), { target: { value: '11' } });
-    fireEvent.change(within(dialog).getByLabelText('Specialty'), { target: { value: '10' } });
-    await within(dialog).findByText('Dr. Sarah Wells');
-    fireEvent.change(within(dialog).getByLabelText('Doctor'), { target: { value: '21' } });
+    await pickFromSelect(user, within(dialog), 'Patient', /John Reed \(john@medbook\.test\)/);
+    await pickFromSelect(user, within(dialog), 'Specialty', 'Cardiology');
+    await pickFromSelect(user, within(dialog), 'Doctor', /Dr\. Sarah Wells/);
     fireEvent.change(within(dialog).getByLabelText('Date'), { target: { value: '2026-09-28' } });
     fireEvent.change(within(dialog).getByLabelText('Start'), { target: { value: '10:00' } });
     fireEvent.change(within(dialog).getByLabelText('End'), { target: { value: '10:30' } });
