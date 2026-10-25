@@ -87,9 +87,13 @@ export function useSpecialties() {
 export function useDoctors(specialtyId: number | null) {
   const { isAuthenticated } = useAuth();
 
+  // An empty <option> registers as NaN with valueAsNumber: treat any non-finite
+  // id as "no specialty" instead of firing a request keyed on NaN.
+  const validSpecialtyId = specialtyId !== null && Number.isFinite(specialtyId) ? specialtyId : null;
+
   return useQuery({
-    queryKey: ['doctors', specialtyId],
-    queryFn: () => appointmentApi.getDoctors(specialtyId ?? undefined),
+    queryKey: ['doctors', validSpecialtyId],
+    queryFn: () => appointmentApi.getDoctors(validSpecialtyId ?? undefined),
     enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000,
   });
@@ -103,10 +107,12 @@ export function useDoctors(specialtyId: number | null) {
 export function useDoctorAvailability(doctorId: number | null, date: string | null) {
   const { isAuthenticated } = useAuth();
 
+  const validDoctorId = doctorId !== null && Number.isFinite(doctorId) ? doctorId : null;
+
   return useQuery({
-    queryKey: ['doctorAvailability', doctorId, date],
-    queryFn: () => appointmentApi.getDoctorAvailability(doctorId!, date ?? undefined),
-    enabled: isAuthenticated && doctorId !== null,
+    queryKey: ['doctorAvailability', validDoctorId, date],
+    queryFn: () => appointmentApi.getDoctorAvailability(validDoctorId!, date ?? undefined),
+    enabled: isAuthenticated && validDoctorId !== null,
     staleTime: 60 * 1000,
   });
 }
