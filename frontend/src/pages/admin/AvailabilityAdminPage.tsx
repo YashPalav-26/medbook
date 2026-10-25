@@ -239,7 +239,7 @@ export function AvailabilityAdminPage() {
                                   onClick={() => close(window)}
                                   disabled={deactivateMutation.isPending}
                                   aria-label="Close window"
-                                  className="text-danger-700 hover:bg-danger-100"
+                                  color="error"
                                 >
                                   <Ban className="w-4 h-4" />
                                 </IconButton>
@@ -268,7 +268,7 @@ export function AvailabilityAdminPage() {
 
       {modalOpen && (
         <Modal title={editing ? 'Edit Window' : 'New Availability Window'} onClose={() => setModalOpen(false)}>
-          <form onSubmit={form.handleSubmit(submit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(submit)} className="flex flex-col gap-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Select label="Day" {...form.register('dayOfWeek', { valueAsNumber: true })} error={form.formState.errors.dayOfWeek?.message}>
                 <option value="">Pick a day...</option>
