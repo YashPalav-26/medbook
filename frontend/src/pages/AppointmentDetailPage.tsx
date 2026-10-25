@@ -170,7 +170,7 @@ export function AppointmentDetailPage() {
   return (
     <AppShell title={`Appointment #${appointment.id}`}>
       <div className="mb-6">
-        <Link to="/appointments/me" className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline">
+        <Link to="/appointments/me" className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:text-brand-800 hover:underline">
           <Calendar className="h-4 w-4" aria-hidden="true" />
           Back to My Appointments
         </Link>
@@ -280,12 +280,11 @@ export function AppointmentDetailPage() {
             )}
             {canCancel && (
               <Button
-                variant="outline"
+                variant="dangerOutline"
                 onClick={() => {
                   reset();
                   setShowCancelForm(true);
                 }}
-                className="border-danger-300 text-danger-700 hover:bg-danger-100/60"
               >
                 <XCircle className="h-4 w-4" aria-hidden="true" />
                 Cancel Appointment
@@ -302,7 +301,7 @@ export function AppointmentDetailPage() {
           description="This releases the time slot. The appointment cannot be re-opened afterwards."
           onClose={() => setShowCancelForm(false)}
         >
-          <form onSubmit={handleSubmit(onCancelSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onCancelSubmit)} className="flex flex-col gap-4">
             <Input
               label="Cancellation reason"
               {...register('cancellationReason')}
@@ -325,8 +324,8 @@ export function AppointmentDetailPage() {
               </Button>
               <Button
                 type="submit"
+                variant="danger"
                 disabled={cancelMutation.isPending}
-                className="bg-danger-600 hover:bg-danger-700"
               >
                 {cancelMutation.isPending ? (
                   <>
