@@ -60,11 +60,15 @@
   --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
 }
 
-/* Base layer — body, focus, reduced motion */
+/* Base layer — body, focus, reduced motion.
+
+   Note: Tailwind's preflight already resets margins/padding/box-sizing. A
+   blanket `* { margin: 0; padding: 0 }` here is deliberately NOT repeated —
+   it competes with MUI's own element rules (notched-outline legend, outlined
+   fieldset) and is what knocked out the gap the floating label uses to sit
+   clear of the border. */
 @layer base {
   * {
-    margin: 0;
-    padding: 0;
     box-sizing: border-box;
   }
 
