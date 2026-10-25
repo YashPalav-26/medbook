@@ -12,9 +12,11 @@ import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { StatusBadge, EmptyState, ErrorBox, Skeleton, Spinner } from '../../components/ui/Feedback';
-import { useToast } from '../../components/ui/Toast';
+import { toast } from '../../lib/toast';
+import { formatDate, formatDateTime } from '../../lib/dates';
+import { formatCurrency } from '../../lib/format';
 import {
-  Calendar, CalendarSearch, Clock, IndianRupee, Stethoscope, User, XCircle,
+  Calendar, CalendarSearch, Clock, DollarSign, Stethoscope, User, XCircle,
   AlertCircle, History,
 } from 'lucide-react';
 
@@ -59,7 +61,7 @@ function HistoryItem({
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={status} />
-          <span className="text-sm text-ink-500">{new Date(changedAt).toLocaleString()}</span>
+          <span className="text-sm text-ink-500">{formatDateTime(changedAt)}</span>
         </div>
         {notes && <p className="mt-1 break-words text-sm text-ink-700">{notes}</p>}
         <p className="mt-0.5 text-xs text-ink-400">
@@ -89,7 +91,7 @@ export function AdminAppointmentDetailPage() {
     defaultValues: { cancellationReason: '' },
   });
 
-  const toast = useToast();
+  // Toasts come from the Sonner-based facade (lib/toast) — no provider needed.
 
   const onCancelSubmit = async (data: CancelFormData) => {
     if (!appointmentId) return;
@@ -163,7 +165,7 @@ export function AdminAppointmentDetailPage() {
         </div>
 
         <PageHeader
-          icon={<CalendarSearch className="w-8 h-8 text-blue-600" />}
+          icon={<CalendarSearch className="h-6 w-6 text-brand-600" />}
           title={`Appointment #${appointment.id}`}
           description="Support view: participants, visit details, audit trail."
         />
@@ -210,7 +212,7 @@ export function AdminAppointmentDetailPage() {
                   <p className="flex items-center gap-1.5 text-xs text-ink-500">
                     <Calendar className="h-3.5 w-3.5" aria-hidden="true" /> Date
                   </p>
-                  <p className="mt-0.5 font-medium text-ink-900">{appointment.appointmentDate}</p>
+                  <p className="mt-0.5 font-medium text-ink-900">{formatDate(appointment.appointmentDate)}</p>
                 </div>
                 <div className="rounded-field border border-ink-100 p-3">
                   <p className="flex items-center gap-1.5 text-xs text-ink-500">
@@ -229,11 +231,11 @@ export function AdminAppointmentDetailPage() {
               {/* Fee */}
               <div className="flex items-center justify-between rounded-field border border-brand-100 bg-brand-50 p-4">
                 <p className="flex items-center gap-2 text-sm font-medium text-ink-700">
-                  <IndianRupee className="h-4 w-4 text-brand-600" aria-hidden="true" />
+                  <DollarSign className="h-4 w-4 text-brand-600" aria-hidden="true" />
                   Consultation fee (locked at booking)
                 </p>
                 <p className="font-display text-2xl font-semibold text-brand-700">
-                  ${appointment.consultationFeeSnapshot.toFixed(2)}
+                  {formatCurrency(appointment.consultationFeeSnapshot)}
                 </p>
               </div>
 
