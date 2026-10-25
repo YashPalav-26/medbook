@@ -15,13 +15,12 @@ import java.util.Optional;
  * {@link JwtAuthenticationToken} in the {@link SecurityContextHolder}. This provider reads
  * it, so services never have to trust a user ID sent in a request body.</p>
  *
- * <h3>Integration point for future steps</h3>
- * <p>{@code appointment_status_history.changed_by_user_id} is currently written as
- * {@code NULL} because no caller identity existed before this step. Future appointment
- * status changes (cancellation, confirmation) can now obtain the real caller with
- * {@code currentUserProvider.requireCurrentUserId()} and pass it through to
- * {@code AppointmentStatusHistory}. That wiring is deliberately not done yet; it is a small
- * change to {@code AppointmentService} left for the step that needs it.</p>
+ * <h3>Where it is used</h3>
+ * <p>{@code AppointmentService} resolves the real caller through this provider and records
+ * them in {@code appointment_status_history.changed_by_user_id} for every status change
+ * (creation, cancellation, confirmation, completion, no-show). A {@code NULL} actor now
+ * only occurs for context-free internal/test calls that legitimately run without
+ * authentication.</p>
  */
 @Component
 public class CurrentUserProvider {
