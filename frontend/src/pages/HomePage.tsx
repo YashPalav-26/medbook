@@ -1,9 +1,8 @@
-import { useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import gsap from 'gsap';
 import { Brand } from '../components/ui/Brand';
-import { Button } from '../components/ui/Button';
+import { ButtonLink } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { StatusBadge } from '../components/ui/Feedback';
+import { formatCurrency } from '../lib/format';
 import {
   CalendarPlus, Stethoscope, CalendarClock, ShieldCheck, ArrowRight, CheckCircle2,
 } from 'lucide-react';
@@ -53,42 +52,21 @@ const STEPS = [
 ];
 
 export function HomePage() {
-  // One subtle GSAP timeline on the hero only — eyebrow, headline, copy, buttons
-  // rise in sequence. Purely presentational, runs once, and prefers-reduced-motion
-  // users skip it entirely. No scroll-triggered effects; the rest of the page is static.
-  const heroRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // jsdom (and very old browsers) lack matchMedia; treat that as "motion allowed".
-    const prefersReducedMotion =
-      typeof window.matchMedia === 'function'
-      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!heroRef.current || prefersReducedMotion) return;
-
-    const elements = heroRef.current.querySelectorAll('[data-hero]');
-    const tween = gsap.fromTo(
-      elements,
-      { opacity: 0, y: 24 },
-      { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out', stagger: 0.12 },
-    );
-    return () => {
-      tween.kill();
-    };
-  }, []);
-
+  // The hero is plain, always-visible markup. An earlier GSAP entrance set the
+  // headline to opacity 0 until requestAnimationFrame ran, which left the primary
+  // content invisible in background tabs and headless renders. Content first;
+  // the page-level fade in AppShell is the only motion here.
   return (
     <div className="min-h-screen bg-ink-50">
       {/* Header */}
       <header className="border-b border-ink-100 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Brand to="/" />
-          <nav aria-label="Account" className="flex items-center gap-2">
-            <Link to="/login">
-              <Button variant="ghost" size="sm">Sign in</Button>
-            </Link>
-            <Link to="/register">
-              <Button size="sm">Create account</Button>
-            </Link>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
+          {/* Mark only on phones: the full wordmark plus two actions overflows 390px. */}
+          <span className="sm:hidden"><Brand to="/" compact /></span>
+          <span className="hidden sm:inline-flex"><Brand to="/" /></span>
+          <nav aria-label="Account" className="flex shrink-0 items-center gap-1 sm:gap-2">
+            <ButtonLink to="/login" variant="ghost" size="sm" className="whitespace-nowrap">Sign in</ButtonLink>
+            <ButtonLink to="/register" size="sm" className="whitespace-nowrap">Create account</ButtonLink>
           </nav>
         </div>
       </header>
@@ -98,27 +76,23 @@ export function HomePage() {
         <section className="relative overflow-hidden">
           {/* quiet brand wash behind the headline */}
           <div aria-hidden="true" className="absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-brand-50 to-transparent" />
-          <div ref={heroRef} className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-            <p data-hero className="mb-3 text-sm font-semibold uppercase tracking-widest text-brand-600">
+          <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-brand-600">
               Clinic appointments, organized
             </p>
-            <h1 data-hero className="max-w-2xl font-display text-4xl font-semibold leading-tight tracking-tight text-ink-950 sm:text-5xl">
+            <h1 className="max-w-2xl font-display text-4xl font-semibold leading-tight tracking-tight text-ink-950 sm:text-5xl">
               Book your doctor. See the schedule. Skip the phone queue.
             </h1>
-            <p data-hero className="mt-4 max-w-xl text-lg text-ink-600">
+            <p className="mt-4 max-w-xl text-lg text-ink-600">
               MedBook is a digital clinic front desk: browse doctors by specialty, book a
               real opening in their week, and manage your visits from one place.
             </p>
-            <div data-hero className="mt-8 flex flex-wrap gap-3">
-              <Link to="/register">
-                <Button size="lg">
-                  Book an appointment
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Button>
-              </Link>
-              <Link to="/login">
-                <Button variant="outline" size="lg">Sign in</Button>
-              </Link>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <ButtonLink to="/register" size="lg">
+                Book an appointment
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </ButtonLink>
+              <ButtonLink to="/login" variant="outline" size="lg">Sign in</ButtonLink>
             </div>
           </div>
         </section>
@@ -128,7 +102,7 @@ export function HomePage() {
           <h2 id="features-heading" className="sr-only">What MedBook does</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((feature) => (
-              <Card key={feature.title} className="p-5" hover>
+              <Card key={feature.title} className="p-5">
                 <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
                   {feature.icon}
                 </div>
@@ -188,20 +162,20 @@ export function HomePage() {
               </ul>
             </div>
             {/* A quiet product glimpse built from real UI primitives — no stock photos */}
+            {/* Illustrative example of an appointment card — labelled as an example,
+                not presented as real patient data. */}
             <Card className="p-6">
-              <p className="text-xs font-semibold uppercase tracking-wider text-ink-400">Your next visit</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-ink-400">Example appointment</p>
               <div className="mt-4 flex items-center justify-between gap-4">
                 <div>
                   <p className="font-medium text-ink-900">Dr. Maya Chen</p>
                   <p className="text-sm text-ink-500">Cardiology</p>
                 </div>
-                <span className="inline-flex items-center rounded-full bg-info-100 px-2.5 py-0.5 text-xs font-medium text-info-700">
-                  Scheduled
-                </span>
+                <StatusBadge status="SCHEDULED" />
               </div>
               <div className="mt-4 rounded-field border border-ink-100 bg-ink-50 p-3 text-sm text-ink-700">
                 <p>Monday, 28 September</p>
-                <p className="text-ink-500">09:00 – 09:30 · Fee $320</p>
+                <p className="text-ink-500">09:00 – 09:30 · Fee {formatCurrency(320)}</p>
               </div>
             </Card>
           </div>
@@ -217,16 +191,12 @@ export function HomePage() {
               Create a free account and book your first visit in a few clicks.
             </p>
             <div className="mt-6 flex justify-center gap-3">
-              <Link to="/register">
-                <Button size="lg" className="bg-white text-brand-700 hover:bg-brand-50">
-                  Create account
-                </Button>
-              </Link>
-              <Link to="/login">
-                <Button size="lg" variant="ghost" className="text-white hover:bg-brand-600">
-                  Sign in
-                </Button>
-              </Link>
+              <ButtonLink to="/register" size="lg" className="bg-white text-brand-700 hover:bg-brand-50">
+                Create account
+              </ButtonLink>
+              <ButtonLink to="/login" size="lg" variant="ghost" className="text-white hover:bg-brand-600">
+                Sign in
+              </ButtonLink>
             </div>
           </div>
         </section>
