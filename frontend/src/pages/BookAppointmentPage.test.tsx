@@ -1,10 +1,13 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
+import { pickFromSelect } from '../test/mui';
 import { BookAppointmentPage } from './BookAppointmentPage';
 import * as appointmentApi from '../api/appointmentApi';
+import { formatDate } from '../lib/dates';
 import type { AppointmentResponse } from '../types/appointment';
 
 // The hooks read authentication state to decide whether queries may run.
@@ -21,6 +24,17 @@ vi.mock('../api/appointmentApi', () => ({
 }));
 
 const mockedApi = vi.mocked(appointmentApi);
+
+/**
+ * A booking date comfortably in the future, computed at run time.
+ * The page rejects past dates, so a hardcoded literal goes stale the day after
+ * it is written — this keeps the suite green on any day it runs.
+ */
+const BOOKING_DATE = (() => {
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60 * 1000).toISOString().slice(0, 10);
+})();
 
 const SPECIALTIES = [
   { id: 5, name: 'Cardiology', description: null, active: true },
@@ -47,7 +61,9 @@ const AVAILABILITY = [
 const BOOKED: AppointmentResponse = {
   id: 99,
   patientId: 123,
+  patientName: 'Test Patient',
   doctorId: 7,
+  doctorName: 'Sarah Wells',
   appointmentDate: '2026-09-28',
   startTime: '09:00',
   endTime: '09:30',
@@ -63,6 +79,8 @@ function renderPage() {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={['/appointments/new']}>
+        {/* Sonner's Toaster stands in for the one App.tsx mounts. */}
+        <Toaster position="bottom-right" />
         <Routes>
           <Route path="/appointments/new" element={<BookAppointmentPage />} />
           <Route path="/appointments/:id" element={<div>DETAIL PAGE PROBE</div>} />
@@ -76,13 +94,11 @@ function renderPage() {
 
 /** Select specialty → doctor, then set date and times through the real form controls. */
 async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
-  // Options arrive asynchronously, so wait for the option elements themselves.
-  await user.selectOptions(await screen.findByLabelText('Specialty'),
-    await screen.findByRole('option', { name: 'Cardiology' }));
-  await user.selectOptions(await screen.findByLabelText('Doctor'),
-    await screen.findByRole('option', { name: /Dr\. Alice Smith/ }));
+  // MUI Selects: open the listbox, then click the option once it renders.
+  await pickFromSelect(user, screen, 'Specialty', 'Cardiology');
+  await pickFromSelect(user, screen, 'Doctor', /Dr\. Alice Smith/);
   const dateInput = screen.getByLabelText('Appointment date');
-  await user.type(dateInput, '2026-09-28');
+  await user.type(dateInput, BOOKING_DATE);
   await user.type(screen.getByLabelText('Start time'), '09:00');
   await user.type(screen.getByLabelText('End time'), '09:30');
 }
@@ -100,17 +116,20 @@ describe('BookAppointmentPage (secure patient self-booking)', () => {
     renderPage();
     const user = userEvent.setup();
 
-    // Specialties load into the dropdown.
-    await user.selectOptions(await screen.findByLabelText('Specialty'),
-      await screen.findByRole('option', { name: 'Cardiology' }));
+    // Specialties load into the MUI listbox.
+    await pickFromSelect(user, screen, 'Specialty', 'Cardiology');
 
     // Doctors of that specialty load into the second dropdown.
     const doctorSelect = await screen.findByLabelText('Doctor');
-    await waitFor(() => expect(doctorSelect).not.toBeDisabled());
-    expect(await screen.findByRole('option', { name: /Dr\. Alice Smith/ })).toBeInTheDocument();
+    // MUI v9 conveys disabled via aria-disabled; jest-dom's toBeDisabled ignores it.
+    await waitFor(() => expect(doctorSelect.getAttribute('aria-disabled')).not.toBe('true'));
 
     // The doctor query was narrowed to the selected specialty.
     expect(mockedApi.getDoctors).toHaveBeenCalledWith(5);
+
+    // The doctor option renders inside MUI's open listbox.
+    fireEvent.mouseDown(doctorSelect);
+    expect(await screen.findByRole('option', { name: /Dr\. Alice Smith/ })).toBeInTheDocument();
   });
 
   it('shows the doctor availability for the selected date', async () => {
@@ -118,7 +137,7 @@ describe('BookAppointmentPage (secure patient self-booking)', () => {
     const user = userEvent.setup();
     await fillValidForm(user);
 
-    expect(await screen.findByText(/Availability on 2026-09-28/)).toBeInTheDocument();
+    expect(await screen.findByText(new RegExp(`Availability on ${formatDate(BOOKING_DATE)}`))).toBeInTheDocument();
     expect(await screen.findByText(/09:00–17:00/)).toBeInTheDocument();
   });
 
@@ -128,7 +147,7 @@ describe('BookAppointmentPage (secure patient self-booking)', () => {
     const user = userEvent.setup();
     await fillValidForm(user);
 
-    expect(await screen.findByText(/No availability windows for this doctor on 2026-09-28/))
+    expect(await screen.findByText(new RegExp(`No availability windows for this doctor on ${formatDate(BOOKING_DATE)}`)))
       .toBeInTheDocument();
   });
 
@@ -160,7 +179,7 @@ describe('BookAppointmentPage (secure patient self-booking)', () => {
     // The JWT is the only identity source: no patientId may be sent, ever.
     expect('patientId' in payload).toBe(false);
     expect(payload.doctorId).toBe(7);
-    expect(payload.appointmentDate).toBe('2026-09-28');
+    expect(payload.appointmentDate).toBe(BOOKING_DATE);
     expect(payload.startTime).toBe('09:00');
     expect(payload.endTime).toBe('09:30');
 
@@ -207,7 +226,7 @@ describe('BookAppointmentPage (secure patient self-booking)', () => {
     // "Dr. Alice Smith" appears in the doctor card AND the summary — assert both.
     expect(screen.getAllByText('Dr. Alice Smith').length).toBeGreaterThanOrEqual(1);
     // Date · time line and the fee line are distinct elements.
-    expect(screen.getByText(/2026-09-28 · 09:00–09:30/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`${formatDate(BOOKING_DATE)} · 09:00–09:30`))).toBeInTheDocument();
     expect(screen.getByText(/Consultation fee: \$500/)).toBeInTheDocument();
   });
 });
