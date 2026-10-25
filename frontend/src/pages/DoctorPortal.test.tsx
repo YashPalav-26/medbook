@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios';
 import { DoctorDashboardPage } from './DoctorDashboardPage';
 import { DoctorAppointmentsPage } from './DoctorAppointmentsPage';
@@ -51,7 +52,9 @@ vi.mock('../hooks/useAuth', () => ({
 const appointment: AppointmentResponse = {
   id: 3100,
   patientId: 1350,
+  patientName: 'John Carter',
   doctorId: 1,
+  doctorName: 'Dana Doyle',
   appointmentDate: '2026-09-28',
   startTime: '09:00',
   endTime: '09:30',
@@ -80,6 +83,8 @@ function renderWithProviders(
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[route]}>
+        {/* Sonner's Toaster stands in for the one App.tsx mounts. */}
+        <Toaster position="bottom-right" />
         <Routes>
           <Route path="*" element={ui} />
           <Route path="/appointments/:id" element={<AppointmentDetailPage />} />
@@ -121,7 +126,7 @@ describe('DoctorAppointmentsPage', () => {
     mockedGetMyAppointments.mockResolvedValue([appointment]);
     renderWithProviders(<DoctorAppointmentsPage />);
     expect(await screen.findByText('Appointment #3100')).toBeInTheDocument();
-    expect(screen.getByText('Patient #1350')).toBeInTheDocument();
+    expect(screen.getByText('John Carter')).toBeInTheDocument();
     expect(screen.getByText('All (1)')).toBeInTheDocument();
   });
 
@@ -152,7 +157,7 @@ describe('AppointmentDetailPage (role-aware doctor actions)', () => {
 
   it('shows no doctor actions for a patient on their own appointment', async () => {
     renderDetail('SCHEDULED', ['ROLE_PATIENT']);
-    expect(await screen.findByText(/Patient #1350/)).toBeInTheDocument();
+    expect(await screen.findByText('John Carter')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Confirm Appointment/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Mark Completed/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Mark No-Show/i })).not.toBeInTheDocument();
@@ -166,7 +171,7 @@ describe('AppointmentDetailPage (role-aware doctor actions)', () => {
     const dialog = await screen.findByRole('dialog');
     await user.click(within(dialog).getByRole('button', { name: 'Confirm Appointment' }));
     await waitFor(() => expect(mockedConfirm).toHaveBeenCalledWith(3100));
-    expect(await screen.findByText('CONFIRMED')).toBeInTheDocument();
+    expect(await screen.findByText('Confirmed')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Confirm Appointment/i })).not.toBeInTheDocument();
   });
 
@@ -178,7 +183,7 @@ describe('AppointmentDetailPage (role-aware doctor actions)', () => {
     const dialog = await screen.findByRole('dialog');
     await user.click(within(dialog).getByRole('button', { name: 'Mark Completed' }));
     await waitFor(() => expect(mockedComplete).toHaveBeenCalledWith(3100));
-    expect(await screen.findByText('COMPLETED')).toBeInTheDocument();
+    expect(await screen.findByText('Completed')).toBeInTheDocument();
   });
 
   it('no-shows a CONFIRMED appointment through the dialog', async () => {
@@ -189,7 +194,7 @@ describe('AppointmentDetailPage (role-aware doctor actions)', () => {
     const dialog = await screen.findByRole('dialog');
     await user.click(within(dialog).getByRole('button', { name: 'Mark No-Show' }));
     await waitFor(() => expect(mockedNoShow).toHaveBeenCalledWith(3100));
-    expect(await screen.findByText('NO SHOW')).toBeInTheDocument(); // badge renders _ as space
+    expect(await screen.findByText('No show')).toBeInTheDocument(); // chip label is humanized
   });
 
   it('surfaces a transition error (409) inside the dialog', async () => {
@@ -204,7 +209,7 @@ describe('AppointmentDetailPage (role-aware doctor actions)', () => {
 
   it('hides lifecycle buttons for terminal states', async () => {
     renderDetail('COMPLETED');
-    expect(await screen.findByText('COMPLETED')).toBeInTheDocument();
+    expect(await screen.findByText('Completed')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Confirm Appointment/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Mark Completed/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Mark No-Show/i })).not.toBeInTheDocument();
