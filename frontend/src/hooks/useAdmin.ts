@@ -7,6 +7,7 @@ import type {
   DoctorUpdateRequest,
   AvailabilityCreateRequest,
   AvailabilityUpdateRequest,
+  AdminCreateRequest,
 } from '../api/adminApi';
 import type { AdminAppointmentFilters } from '../types/appointment';
 import { useAuth } from './useAuth';
@@ -18,6 +19,33 @@ import { useAuth } from './useAuth';
  * resource so lists, detail views and the booking discovery API cache stay
  * consistent without full page reloads.
  */
+
+// ------------------------------------------------------------------
+// Administrators (admin account management)
+// ------------------------------------------------------------------
+
+/** Every administrator account for the Admin Management screen. */
+export function useAdminAccounts() {
+  const { isAuthenticated } = useAuth();
+
+  return useQuery({
+    queryKey: ['admin', 'admins'],
+    queryFn: adminApi.listAdminAccounts,
+    enabled: isAuthenticated,
+  });
+}
+
+/** Create an administrator; success refreshes the Admin Management list. */
+export function useCreateAdminAccount() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: AdminCreateRequest) => adminApi.createAdminAccount(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'admins'] });
+    },
+  });
+}
 
 // ------------------------------------------------------------------
 // Specialties
