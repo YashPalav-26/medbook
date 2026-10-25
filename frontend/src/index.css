@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Emotion (MUI's styling engine) must come before Tailwind's preflight, or the
+   preflight resets MUI styles (e.g. solid buttons rendered as plain text). */
+@layer theme, base, components, utilities;
+
 /* ------------------------------------------------------------------
    MedBook design tokens (Tailwind CSS v4 @theme)
    Single source of truth for color, type, radius and shadows.
