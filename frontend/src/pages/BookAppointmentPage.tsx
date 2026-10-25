@@ -10,22 +10,18 @@ import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { ErrorBox, Skeleton, Spinner } from '../components/ui/Feedback';
-import { useToast } from '../components/ui/Toast';
+import { toast } from '../lib/toast';
 import { toApiError } from '../api/client';
+import { formatDate, todayIso } from '../lib/dates';
+import { formatCurrency } from '../lib/format';
 import { Calendar, Stethoscope, CheckCircle2, Clock, User } from 'lucide-react';
-
-/** Local (not UTC) ISO date for "today" — matches the <input type="date"> value format. */
-function localTodayIso(): string {
-  const now = new Date();
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000).toISOString().slice(0, 10);
-}
 
 const bookingSchema = z.object({
   // UI-only field: narrows the doctor dropdown. Never sent to the backend.
   specialtyId: z.number({ error: 'Select a specialty' }).min(1, 'Select a specialty'),
   doctorId: z.number({ error: 'Select a doctor' }).min(1, 'Select a doctor'),
   appointmentDate: z.string().min(1, 'Date is required').refine(
-    (value) => value >= localTodayIso(),
+    (value) => value >= todayIso(),
     'Appointment date must be today or in the future',
   ),
   startTime: z.string().min(1, 'Start time is required'),
@@ -84,7 +80,7 @@ function Stepper({ current }: { current: 1 | 2 | 3 }) {
  */
 export function BookAppointmentPage() {
   const navigate = useNavigate();
-  const toast = useToast();
+  // Toasts come from the Sonner-based facade (lib/toast) — no provider needed.
   const createMutation = useCreateAppointment();
 
   const specialtiesQuery = useSpecialties();
@@ -159,6 +155,18 @@ export function BookAppointmentPage() {
             Choose a doctor
           </h2>
           <Card className="space-y-4 p-5">
+            {specialtiesQuery.isError && (
+              <ErrorBox
+                message="Could not load specialties. Check your connection and try again."
+                onRetry={() => specialtiesQuery.refetch()}
+              />
+            )}
+            {doctorsQuery.isError && (
+              <ErrorBox
+                message="Could not load the doctors for this specialty."
+                onRetry={() => doctorsQuery.refetch()}
+              />
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <Select
                 label="Specialty"
@@ -212,7 +220,7 @@ export function BookAppointmentPage() {
                     </div>
                   </div>
                   <p className="font-display text-xl font-semibold text-brand-700">
-                    ${selectedDoctor.consultationFee}
+                    {formatCurrency(selectedDoctor.consultationFee)}
                   </p>
                 </div>
                 {selectedDoctor.bio && (
@@ -229,11 +237,10 @@ export function BookAppointmentPage() {
             <Clock className="h-5 w-5 text-brand-600" aria-hidden="true" />
             Pick a date and time
           </h2>
-          <Card className="space-y-4 p-5">
-            <Input
+          <Card className="space-y-4 p-5">              <Input
               label="Appointment date"
               type="date"
-              min={localTodayIso()}
+              min={todayIso()}
               className="sm:max-w-xs"
               {...register('appointmentDate')}
               error={errors.appointmentDate?.message}
@@ -245,10 +252,15 @@ export function BookAppointmentPage() {
                   <Skeleton className="h-8 w-32 rounded-full" />
                   <Skeleton className="h-8 w-40 rounded-full" />
                 </div>
+              ) : availabilityQuery.isError ? (
+                <ErrorBox
+                  message="Could not check this doctor’s availability."
+                  onRetry={() => availabilityQuery.refetch()}
+                />
               ) : availabilityQuery.data && availabilityQuery.data.length > 0 ? (
                 <div>
                   <p className="text-sm font-medium text-ink-700">
-                    Availability on {appointmentDate}:
+                    Availability on {formatDate(appointmentDate)}:
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {availabilityQuery.data.map((w, i) => (
@@ -263,15 +275,21 @@ export function BookAppointmentPage() {
                 </div>
               ) : (
                 <p className="rounded-field border border-warning-100 bg-warning-100/60 p-3 text-sm text-warning-700">
-                  No availability windows for this doctor on {appointmentDate}. Try another date —
-                  the doctor does not take appointments that day.
+                  No availability windows for this doctor on {formatDate(appointmentDate)}. Try another
+                  date — the doctor does not take appointments that day.
                 </p>
               )
             )}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label="Start time" type="time" {...register('startTime')} error={errors.startTime?.message} />
-              <Input label="End time" type="time" {...register('endTime')} error={errors.endTime?.message} />
+              <Input
+                label="End time"
+                type="time"
+                min={startTime || undefined}
+                {...register('endTime')}
+                error={errors.endTime?.message}
+              />
             </div>
           </Card>
         </section>
@@ -291,8 +309,10 @@ export function BookAppointmentPage() {
                   </span>{' '}
                   ({selectedDoctor.specialty})
                 </p>
-                <p className="text-ink-700">{appointmentDate} · {startTime}–{endTime}</p>
-                <p className="text-ink-700">Consultation fee: ${selectedDoctor.consultationFee}</p>
+                <p className="text-ink-700">{formatDate(appointmentDate)} · {startTime}–{endTime}</p>
+                <p className="text-ink-700">
+                  Consultation fee: {formatCurrency(selectedDoctor.consultationFee)}
+                </p>
                 <Input
                   label="Reason for visit (optional)"
                   type="text"
