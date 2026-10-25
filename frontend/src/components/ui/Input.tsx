@@ -37,6 +37,21 @@ export function Input({ label, helper, error, className = '', id, endAdornment, 
   if (ariaLabel) inputSlotProps['aria-label'] = ariaLabel;
   if (endAdornment) inputSlotProps.endAdornment = endAdornment;
 
+  // The floating label is pinned to its shrunk position from the first render.
+  //
+  // MUI derives the label transform, the input padding AND the outline notch
+  // (the gap the label sits in) from this one flag, and it evaluates them when
+  // the field first mounts — if `shrink` is left to flip later, the styles can
+  // be computed for the unshrunk state and the label then overlaps the border
+  // line and the input text (date/time fields are the worst case, because their
+  // native "mm/dd/yyyy" placeholder cannot be hidden).
+  const slotProps: Record<string, Record<string, unknown>> = {
+    inputLabel: { shrink: true },
+  };
+  if (Object.keys(inputSlotProps).length > 0) {
+    slotProps.input = inputSlotProps;
+  }
+
   return (
     <TextField
       label={label}
@@ -48,7 +63,7 @@ export function Input({ label, helper, error, className = '', id, endAdornment, 
       helperText={error ?? helper}
       error={Boolean(error)}
       inputRef={ref}
-      slotProps={Object.keys(inputSlotProps).length > 0 ? { input: inputSlotProps } : undefined}
+      slotProps={slotProps}
       {...rest}
     />
   );
