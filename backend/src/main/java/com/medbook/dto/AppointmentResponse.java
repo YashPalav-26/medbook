@@ -2,6 +2,7 @@ package com.medbook.dto;
 
 import com.medbook.entity.Appointment;
 import com.medbook.entity.AppointmentStatus;
+import com.medbook.entity.User;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.math.BigDecimal;
@@ -17,7 +18,12 @@ import java.time.LocalTime;
  * directly would couple the JSON contract to the database mapping (column names, lazy
  * associations, internal fields), and Jackson would try to walk {@code patient} and
  * {@code doctor}. The DTO is an explicit, stable contract: only these fields are ever
- * serialized, and the participants are exposed as IDs.</p>
+ * serialized, and the participants are exposed as IDs <em>plus</em> the safe display
+ * names ("First Last") the UI needs to identify a visit without a second lookup.</p>
+ *
+ * <p>Only names are added — no address, insurance, medical or contact data. A patient
+ * sees their own name and their doctor's name; a doctor sees the patient's name for an
+ * appointment assigned to them. That is information both parties already need.</p>
  *
  * <p>The mutable, client-visible outcome of the booking — {@link #status} and
  * {@link #cancellationReason} — is produced by the service layer, never accepted from the
@@ -43,7 +49,9 @@ import java.time.LocalTime;
  *
  * @param id                       appointment identifier
  * @param patientId                ID of the patient who booked
+ * @param patientName              "First Last" of the patient's account
  * @param doctorId                 ID of the booked doctor
+ * @param doctorName               "First Last" of the doctor's account
  * @param appointmentDate          clinic visit date
  * @param startTime                window start, serialized as {@code HH:mm}
  * @param endTime                  window end, serialized as {@code HH:mm}
@@ -54,7 +62,9 @@ import java.time.LocalTime;
 public record AppointmentResponse(
         Long id,
         Long patientId,
+        String patientName,
         Long doctorId,
+        String doctorName,
         LocalDate appointmentDate,
         @JsonFormat(pattern = "HH:mm") LocalTime startTime,
         @JsonFormat(pattern = "HH:mm") LocalTime endTime,
@@ -66,9 +76,11 @@ public record AppointmentResponse(
     /**
      * Map a persisted appointment to its API representation.
      *
-     * <p>Only mapped columns and the participants' IDs are read, so this method is safe to
-     * call after the service transaction has ended: {@code patient} and {@code doctor} are
-     * lazy proxies, but reading their identifiers does not require a database round trip.</p>
+     * <p>Participant names are read from {@code patient.user} and {@code doctor.user},
+     * which are lazy associations. Call this only with appointments whose participants and
+     * their accounts were initialized (the service reloads with fetch joins before the
+     * transaction ends), otherwise a {@code LazyInitializationException} is possible once
+     * Open Session In View is disabled — which it is, by configuration.</p>
      *
      * @param appointment a persisted appointment (never {@code null})
      * @return the response DTO for that appointment
@@ -77,7 +89,9 @@ public record AppointmentResponse(
         return new AppointmentResponse(
                 appointment.getId(),
                 appointment.getPatient().getId(),
+                displayName(appointment.getPatient().getUser()),
                 appointment.getDoctor().getId(),
+                displayName(appointment.getDoctor().getUser()),
                 appointment.getAppointmentDate(),
                 appointment.getStartTime(),
                 appointment.getEndTime(),
@@ -85,5 +99,10 @@ public record AppointmentResponse(
                 appointment.getCancellationReason(),
                 appointment.getConsultationFeeSnapshot()
         );
+    }
+
+    /** "First Last" from the account — the display form used across the appointment UI. */
+    private static String displayName(User user) {
+        return user.getFirstName() + " " + user.getLastName();
     }
 }
