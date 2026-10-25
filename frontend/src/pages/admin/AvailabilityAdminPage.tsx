@@ -10,9 +10,20 @@ import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Modal } from '../../components/ui/Modal';
 import { AppShell } from '../../components/layout/AppShell';
-import { PageHeader, EmptyState, ErrorBox } from '../../components/admin/AdminUi';
+import { PageHeader, EmptyState, ErrorBox, Spinner } from '../../components/admin/AdminUi';
 import { toApiError } from '../../api/client';
-import { CalendarClock, Loader2, Ban, Pencil, PlusCircle } from 'lucide-react';
+import { formatDate } from '../../lib/dates';
+import { CalendarClock, Ban, Pencil, PlusCircle } from 'lucide-react';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import { StatusBadge } from '../../components/admin/AdminUi';
 
 /**
  * Day names for display; values sent to the backend use the MySQL convention
@@ -145,7 +156,7 @@ export function AvailabilityAdminPage() {
     <AppShell>
       <div className="mx-auto max-w-4xl">
         <PageHeader
-          icon={<CalendarClock className="w-8 h-8 text-blue-600" />}
+          icon={<CalendarClock className="h-6 w-6 text-brand-600" />}
           title="Manage Availability"
           description="When doctors can take appointments. Closing a window keeps its history but stops future bookings."
         />
@@ -171,7 +182,7 @@ export function AvailabilityAdminPage() {
         {doctorId !== null && (
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-medium text-gray-900">Weekly schedule</h3>
+              <h3 className="font-medium text-ink-900">Weekly schedule</h3>
               <Button onClick={openCreate} className="flex items-center gap-2">
                 <PlusCircle className="w-4 h-4" />
                 New Window
@@ -184,62 +195,63 @@ export function AvailabilityAdminPage() {
               <ErrorBox message={toApiError(availabilityQuery.error).message} />
             ) : windows.length === 0 ? (
               <EmptyState
-                icon={<CalendarClock className="w-8 h-8 text-gray-400" />}
+                icon={<CalendarClock className="h-6 w-6 text-ink-300" />}
                 message="No availability windows for this doctor yet. Add one so patients can book."
               />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-gray-500 border-b border-gray-200">
-                      <th className="py-2 pr-4 font-medium">Day</th>
-                      <th className="py-2 pr-4 font-medium">Time</th>
-                      <th className="py-2 pr-4 font-medium">Pattern</th>
-                      <th className="py-2 pr-4 font-medium">Effective</th>
-                      <th className="py-2 pr-4 font-medium">Status</th>
-                      <th className="py-2 font-medium text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <TableContainer component={Paper} className="overflow-x-auto !bg-transparent !shadow-none">
+                <Table size="small" aria-label="Availability windows">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Day</TableCell>
+                      <TableCell>Time</TableCell>
+                      <TableCell>Pattern</TableCell>
+                      <TableCell>Effective</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell align="right">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
                     {windows.map((window) => {
                       const closed = isClosed(window);
                       return (
-                        <tr key={window.id ?? `${window.dayOfWeek}-${window.startTime}`} className="border-b border-gray-100 last:border-0">
-                          <td className="py-3 pr-4 font-medium text-gray-900">{dayLabel(window.dayOfWeek)}</td>
-                          <td className="py-3 pr-4 text-gray-700">{window.startTime.slice(0, 5)}–{window.endTime.slice(0, 5)}</td>
-                          <td className="py-3 pr-4 text-gray-700">{window.recurring ? 'Weekly' : 'One-off'}</td>
-                          <td className="py-3 pr-4 text-gray-700">
-                            {window.effectiveFrom ?? '—'} → {window.effectiveUntil ?? 'open ended'}
-                          </td>
-                          <td className="py-3 pr-4">
-                            {closed ? (
-                              <span className="px-2 py-0.5 bg-gray-200 text-gray-600 rounded-full text-xs font-medium">Closed</span>
-                            ) : (
-                              <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">Open</span>
-                            )}
-                          </td>
-                          <td className="py-3 text-right whitespace-nowrap">
-                            <Button variant="outline" className="mr-2 !py-1.5 !px-3 text-sm" onClick={() => openEdit(window)} aria-label="Edit window">
-                              <Pencil className="w-4 h-4" />
-                            </Button>
+                        <TableRow key={window.id ?? `${window.dayOfWeek}-${window.startTime}`} hover>
+                          <TableCell className="!font-medium text-ink-900">{dayLabel(window.dayOfWeek)}</TableCell>
+                          <TableCell className="text-ink-700">{window.startTime.slice(0, 5)}–{window.endTime.slice(0, 5)}</TableCell>
+                          <TableCell className="text-ink-700">{window.recurring ? 'Weekly' : 'One-off'}</TableCell>
+                          <TableCell className="text-ink-700">
+                            {window.effectiveFrom ? formatDate(window.effectiveFrom) : '—'} →{' '}
+                            {window.effectiveUntil ? formatDate(window.effectiveUntil) : 'open ended'}
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge status={closed ? 'Closed' : 'Open'} />
+                          </TableCell>
+                          <TableCell align="right" className="whitespace-nowrap">
+                            <Tooltip title="Edit window">
+                              <IconButton size="small" onClick={() => openEdit(window)} aria-label="Edit window">
+                                <Pencil className="w-4 h-4" />
+                              </IconButton>
+                            </Tooltip>
                             {!closed && (
-                              <Button
-                                variant="outline"
-                                className="!py-1.5 !px-3 text-sm text-red-600 hover:bg-red-50"
-                                onClick={() => close(window)}
-                                disabled={deactivateMutation.isPending}
-                                aria-label="Close window"
-                              >
-                                <Ban className="w-4 h-4" />
-                              </Button>
+                              <Tooltip title="Close window">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => close(window)}
+                                  disabled={deactivateMutation.isPending}
+                                  aria-label="Close window"
+                                  className="text-danger-700 hover:bg-danger-100"
+                                >
+                                  <Ban className="w-4 h-4" />
+                                </IconButton>
+                              </Tooltip>
                             )}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       );
                     })}
-                  </tbody>
-                </table>
-              </div>
+                  </TableBody>
+                </Table>
+              </TableContainer>
             )}
           </Card>
         )}
@@ -247,7 +259,7 @@ export function AvailabilityAdminPage() {
         {doctorId === null && !doctorsQuery.isLoading && doctors.length === 0 && (
           <Card className="p-6">
             <EmptyState
-              icon={<CalendarClock className="w-8 h-8 text-gray-400" />}
+              icon={<CalendarClock className="h-6 w-6 text-ink-300" />}
               message="Create a doctor first — availability belongs to doctors."
             />
           </Card>
@@ -277,7 +289,7 @@ export function AvailabilityAdminPage() {
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={pending}>
-                {pending ? <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Saving...</span> : editing ? 'Save Changes' : 'Add Window'}
+                {pending ? <span className="flex items-center gap-2"><Spinner className="text-white" /> Saving...</span> : editing ? 'Save Changes' : 'Add Window'}
               </Button>
             </div>
           </form>
