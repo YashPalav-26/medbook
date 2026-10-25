@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Adds hover elevation and pointer cursor — for clickable cards. */
@@ -19,5 +20,38 @@ export function Card({ children, className = '', hover = false, ...props }: Card
     >
       {children}
     </div>
+  );
+}
+
+/**
+ * A card that navigates when activated.
+ *
+ * Rendered as a real `<Link>` (not a div with onClick) so it is reachable with
+ * Tab, activated with Enter, listed as a link by screen readers, and supports
+ * middle-click / open-in-new-tab. The focus ring sits on the link, the surface
+ * stays a Card.
+ */
+export function LinkCard({
+  to,
+  children,
+  className = '',
+  label,
+}: {
+  to: string;
+  children: React.ReactNode;
+  className?: string;
+  /** Accessible name when the card's visible text is not descriptive enough. */
+  label?: string;
+}) {
+  return (
+    <Link
+      to={to}
+      aria-label={label}
+      className="block rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+    >
+      <Card hover className={className}>
+        {children}
+      </Card>
+    </Link>
   );
 }
