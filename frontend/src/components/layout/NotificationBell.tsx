@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import IconButton from '@mui/material/IconButton';
+import Badge from '@mui/material/Badge';
 import {
   Bell, CalendarPlus, CalendarCheck, CalendarX2, CalendarClock, CalendarX,
   Inbox, CheckCheck,
@@ -54,12 +56,26 @@ function timeAgo(iso: string): string {
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const bellRef = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
   const navigate = useNavigate();
 
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   const { data: notifications = [], isLoading, isError, refetch } = useNotifications(open);
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
+
+  // The panel is announced as a dialog, so focus must move into it on open and
+  // return to the bell when it closes (otherwise focus lands on <body>).
+  useEffect(() => {
+    if (open) {
+      panelRef.current?.focus();
+    } else if (wasOpen.current) {
+      bellRef.current?.focus();
+    }
+    wasOpen.current = open;
+  }, [open]);
 
   // Close on outside click and on Escape.
   useEffect(() => {
@@ -90,30 +106,38 @@ export function NotificationBell() {
 
   return (
     <div className="relative" ref={containerRef}>
-      <button
-        type="button"
+      {/* MUI IconButton + Badge — the unread count is a standard badge primitive. */}
+      <IconButton
+        ref={bellRef}
         onClick={() => setOpen((value) => !value)}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
         aria-expanded={open}
         aria-haspopup="true"
+        aria-controls={open ? 'notifications-panel' : undefined}
         data-testid="notification-bell"
-        className="relative rounded-field p-2 text-ink-600 transition-colors hover:bg-ink-100 hover:text-ink-900"
+        size="small"
+        sx={{ borderRadius: 2, color: 'text.secondary' }}
       >
-        <Bell className="h-5 w-5" aria-hidden="true" />
-        {unreadCount > 0 && (
-          <span
-            data-testid="unread-badge"
-            className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger-600 px-1 text-[10px] font-semibold text-white"
-          >
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
-      </button>
+        <Badge
+          badgeContent={unreadCount > 99 ? '99+' : unreadCount}
+          color="error"
+          slotProps={
+            // The test hook rides on the badge span at runtime; MUI v9's strict
+            // slot types need the cast.
+            { badge: { 'data-testid': 'unread-badge' } } as object
+          }
+        >
+          <Bell className="h-5 w-5" aria-hidden="true" />
+        </Badge>
+      </IconButton>
 
       {open && (
         <div
+          ref={panelRef}
+          id="notifications-panel"
+          tabIndex={-1}
           data-testid="notification-panel"
-          className="absolute right-0 z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-card border border-ink-100 bg-white shadow-modal
+          className="absolute right-0 z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-card border border-ink-100 bg-white shadow-modal focus:outline-none
             max-sm:fixed max-sm:inset-x-3 max-sm:top-16 max-sm:mt-0 max-sm:w-auto"
           role="dialog"
           aria-label="Notifications"
