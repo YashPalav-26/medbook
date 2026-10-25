@@ -99,7 +99,7 @@ Each action asks you to confirm first, and the status badge on the page updates 
 
 ## Using MedBook as an Admin
 
-Admins log in like everyone else. Their dashboard shows an **Admin Area** card with three sections.
+Admins log in like everyone else. They land on the **clinic overview** (today's appointments and status counts), and the **Administration** section of the sidebar links to every management page: Appointments, Specialties, Doctors, Patients and Availability.
 
 ### 1. Specialties
 - Add the clinic's medical departments (e.g. Cardiology).
@@ -117,6 +117,11 @@ Admins log in like everyone else. Their dashboard shows an **Admin Area** card w
 - **Effective from / until** dates can limit a window to a period (for example a doctor on leave).
 - **Deactivate** a window when the doctor stops working that slot.
 - These are exactly the time slots patients see when booking.
+
+### 4. Patients
+- A read-only list of everyone registered with the clinic (name, email, phone, date of birth, status).
+- Use the search box to find someone by name, email or phone.
+- Patients create and manage their own accounts, so there are no edit or delete actions here.
 
 ---
 
@@ -153,5 +158,5 @@ Admins log in like everyone else. Their dashboard shows an **Admin Area** card w
 | See/cancel my appointments | Menu → **My Appointments** |
 | See my schedule (doctor) | Menu → **My Appointments** |
 | Confirm/complete a visit (doctor) | Open the appointment → action buttons |
-| Manage specialties/doctors/hours (admin) | Dashboard → **Admin Area** |
+| Manage specialties/doctors/patients/hours (admin) | Sidebar → **Administration** |
 | Log out | Top-right → **Sign Out** |
