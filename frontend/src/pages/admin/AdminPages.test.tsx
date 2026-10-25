@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
@@ -6,8 +6,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AdminDashboardPage } from './AdminDashboardPage';
 import { SpecialtiesAdminPage } from './SpecialtiesAdminPage';
 import { DoctorsAdminPage } from './DoctorsAdminPage';
+import { AdminManagementPage } from './AdminManagementPage';
 import { AvailabilityAdminPage } from './AvailabilityAdminPage';
 import * as adminApi from '../../api/adminApi';
+import { pickFromSelect } from '../../test/mui';
 import type { SpecialtyResponse } from '../../types/appointment';
 
 // All admin pages call the real API module; every test controls what it returns.
@@ -29,6 +31,8 @@ vi.mock('../../api/adminApi', () => ({
   getAdminAppointment: vi.fn(),
   getAdminOverview: vi.fn(),
   cancelAppointmentAsAdmin: vi.fn(),
+  listAdminAccounts: vi.fn(),
+  createAdminAccount: vi.fn(),
 }));
 
 // Admin pages use the auth context for query gating and the AdminRoute guard.
@@ -65,6 +69,13 @@ const WINDOWS = [
   { id: 30, dayOfWeek: 1, startTime: '09:00', endTime: '17:00', recurring: true, effectiveFrom: null, effectiveUntil: null },
 ];
 
+const ADMINS: adminApi.AdminAccountResponse[] = [
+  {
+    id: 40, email: 'yashpalav100@gmail.com', firstName: 'Yash', lastName: 'Palav',
+    phoneNumber: '+10000000000', active: true, locked: false, roles: ['ADMIN'],
+  },
+];
+
 function renderWithRoutes(ui: React.ReactElement, initialPath: string) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -89,6 +100,7 @@ beforeEach(() => {
   mockedApi.listAdminSpecialties.mockResolvedValue(SPECIALTIES);
   mockedApi.listAdminDoctors.mockResolvedValue(DOCTORS);
   mockedApi.listAdminAvailability.mockResolvedValue(WINDOWS);
+  mockedApi.listAdminAccounts.mockResolvedValue(ADMINS);
   // The dashboard now shows the real clinic overview; default to a benign payload
   // so the management-card assertions stay focused on navigation.
   mockedApi.getAdminOverview.mockResolvedValue({
@@ -186,7 +198,7 @@ describe('DoctorsAdminPage', () => {
     renderWithRoutes(<DoctorsAdminPage />, '/admin/doctors');
     expect(await screen.findByText('Dr. Alice Smith')).toBeInTheDocument();
     expect(screen.getByText('Cardiology')).toBeInTheDocument();
-    expect(screen.getByText('$300')).toBeInTheDocument();
+    expect(screen.getByText('$300.00')).toBeInTheDocument();
   });
 
   it('shows an empty state when there are no doctors', async () => {
@@ -206,7 +218,7 @@ describe('DoctorsAdminPage', () => {
     await user.type(screen.getByLabelText('First name'), 'New');
     await user.type(screen.getByLabelText('Last name'), 'Doc');
     await user.type(screen.getByLabelText('Phone number'), '+15550001234');
-    await user.selectOptions(screen.getByLabelText('Specialty'), '10');
+    await pickFromSelect(user, screen, 'Specialty', 'Cardiology');
     await user.type(screen.getByLabelText('Medical license number'), 'LIC-NEW');
     await user.type(screen.getByLabelText('Years of experience'), '5');
     await user.type(screen.getByLabelText('Consultation fee'), '275');
@@ -235,7 +247,7 @@ describe('DoctorsAdminPage', () => {
     await user.type(screen.getByLabelText('First name'), 'X');
     await user.type(screen.getByLabelText('Last name'), 'Y');
     await user.type(screen.getByLabelText('Phone number'), '+15550001234');
-    await user.selectOptions(screen.getByLabelText('Specialty'), '10');
+    await pickFromSelect(user, screen, 'Specialty', 'Cardiology');
     await user.type(screen.getByLabelText('Medical license number'), 'LIC-X');
     await user.type(screen.getByLabelText('Years of experience'), '5');
     await user.type(screen.getByLabelText('Consultation fee'), '275');
@@ -257,11 +269,85 @@ describe('DoctorsAdminPage', () => {
   });
 });
 
+describe('AdminManagementPage', () => {
+  it('lists administrator accounts with name, email and status — never passwords', async () => {
+    renderWithRoutes(<AdminManagementPage />, '/admin/specialties');
+    expect(await screen.findByText('Yash Palav')).toBeInTheDocument();
+    expect(screen.getByText('yashpalav100@gmail.com')).toBeInTheDocument();
+    expect(screen.getAllByText('Active').length).toBeGreaterThan(0);
+    // The page never renders password material (the API response has no such field).
+    expect(screen.queryByText(/password/i)).not.toBeInTheDocument();
+  });
+
+  it('shows an empty state when there are no administrators', async () => {
+    mockedApi.listAdminAccounts.mockResolvedValue([]);
+    renderWithRoutes(<AdminManagementPage />, '/admin/specialties');
+    expect(await screen.findByText(/No administrator accounts yet/)).toBeInTheDocument();
+  });
+
+  it('creates an admin with account credentials (no role field is sent)', async () => {
+    mockedApi.createAdminAccount.mockResolvedValue({ ...ADMINS[0], id: 41, email: 'new@medbook.test' });
+    renderWithRoutes(<AdminManagementPage />, '/admin/specialties');
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: /add admin/i }));
+    await user.type(screen.getByLabelText('Email (login)'), 'new@medbook.test');
+    await user.type(screen.getByLabelText('Password (min 8 chars)'), 'Password#1');
+    await user.type(screen.getByLabelText('First name'), 'Nia');
+    await user.type(screen.getByLabelText('Last name'), 'Admin');
+    await user.type(screen.getByLabelText('Phone number'), '+15550009999');
+    await user.click(screen.getByRole('button', { name: /create admin/i }));
+
+    await waitFor(() => expect(mockedApi.createAdminAccount).toHaveBeenCalledTimes(1));
+    const payload = mockedApi.createAdminAccount.mock.calls[0][0];
+    expect(payload).toEqual({
+      email: 'new@medbook.test',
+      password: 'Password#1',
+      firstName: 'Nia',
+      lastName: 'Admin',
+      phoneNumber: '+15550009999',
+    });
+    expect('role' in payload).toBe(false);
+  });
+
+  it('surfaces backend duplicate-email errors inside the modal', async () => {
+    mockedApi.createAdminAccount.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 409, data: { message: 'An account with this email address already exists' } },
+    });
+    renderWithRoutes(<AdminManagementPage />, '/admin/specialties');
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: /add admin/i }));
+    await user.type(screen.getByLabelText('Email (login)'), 'taken@medbook.test');
+    await user.type(screen.getByLabelText('Password (min 8 chars)'), 'Password#1');
+    await user.type(screen.getByLabelText('First name'), 'X');
+    await user.type(screen.getByLabelText('Last name'), 'Y');
+    await user.type(screen.getByLabelText('Phone number'), '+15550009999');
+    await user.click(screen.getByRole('button', { name: /create admin/i }));
+
+    expect(await screen.findByText(/already exists/)).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('blocks submission with client-side validation errors', async () => {
+    renderWithRoutes(<AdminManagementPage />, '/admin/specialties');
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: /add admin/i }));
+    await user.click(screen.getByRole('button', { name: /create admin/i }));
+
+    expect(await screen.findByText('Email is required')).toBeInTheDocument();
+    expect(screen.getByText('At least 8 characters')).toBeInTheDocument();
+    expect(mockedApi.createAdminAccount).not.toHaveBeenCalled();
+  });
+});
+
 describe('AvailabilityAdminPage', () => {
   async function pickDoctor(user: ReturnType<typeof userEvent.setup>) {
-    // Options load asynchronously — wait for the option element before selecting.
-    await user.selectOptions(await screen.findByLabelText('Doctor'),
-      await screen.findByRole('option', { name: /Dr\. Alice Smith/ }));
+    // MUI Select: open the listbox, then click the option once it renders.
+    fireEvent.mouseDown(await screen.findByLabelText('Doctor'));
+    await user.click(await screen.findByRole('option', { name: /Dr\. Alice Smith/ }));
     await screen.findByText('Weekly schedule');
   }
 
@@ -289,7 +375,7 @@ describe('AvailabilityAdminPage', () => {
     await pickDoctor(user);
 
     await user.click(screen.getByRole('button', { name: /new window/i }));
-    await user.selectOptions(screen.getByLabelText('Day'), '2');
+    await pickFromSelect(user, screen, 'Day', 'Tuesday');
     await user.type(screen.getByLabelText('Start time'), '10:00');
     await user.type(screen.getByLabelText('End time'), '12:00');
     await user.click(screen.getByRole('button', { name: /add window/i }));
@@ -307,7 +393,7 @@ describe('AvailabilityAdminPage', () => {
     await pickDoctor(user);
 
     await user.click(screen.getByRole('button', { name: /new window/i }));
-    await user.selectOptions(screen.getByLabelText('Day'), '2');
+    await pickFromSelect(user, screen, 'Day', 'Tuesday');
     await user.type(screen.getByLabelText('Start time'), '17:00');
     await user.type(screen.getByLabelText('End time'), '09:00');
     await user.click(screen.getByRole('button', { name: /add window/i }));
