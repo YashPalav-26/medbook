@@ -3,10 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ToastProvider } from '../components/ui/Toast';
+import { Toaster } from 'sonner';
+import { pickFromSelect } from '../test/mui';
 import { ProfilePage } from './ProfilePage';
 import * as profileApi from '../api/profileApi';
 import type { CurrentUserResponse } from '../types/auth';
+import { formatDate } from '../lib/dates';
 
 // The page calls the real API module; every test controls what it returns.
 vi.mock('../api/profileApi', () => ({
@@ -91,9 +93,10 @@ function renderPage() {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
-        <ToastProvider>
-          <ProfilePage />
-        </ToastProvider>
+        {/* Sonner's Toaster stands in for the one App.tsx mounts, so success
+            toasts render inside the test DOM like they do in the browser. */}
+        <Toaster position="bottom-right" />
+        <ProfilePage />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -124,7 +127,7 @@ describe('ProfilePage — rendering', () => {
     renderPage();
 
     expect(await screen.findByText('Patient Profile')).toBeInTheDocument();
-    expect(screen.getByText('1990-05-15')).toBeInTheDocument();
+    expect(screen.getByText(formatDate('1990-05-15'))).toBeInTheDocument();
     expect(screen.getByText(/12 Beach Road/)).toBeInTheDocument();
     expect(screen.getByText(/Rita Reed/)).toBeInTheDocument();
     expect(screen.getByText('Peanuts')).toBeInTheDocument();
@@ -232,7 +235,8 @@ describe('ProfilePage — patient profile editing', () => {
     await user.click(within(patientCard).getByRole('button', { name: /edit/i }));
     await user.clear(screen.getByLabelText('City'));
     await user.type(screen.getByLabelText('City'), 'Pune');
-    fireEvent.change(screen.getByLabelText('Insurance status'), { target: { value: 'false' } });
+    // MUI Select: open the listbox and click the option (no native select).
+    await pickFromSelect(user, screen, 'Insurance status', 'No insurance');
     await user.click(screen.getByRole('button', { name: /save changes/i }));
 
     await waitFor(() =>
