@@ -217,8 +217,9 @@ distinction from 401 ("we know who you are, but not allowed") makes the boundary
   business roles may call the appointment endpoints; the task forbids inventing ownership
   rules ("this patient may only see their own appointments") before the service layer
   implements them, and no administrative endpoint exists yet to fence off.
-- Registration can only ever grant `PATIENT`. Doctor and admin accounts must come from a
-  controlled back-office step (the next auth-related step).
+- Registration can only ever grant `PATIENT`. Doctor accounts come from the admin back-office
+  and the first admin from the configuration-gated startup bootstrap
+  (`MEDBOOK_BOOTSTRAP_ADMIN_EMAIL` / `..._PASSWORD`) or the dev seed — never from signup.
 - `401` (missing/invalid token) vs `403` (valid token, wrong roles) is enforced and tested.
 
 ## Getting the Authenticated User in Code
@@ -231,18 +232,18 @@ currentUser.currentUserEmail()  // Optional<String> from the JWT email claim
 currentUser.requireCurrentUserId() // throws 401-style InsufficientAuthenticationException when absent
 ```
 
-`appointment_status_history.changed_by_user_id` is still written as `NULL` — not because
-identity is missing, but because the appointment service signature has not been extended
-with the actor yet (a small, self-contained change left for the step that needs it):
+`appointment_status_history.changed_by_user_id` now records the **real authenticated
+caller**. The appointment service resolves it from `CurrentUserProvider` (the JWT `sub`)
+and passes it to the history row — never a user ID from the request:
 
 ```java
-// future wiring sketch
-Long callerId = currentUserProvider.requireCurrentUserId();
-appointmentService.cancelAppointment(id, reason, callerId); // overload to be added
+// inside the write transaction
+User caller = requireCurrentUser();
+recordStatusChange(saved, AppointmentStatus.CANCELLED, reason, caller);
 ```
 
-This is the integration seam: identity is available from the security context, and the
-service will accept it as an argument — never as a client-supplied request field.
+A `NULL` actor now only occurs for context-free internal/test calls that legitimately run
+without authentication; HTTP requests always store the real caller.
 
 ---
 
@@ -288,8 +289,8 @@ the only plaintext strings are low-entropy fixtures (`"SecretPass1"`, `"RightPas
 5. **No ownership rules.** Any authenticated business role can call any appointment
    endpoint; "my appointments only" needs a service-layer query by the authenticated user.
 6. **Registration is patient-only.** Doctor/admin accounts need a back-office flow.
-7. **`changed_by_user_id` still NULL** — the wiring sketch above is prepared but not
-   applied to `AppointmentService` yet.
+7. **`changed_by_user_id` still NULL** — **resolved:** history rows now store the real
+   authenticated caller (NULL only for context-free internal/test calls).
 8. **BCrypt cost is the default (10)** — tune it per deployment hardware if needed.
 9. **Not production-grade.** No rate limiting on `/login`, no HTTPS enforcement here (do
    that at the proxy), no password-strength meter, no audit logging of security events.
