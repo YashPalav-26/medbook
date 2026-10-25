@@ -158,7 +158,7 @@ export function SpecialtiesAdminPage() {
                               onClick={() => deactivate(specialty)}
                               disabled={deactivateMutation.isPending}
                               aria-label={`Deactivate ${specialty.name}`}
-                              className="text-danger-700 hover:bg-danger-100"
+                              color="error"
                             >
                               <Ban className="w-4 h-4" />
                             </IconButton>
@@ -178,7 +178,7 @@ export function SpecialtiesAdminPage() {
           title={editing ? `Edit ${editing.name}` : 'New Specialty'}
           onClose={() => setModalOpen(false)}
         >
-          <form onSubmit={handleSubmit(submit)} className="space-y-4">
+          <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-4">
             <Input label="Name" type="text" {...register('name')} error={errors.name?.message} placeholder="e.g. Cardiology" />
             <Input
               label="Description (optional)"
