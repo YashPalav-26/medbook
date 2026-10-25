@@ -10,7 +10,7 @@
   ```bash
   mysql -uroot -proot medbook -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='medbook';"
   ```
-  Expected: `10`.
+  Expected: `11`.
 - [ ] **Backend running** (port 8080):
   ```bash
   cd backend
@@ -40,19 +40,24 @@
 
 ## 1. ACCOUNTS AND DATA SETUP
 
-> Credentials below are **development/test-only**. There are no admin accounts by
-> default — registration always creates a PATIENT; the ADMIN role is granted once
-> via SQL (dev bootstrap).
+> Credentials below are **development/test-only**. The fastest path to a fully
+> populated environment is the **dev seed**:
+> `mvn spring-boot:run -Dspring-boot.run.profiles=dev` creates the Admin, Doctor and
+> Patient accounts (plus a specialty, availability and a few appointments). See
+> `docs/demo-accounts.md`. Registration still only ever creates a PATIENT.
 
 | Account / data | How to create | Values |
 |---|---|---|
-| Admin | Register at `/register`, then: `mysql -uroot -proot medbook -e "INSERT INTO user_roles (user_id, role_id) SELECT (SELECT id FROM users WHERE email='admin@demo.test'), id FROM roles WHERE name='ADMIN';"` | `admin@demo.test` / chosen password |
-| Patient | Register at `/register` | `patient@demo.test` / chosen password |
-| Doctor | Log in as admin → Doctors → Add Doctor (creates login + profile in one step) | email/password entered in the form |
+| Admin | Dev seed, or `MEDBOOK_BOOTSTRAP_ADMIN_EMAIL` / `..._PASSWORD`, or the SQL grant below | `admin@medbook.test` / `Admin@123` |
+| Patient | Dev seed, or register at `/register` | `patient@medbook.test` / `Patient@123` |
+| Doctor | Dev seed, or log in as admin → Doctors → New Doctor (creates login + profile in one step) | `doctor@medbook.test` / `Doctor@123` |
 | Specialty | Admin → Specialties → create (e.g. "Cardiology") | — |
 | Availability | Admin → Availability → pick the doctor → window 09:00–17:00 for the demo date's weekday (Mon=1, Tue=2, Wed=3, Thu=4, Fri=5, Sat=6, Sun=0) | — |
 
-Verify the admin grant: log in as admin → **Admin Area** card visible on the dashboard.
+Verify the seed: log in as `admin@medbook.test` → the **Admin overview** page opens.
+
+*(Legacy manual grant, no longer needed: register an account, then
+`mysql -uroot -proot medbook -e "INSERT INTO user_roles (user_id, role_id) SELECT (SELECT id FROM users WHERE email='admin@demo.test'), id FROM roles WHERE name='ADMIN';"`.)*
 
 ---
 
@@ -72,7 +77,7 @@ Verify the admin grant: log in as admin → **Admin Area** card visible on the d
 | 10 | Sign out → sign in as **doctor** | Doctor dashboard (today/upcoming) |
 | 11 | Open a SCHEDULED appointment → **Confirm** | Dialog → badge CONFIRMED → toast |
 | 12 | → **Mark Completed** | Badge COMPLETED; action buttons gone (terminal state) |
-| 13 | Sign out → sign in as **admin** | Dashboard with Admin Area card |
+| 13 | Sign out → sign in as **admin** | Admin overview dashboard (clinic counts) |
 | 14 | Specialties → create/edit | Table updates instantly |
 | 15 | Doctors → Add Doctor | Doctor appears in table |
 | 16 | Availability → create/close a window | Open/Closed badges update |
@@ -105,7 +110,7 @@ mysql -uroot -proot medbook -e "SELECT version, success FROM flyway_schema_histo
 |---|---|
 | 401 | Token expired after 60 minutes — log in again (normal) |
 | 409 when booking | Conflict guard working — pick another slot (intended behavior) |
-| Admin card missing | ADMIN grant SQL wasn't run for that account — rerun §1 SQL, log in again |
+| Cannot sign in as admin | No admin exists yet — start with the dev profile or set the bootstrap variables (see `docs/demo-accounts.md`) |
 | Frontend frozen | Hard refresh (Ctrl+Shift+R); restart `npm run dev` if needed |
 | Backend down | Restart backend; `mvn clean test` output verifies system health |
 
