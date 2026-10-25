@@ -2,11 +2,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useMyAppointments } from '../hooks/useMyAppointments';
 import { AppShell } from '../components/layout/AppShell';
-import { Brand } from '../components/ui/Brand';
-import { Button } from '../components/ui/Button';
-import { Card } from '../components/ui/Card';
+import { Button, ButtonLink } from '../components/ui/Button';
+import { Card, LinkCard } from '../components/ui/Card';
 import { StatusBadge, EmptyState, Skeleton } from '../components/ui/Feedback';
 import { CalendarPlus, CalendarDays, ArrowRight, Clock, Stethoscope, UserRound } from 'lucide-react';
+import { formatDate, todayIso } from '../lib/dates';
+import { formatCurrency } from '../lib/format';
 
 /**
  * Patient dashboard. Personalized welcome, quick actions, and the next upcoming
@@ -19,38 +20,39 @@ export function DashboardPage() {
   const appointmentsQuery = useMyAppointments();
 
   const appointments = appointmentsQuery.data ?? [];
+  const today = todayIso();
   const upcoming = appointments
-    .filter((a) => a.status === 'SCHEDULED' || a.status === 'CONFIRMED')
+    .filter((a) => (a.status === 'SCHEDULED' || a.status === 'CONFIRMED') && a.appointmentDate >= today)
     .sort((a, b) => (a.appointmentDate + a.startTime).localeCompare(b.appointmentDate + b.startTime));
   const next = upcoming[0];
 
   return (
     <AppShell>
-      {/* Welcome */}
+      {/* Welcome — the page's single h1 */}
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="font-display text-3xl font-semibold text-ink-900">
+          <h1 className="font-display text-3xl font-semibold text-ink-900">
             Good to see you, {user?.firstName ?? 'there'}
-          </h2>
+          </h1>
           <p className="mt-1 text-ink-500">
-            {upcoming.length > 0
-              ? `You have ${upcoming.length} upcoming appointment${upcoming.length > 1 ? 's' : ''}.`
-              : 'No upcoming appointments right now.'}
+            {appointmentsQuery.isLoading
+              ? 'Checking your schedule…'
+              : upcoming.length > 0
+                ? `You have ${upcoming.length} upcoming appointment${upcoming.length > 1 ? 's' : ''}.`
+                : 'No upcoming appointments right now.'}
           </p>
         </div>
-        <Link to="/appointments/new">
-          <Button size="lg">
-            <CalendarPlus className="h-4 w-4" aria-hidden="true" />
-            Book Appointment
-          </Button>
-        </Link>
+        <ButtonLink to="/appointments/new" size="lg">
+          <CalendarPlus className="h-4 w-4" aria-hidden="true" />
+          Book Appointment
+        </ButtonLink>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Next appointment — real data or a real empty state */}
         <Card className="p-6 lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-medium text-ink-900">Upcoming appointment</h3>
+            <h2 className="font-medium text-ink-900">Upcoming appointment</h2>
             <Link
               to="/appointments/me"
               className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline"
@@ -76,23 +78,24 @@ export function DashboardPage() {
             <div>
               <div className="flex flex-wrap items-center gap-3">
                 <span className="font-display text-2xl font-semibold text-ink-900">
-                  Dr. visit #{next.id}
+                  Dr. {next.doctorName}
                 </span>
                 <StatusBadge status={next.status} />
               </div>
+              <p className="mt-1 text-sm text-ink-500">Appointment #{next.id}</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div className="flex items-center gap-3 rounded-field border border-ink-100 bg-ink-50 p-3">
                   <Clock className="h-5 w-5 text-brand-600" aria-hidden="true" />
                   <div>
-                    <p className="text-sm font-medium text-ink-900">{next.appointmentDate}</p>
+                    <p className="text-sm font-medium text-ink-900">{formatDate(next.appointmentDate)}</p>
                     <p className="text-sm text-ink-500">{next.startTime} – {next.endTime}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 rounded-field border border-ink-100 bg-ink-50 p-3">
                   <Stethoscope className="h-5 w-5 text-brand-600" aria-hidden="true" />
                   <div>
-                    <p className="text-sm font-medium text-ink-900">Doctor #{next.doctorId}</p>
-                    <p className="text-sm text-ink-500">Fee ${next.consultationFeeSnapshot}</p>
+                    <p className="text-sm font-medium text-ink-900">Consultation</p>
+                    <p className="text-sm text-ink-500">{formatCurrency(next.consultationFeeSnapshot)}</p>
                   </div>
                 </div>
               </div>
@@ -105,48 +108,40 @@ export function DashboardPage() {
               icon={<CalendarDays className="h-8 w-8" />}
               title="Nothing scheduled yet"
               message="When you book a visit, it will show up here with its time and doctor."
-              action={<Link to="/appointments/new"><Button size="sm">Book your first appointment</Button></Link>}
+              action={<ButtonLink to="/appointments/new" size="sm">Book your first appointment</ButtonLink>}
             />
           )}
         </Card>
 
         {/* Quick actions + profile summary */}
         <div className="space-y-6">
-          <Card hover className="p-6" onClick={() => navigate('/appointments/me')}>
+          <LinkCard to="/appointments/me" className="p-6">
             <div className="flex items-center gap-4">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
                 <CalendarDays className="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
-                <h3 className="font-medium text-ink-900">My Appointments</h3>
+                <h2 className="font-medium text-ink-900">My Appointments</h2>
                 <p className="text-sm text-ink-500">Review past and upcoming visits</p>
               </div>
             </div>
-          </Card>
+          </LinkCard>
 
-          <Card
-            hover
-            className="p-6 cursor-pointer"
-            onClick={() => navigate('/profile')}
-            aria-label="Open My Profile"
-          >
+          <LinkCard to="/profile" className="p-6" label="Open My Profile">
             <div className="flex items-center gap-4">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
                 <UserRound className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="min-w-0">
-                <h3 className="font-medium text-ink-900">My Profile</h3>
+                <h2 className="font-medium text-ink-900">My Profile</h2>
                 <p className="truncate text-sm text-ink-500">
                   {user?.firstName} {user?.lastName} · {user?.email}
                 </p>
               </div>
             </div>
-          </Card>
+          </LinkCard>
         </div>
       </div>
-
-      {/* Hidden brand reference keeps the wordmark visible for screen-reader users on this route too */}
-      <span className="sr-only"><Brand /></span>
     </AppShell>
   );
 }
