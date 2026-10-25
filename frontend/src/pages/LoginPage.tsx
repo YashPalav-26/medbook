@@ -8,6 +8,8 @@ import { Brand } from '../components/ui/Brand';
 import { ErrorBox } from '../components/ui/Feedback';
 import { Eye, EyeOff } from 'lucide-react';
 import { Spinner } from '../components/ui/Feedback';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
 
 /**
  * Sign-in page. Centered card on desktop, compact single column on mobile.
@@ -45,8 +47,10 @@ export function LoginPage() {
             <Brand to="/" />
           </div>
           <Card className="p-6 sm:p-8">
-            <h1 className="font-display text-2xl font-semibold text-ink-900">Welcome back</h1>
-            <p className="mt-1 text-sm text-ink-500">Sign in to manage your appointments.</p>
+            <h1 className="font-display text-2xl font-semibold text-ink-900">Sign in to MedBook</h1>
+            <p className="mt-1 text-sm text-ink-500">
+              Patients, doctors, and administrators all use the same login.
+            </p>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
               <Input
@@ -58,28 +62,29 @@ export function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
               />
-              <div>
-                <div className="relative">
-                  <Input
-                    label="Password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Your password"
-                    className="pr-0"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-3 top-[2.1rem] text-ink-400 hover:text-ink-600"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
+              <Input
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Your password"
+                endAdornment={
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      edge="end"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword
+                        ? <EyeOff className="h-4 w-4" aria-hidden="true" />
+                        : <Eye className="h-4 w-4" aria-hidden="true" />}
+                    </IconButton>
+                  </InputAdornment>
+                }
+              />
 
               {error && <ErrorBox message={error} />}
 
@@ -94,6 +99,10 @@ export function LoginPage() {
               <Link to="/register" className="font-medium text-brand-700 hover:underline">
                 Create an account
               </Link>
+            </p>
+            <p className="mt-2 text-center text-xs text-ink-400">
+              Patient accounts can be created here. Doctor accounts are created by a clinic
+              administrator.
             </p>
           </Card>
         </div>
