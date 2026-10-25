@@ -174,7 +174,7 @@ function BookForPatientModal({
       description="Support path: book on behalf of a patient who cannot use the app. The patient is notified like any other booking."
       onClose={onClose}
     >
-      <form onSubmit={submit} className="space-y-4">
+      <form onSubmit={submit} className="flex flex-col gap-4">
         <Select
           label="Patient"
           value={form.patientId ?? ''}
@@ -445,7 +445,7 @@ export function AdminAppointmentsPage() {
                         <TableCell align="right">
                           <Link
                             to={`/admin/appointments/${appointment.id}`}
-                            className="font-medium text-brand-700 hover:underline"
+                            className="font-medium text-brand-700 hover:text-brand-800 hover:underline"
                             aria-label={`View appointment #${appointment.id}`}
                           >
                             View
