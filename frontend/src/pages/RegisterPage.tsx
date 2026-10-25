@@ -8,6 +8,9 @@ import { Brand } from '../components/ui/Brand';
 import { ErrorBox } from '../components/ui/Feedback';
 import { Eye, EyeOff } from 'lucide-react';
 import { Spinner } from '../components/ui/Feedback';
+import { todayIso } from '../lib/dates';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
 
 /**
  * Registration page, consistent with the login card. Fields exactly match the
@@ -83,9 +86,10 @@ export function RegisterPage() {
             <Brand to="/" />
           </div>
           <Card className="p-6 sm:p-8">
-            <h1 className="font-display text-2xl font-semibold text-ink-900">Create your account</h1>
+            <h1 className="font-display text-2xl font-semibold text-ink-900">Create your patient account</h1>
             <p className="mt-1 text-sm text-ink-500">
-              One account to book and manage your clinic visits.
+              Patient accounts can be created directly — this one is for booking and managing
+              your clinic visits.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-5" noValidate>
@@ -129,6 +133,7 @@ export function RegisterPage() {
                     type="date"
                     autoComplete="bday"
                     required
+                    max={todayIso()}
                     value={formData.dateOfBirth}
                     onChange={(e) => handleChange('dateOfBirth', e.target.value)}
                     error={fieldErrors.dateOfBirth}
@@ -150,26 +155,30 @@ export function RegisterPage() {
                   onChange={(e) => handleChange('email', e.target.value)}
                   error={fieldErrors.email}
                 />
-                <div className="relative">
-                  <Input
-                    label="Password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    required
-                    helper="At least 8 characters."
-                    value={formData.password}
-                    onChange={(e) => handleChange('password', e.target.value)}
-                    error={fieldErrors.password}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-3 top-[2.1rem] text-ink-400 hover:text-ink-600"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
+                <Input
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  required
+                  helper="At least 8 characters."
+                  value={formData.password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                  error={fieldErrors.password}
+                  endAdornment={
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        edge="end"
+                        onClick={() => setShowPassword((v) => !v)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword
+                          ? <EyeOff className="h-4 w-4" aria-hidden="true" />
+                          : <Eye className="h-4 w-4" aria-hidden="true" />}
+                      </IconButton>
+                    </InputAdornment>
+                  }
+                />
               </fieldset>
 
               {error && <ErrorBox message={error} />}
@@ -185,6 +194,10 @@ export function RegisterPage() {
               <Link to="/login" className="font-medium text-brand-700 hover:underline">
                 Sign in
               </Link>
+            </p>
+            <p className="mt-2 text-center text-xs text-ink-400">
+              Are you a doctor or administrator? Your account is created and provisioned by the
+              clinic, not from this page.
             </p>
           </Card>
         </div>
