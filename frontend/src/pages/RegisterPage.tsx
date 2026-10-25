@@ -92,7 +92,7 @@ export function RegisterPage() {
               your clinic visits.
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-5" noValidate>
+            <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5" noValidate>
               <fieldset className="space-y-4">
                 <legend className="text-sm font-semibold uppercase tracking-wider text-ink-400">
                   About you
@@ -145,40 +145,42 @@ export function RegisterPage() {
                 <legend className="text-sm font-semibold uppercase tracking-wider text-ink-400">
                   Account security
                 </legend>
-                <Input
-                  label="Email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  helper="You will use this to sign in."
-                  value={formData.email}
-                  onChange={(e) => handleChange('email', e.target.value)}
-                  error={fieldErrors.email}
-                />
-                <Input
-                  label="Password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  helper="At least 8 characters."
-                  value={formData.password}
-                  onChange={(e) => handleChange('password', e.target.value)}
-                  error={fieldErrors.password}
-                  endAdornment={
-                    <InputAdornment position="end">
-                      <IconButton
-                        size="small"
-                        edge="end"
-                        onClick={() => setShowPassword((v) => !v)}
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword
-                          ? <EyeOff className="h-4 w-4" aria-hidden="true" />
-                          : <Eye className="h-4 w-4" aria-hidden="true" />}
-                      </IconButton>
-                    </InputAdornment>
-                  }
-                />
+                <div className="flex flex-col gap-4">
+                  <Input
+                    label="Email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    helper="You will use this to sign in."
+                    value={formData.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                    error={fieldErrors.email}
+                  />
+                  <Input
+                    label="Password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    required
+                    helper="At least 8 characters."
+                    value={formData.password}
+                    onChange={(e) => handleChange('password', e.target.value)}
+                    error={fieldErrors.password}
+                    endAdornment={
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          edge="end"
+                          onClick={() => setShowPassword((v) => !v)}
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword
+                            ? <EyeOff className="h-4 w-4" aria-hidden="true" />
+                            : <Eye className="h-4 w-4" aria-hidden="true" />}
+                        </IconButton>
+                      </InputAdornment>
+                    }
+                  />
+                </div>
               </fieldset>
 
               {error && <ErrorBox message={error} />}
@@ -191,7 +193,7 @@ export function RegisterPage() {
 
             <p className="mt-6 text-center text-sm text-ink-600">
               Already have an account?{' '}
-              <Link to="/login" className="font-medium text-brand-700 hover:underline">
+              <Link to="/login" className="font-medium text-brand-700 hover:text-brand-800 hover:underline">
                 Sign in
               </Link>
             </p>
