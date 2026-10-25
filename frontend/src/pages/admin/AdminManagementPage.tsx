@@ -138,7 +138,7 @@ export function AdminManagementPage() {
 
       {modalOpen && (
         <Modal title="Add Admin" onClose={() => setModalOpen(false)}>
-          <form onSubmit={createForm.handleSubmit(submitCreate)} className="space-y-4">
+          <form onSubmit={createForm.handleSubmit(submitCreate)} className="flex flex-col gap-4">
             <p className="text-sm text-ink-600 bg-info-100/60 border border-info-100 rounded-field p-3">
               Creating an admin also creates their <strong>login account</strong> with the
               ADMIN role. They will sign in at the shared <strong>/login</strong> page with
