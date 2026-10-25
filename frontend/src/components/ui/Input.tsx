@@ -1,37 +1,55 @@
 import React from 'react';
+import TextField from '@mui/material/TextField';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'color'> {
   label: string;
-  /** Optional helper line shown under the label. */
+  /** Optional helper line shown under the control. */
   helper?: string;
   error?: string;
+  /** Trailing control inside the field (e.g. a password visibility toggle). */
+  endAdornment?: React.ReactNode;
+  /** Renders a textarea instead of a single-line input. */
+  multiline?: boolean;
+  minRows?: number;
+  /** react-hook-form's register() ref — must reach the real <input>, not the wrapper. */
+  ref?: React.Ref<HTMLInputElement>;
 }
 
 /**
- * MedBook text field. Label + helper sit above the control (helps screen-reader
- * and label-click users alike); the control uses radius-field, an ink-200 border
- * that turns brand on focus and danger on error. The label is always programmatically
- * associated (htmlFor/id).
+ * MedBook text field — MUI TextField (outlined).
+ *
+ * Label, helper text, error message and aria-invalid wiring are handled by
+ * MUI (the label is programmatically associated via the generated id), so the
+ * control keeps the accessible behavior of the previous in-house field while
+ * using the third-party implementation.
  */
-export function Input({ label, helper, error, className = '', id, ...props }: InputProps) {
-  const generatedId = React.useId();
-  const inputId = id ?? generatedId;
+export function Input({ label, helper, error, className = '', id, endAdornment, ref, ...props }: InputProps) {
+  // MUI spreads unknown props onto the FormControl root, so a caller's
+  // aria-label would never reach the actual <input>. Route it through the
+  // htmlInput slot (MUI v9 removed the legacy inputProps prop).
+  const { 'aria-label': ariaLabel, ...rest } = props as {
+    'aria-label'?: string;
+  } & typeof props;
+
+  // MUI routes OutlinedInput props through slotProps.input (v9); putting the
+  // adornment there keeps it inside the field outline and out of the text area.
+  const inputSlotProps: Record<string, unknown> = {};
+  if (ariaLabel) inputSlotProps['aria-label'] = ariaLabel;
+  if (endAdornment) inputSlotProps.endAdornment = endAdornment;
 
   return (
-    <div className={className}>
-      <label htmlFor={inputId} className="mb-1 block text-sm font-medium text-ink-700">
-        {label}
-      </label>
-      {helper && <p className="mb-1 text-xs text-ink-500">{helper}</p>}
-      <input
-        id={inputId}
-        aria-invalid={error ? true : undefined}
-        className={`w-full rounded-field border bg-white px-3 py-2 text-ink-900 placeholder:text-ink-400 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 ${
-          error ? 'border-danger-600' : 'border-ink-200'
-        }`}
-        {...props}
-      />
-      {error && <p className="mt-1 text-sm text-danger-700">{error}</p>}
-    </div>
+    <TextField
+      label={label}
+      id={id}
+      className={className}
+      fullWidth
+      size="small"
+      margin="none"
+      helperText={error ?? helper}
+      error={Boolean(error)}
+      inputRef={ref}
+      slotProps={Object.keys(inputSlotProps).length > 0 ? { input: inputSlotProps } : undefined}
+      {...rest}
+    />
   );
 }
