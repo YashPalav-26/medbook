@@ -157,7 +157,7 @@ export function AdminAppointmentDetailPage() {
         <div className="mb-6">
           <Link
             to="/admin/appointments"
-            className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline"
+            className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:text-brand-800 hover:underline"
           >
             <CalendarSearch className="h-4 w-4" aria-hidden="true" />
             Back to Appointments
@@ -254,12 +254,11 @@ export function AdminAppointmentDetailPage() {
               {canCancel && (
                 <div className="flex flex-wrap gap-3">
                   <Button
-                    variant="outline"
+                    variant="dangerOutline"
                     onClick={() => {
                       reset();
                       setShowCancelModal(true);
                     }}
-                    className="border-danger-300 text-danger-700 hover:bg-danger-100/60"
                   >
                     <XCircle className="h-4 w-4" aria-hidden="true" />
                     Cancel as Admin
@@ -305,7 +304,7 @@ export function AdminAppointmentDetailPage() {
           description="This releases the time slot and records you as the actor in the audit trail. The appointment cannot be re-opened afterwards."
           onClose={() => setShowCancelModal(false)}
         >
-          <form onSubmit={handleSubmit(onCancelSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onCancelSubmit)} className="flex flex-col gap-4">
             <Input
               label="Cancellation reason"
               {...register('cancellationReason')}
@@ -326,8 +325,8 @@ export function AdminAppointmentDetailPage() {
               </Button>
               <Button
                 type="submit"
+                variant="danger"
                 disabled={cancelMutation.isPending}
-                className="bg-danger-600 hover:bg-danger-700"
               >
                 {cancelMutation.isPending ? (
                   <>
