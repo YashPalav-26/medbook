@@ -1,8 +1,11 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { Toaster } from 'sonner';
+import { theme } from './theme';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
-import { ToastProvider } from './components/ui/Toast';
 import { Card } from './components/ui/Card';
 import { Button } from './components/ui/Button';
 import { ShieldAlert } from 'lucide-react';
@@ -19,6 +22,8 @@ import { DoctorAppointmentsPage } from './pages/DoctorAppointmentsPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { SpecialtiesAdminPage } from './pages/admin/SpecialtiesAdminPage';
 import { DoctorsAdminPage } from './pages/admin/DoctorsAdminPage';
+import { AdminPatientsPage } from './pages/admin/AdminPatientsPage';
+import { AdminManagementPage } from './pages/admin/AdminManagementPage';
 import { AvailabilityAdminPage } from './pages/admin/AvailabilityAdminPage';
 import { AdminAppointmentsPage } from './pages/admin/AdminAppointmentsPage';
 import { AdminAppointmentDetailPage } from './pages/admin/AdminAppointmentDetailPage';
@@ -99,10 +104,16 @@ function DoctorRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/** Dashboard route switch: each role lands on its own dashboard. */
+/**
+ * Dashboard route switch: each role lands on its own dashboard after login.
+ * ADMIN → clinic overview, DOCTOR → practice dashboard, PATIENT → patient dashboard.
+ * Guarded here rather than at login so a direct visit to /dashboard also lands correctly.
+ */
 function DashboardRouter() {
   const { user } = useAuth();
+  const isAdmin = user?.roles?.includes('ROLE_ADMIN') ?? false;
   const isDoctor = user?.roles?.includes('ROLE_DOCTOR') ?? false;
+  if (isAdmin) return <AdminDashboardPage />;
   return isDoctor ? <DoctorDashboardPage /> : <DashboardPage />;
 }
 
@@ -124,8 +135,9 @@ const queryClient = new QueryClient({
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ToastProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <QueryClientProvider client={queryClient}>
         <AuthProvider>
         <BrowserRouter>
           <Routes>
@@ -186,12 +198,23 @@ export default function App() {
             <Route path="/admin/appointments/:id" element={<AdminRoute><AdminAppointmentDetailPage /></AdminRoute>} />
             <Route path="/admin/specialties" element={<AdminRoute><SpecialtiesAdminPage /></AdminRoute>} />
             <Route path="/admin/doctors" element={<AdminRoute><DoctorsAdminPage /></AdminRoute>} />
+            <Route path="/admin/patients" element={<AdminRoute><AdminPatientsPage /></AdminRoute>} />
+            <Route path="/admin/admins" element={<AdminRoute><AdminManagementPage /></AdminRoute>} />
             <Route path="/admin/availability" element={<AdminRoute><AvailabilityAdminPage /></AdminRoute>} />
 
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
-        </BrowserRouter>        </AuthProvider>
-      </ToastProvider>
-    </QueryClientProvider>
+        </BrowserRouter>
+        {/* Third-party toast system (Sonner) — mounted once, themed to MedBook. */}
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            className: 'text-sm',
+            style: { background: '#ffffff', color: '#343e42', border: '1px solid #eceff0' },
+          }}
+        />
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
