@@ -114,20 +114,110 @@ export const theme = createTheme({
           gap: 8,
           whiteSpace: 'nowrap',
           boxShadow: '0 1px 3px rgb(28 36 39 / 0.06)',
-          variants: [
-            {
-              props: { color: 'primary' },
-              style: {
-                '&:hover': { backgroundColor: brand[700] },
-                '&:active': { backgroundColor: brand[800] },
-              },
-            },
-          ],
         },
         sizeSmall: { padding: '6px 12px', fontSize: '0.875rem' },
         sizeMedium: { padding: '8px 16px', fontSize: '0.875rem' },
         sizeLarge: { padding: '10px 20px', fontSize: '1rem' },
       },
+      // `variants` must sit on the component options (a sibling of styleOverrides).
+      // Nested inside styleOverrides it is treated as a CSS declaration, and the
+      // resulting invalid rule aborts MUI's stylesheet insertion — every rule after
+      // it (hover, floating-label shrink, notch knockout) silently disappears.
+      variants: [
+        // Primary, solid: darken on hover so the action reads as pressable.
+        {
+          props: { variant: 'contained', color: 'primary' },
+          style: {
+            '&:hover': { backgroundColor: brand[700] },
+            '&:active': { backgroundColor: brand[800] },
+          },
+        },
+        // Primary text/link-style button: a light brand wash, never a neutral wash.
+        {
+          props: { variant: 'text', color: 'primary' },
+          style: {
+            '&:hover': { backgroundColor: brand[50] },
+          },
+        },
+        // Outline button: neutral border at rest, one step darker + faint fill on hover.
+        {
+          props: { variant: 'outlined', color: 'inherit' },
+          style: {
+            borderColor: ink[200],
+            color: ink[700],
+            '&:hover': {
+              backgroundColor: ink[50],
+              borderColor: ink[300],
+              color: ink[900],
+            },
+          },
+        },
+        // Ghost button: no resting fill, faint neutral wash on hover.
+        {
+          props: { variant: 'text', color: 'inherit' },
+          style: {
+            color: ink[700],
+            '&:hover': { backgroundColor: ink[100], color: ink[900] },
+            '&:active': { backgroundColor: ink[200] },
+          },
+        },
+        // Destructive outline (cancel flows): danger outline + a soft danger wash.
+        {
+          props: { variant: 'outlined', color: 'error' },
+          style: {
+            borderColor: '#fca5a5', // danger-300
+            color: '#b91c1c', // danger-700
+            '&:hover': {
+              backgroundColor: '#fee2e266', // danger-100 at 40%
+              borderColor: '#dc2626', // danger-600
+              color: '#b91c1c',
+            },
+          },
+        },
+        // Destructive solid: darken on hover instead of brightening.
+        {
+          props: { variant: 'contained', color: 'error' },
+          style: {
+            '&:hover': { backgroundColor: '#b91c1c' },
+            '&:active': { backgroundColor: '#991b1b' },
+          },
+        },
+        // — On-brand-surface variants (homepage CTA panel).
+        // `info` is only the carrier key (MUI requires a palette key); these
+        // rules fully replace it, so no blue is ever rendered.
+        // Outline on dark/brand surfaces.
+        {
+          props: { variant: 'outlined', color: 'info' },
+          style: {
+            borderColor: 'rgba(255,255,255,0.55)',
+            color: '#ffffff',
+            '&:hover': {
+              borderColor: '#ffffff',
+              backgroundColor: 'rgba(255,255,255,0.14)',
+            },
+          },
+        },
+        // Solid white action on the brand panel.
+        {
+          props: { variant: 'contained', color: 'info' },
+          style: {
+            backgroundColor: '#ffffff',
+            color: brand[700],
+            boxShadow: '0 1px 3px rgb(28 36 39 / 0.10)',
+            '&:hover': { backgroundColor: brand[50], color: brand[800] },
+            '&:active': { backgroundColor: brand[100] },
+          },
+        },
+        // Ghost text action on the brand panel: white label, white wash on hover.
+        {
+          props: { variant: 'text', color: 'info' },
+          style: {
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.16)', color: '#ffffff' },
+            '&:active': { backgroundColor: 'rgba(255,255,255,0.24)' },
+          },
+        },
+      ],
     },
     MuiOutlinedInput: {
       styleOverrides: {
@@ -135,7 +225,7 @@ export const theme = createTheme({
           borderRadius: 10,
           backgroundColor: '#ffffff',
           '& fieldset': { borderColor: ink[200] },
-          '&:hover fieldset': { borderColor: brand[300] },
+          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: brand[500] },
         },
       },
     },
@@ -143,6 +233,18 @@ export const theme = createTheme({
       styleOverrides: {
         root: { color: ink[700], '&.Mui-focused': { color: brand[600] } },
       },
+    },
+    MuiIconButton: {
+      variants: [
+        // Destructive row action (deactivate/close): danger glyph, soft danger wash.
+        {
+          props: { color: 'error' },
+          style: {
+            color: '#b91c1c', // danger-700
+            '&:hover': { backgroundColor: '#fee2e2' }, // danger-100
+          },
+        },
+      ],
     },
     MuiChip: {
       styleOverrides: {
