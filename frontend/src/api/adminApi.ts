@@ -33,6 +33,26 @@ export interface DoctorAdminResponse {
   userActive: boolean;
 }
 
+export interface AdminCreateRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+}
+
+/** An administrator account in the Admin Management view — never any password field. */
+export interface AdminAccountResponse {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  active: boolean;
+  locked: boolean;
+  roles: string[];
+}
+
 export interface SpecialtyCreateRequest {
   name: string;
   description?: string;
@@ -82,6 +102,22 @@ export interface AvailabilityUpdateRequest {
   recurring?: boolean;
   effectiveFrom?: string;
   effectiveUntil?: string;
+}
+
+// ------------------------------------------------------------------
+// Administrators (admin account management)
+// ------------------------------------------------------------------
+
+/** Every administrator account with role names (GET /admin/admins). */
+export async function listAdminAccounts(): Promise<AdminAccountResponse[]> {
+  const response: AxiosResponse<AdminAccountResponse[]> = await api.get('/admin/admins');
+  return response.data;
+}
+
+/** Create an administrator (POST /admin/admins); the backend assigns ADMIN server-side. */
+export async function createAdminAccount(payload: AdminCreateRequest): Promise<AdminAccountResponse> {
+  const response: AxiosResponse<AdminAccountResponse> = await api.post('/admin/admins', payload);
+  return response.data;
 }
 
 // ------------------------------------------------------------------
