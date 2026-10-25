@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios';
 import { MyAppointmentsPage } from './MyAppointmentsPage';
 import * as appointmentApi from '../api/appointmentApi';
@@ -34,7 +35,9 @@ const mockedGetMyAppointments = vi.mocked(appointmentApi.getMyAppointments);
 const appointmentA: AppointmentResponse = {
   id: 1101,
   patientId: 1350,
+  patientName: 'John Carter',
   doctorId: 1,
+  doctorName: 'Sarah Wells',
   appointmentDate: '2026-09-28',
   startTime: '09:00',
   endTime: '09:30',
@@ -46,7 +49,9 @@ const appointmentA: AppointmentResponse = {
 const appointmentB: AppointmentResponse = {
   id: 1102,
   patientId: 1350,
+  patientName: 'John Carter',
   doctorId: 1,
+  doctorName: 'Sarah Wells',
   appointmentDate: '2026-09-29',
   startTime: '10:00',
   endTime: '10:30',
@@ -62,6 +67,9 @@ function renderPage() {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
+        {/* Sonner's Toaster stands in for the one App.tsx mounts, so success
+            toasts render inside the test DOM like they do in the browser. */}
+        <Toaster position="bottom-right" />
         <MyAppointmentsPage />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -88,8 +96,8 @@ describe('MyAppointmentsPage', () => {
   it('renders skeleton placeholders while loading (never a bare "Loading...")', () => {
     mockedGetMyAppointments.mockReturnValue(new Promise(() => {}));
     renderPage();
-    // Skeletons are aria-hidden decorative divs; there must be several, and no list yet.
-    const skeletons = document.querySelectorAll('.animate-pulse');
+    // MUI Skeletons are aria-hidden decorative divs; there must be several, and no list yet.
+    const skeletons = document.querySelectorAll('.MuiSkeleton-root');
     expect(skeletons.length).toBeGreaterThanOrEqual(3);
     expect(screen.queryByText('Appointment #1101')).not.toBeInTheDocument();
   });
@@ -102,11 +110,13 @@ describe('MyAppointmentsPage', () => {
       expect(screen.getByText('Appointment #1101')).toBeInTheDocument();
     });
     expect(screen.getByText('Appointment #1102')).toBeInTheDocument();
-    expect(screen.getByText('SCHEDULED')).toBeInTheDocument();
-    expect(screen.getByText('CANCELLED')).toBeInTheDocument();
+    // Status chips render humanized labels through MUI Chip (never color alone).
+    const chipLabels = Array.from(document.querySelectorAll('.MuiChip-label')).map((el) => el.textContent);
+    expect(chipLabels).toContain('Scheduled');
+    expect(chipLabels).toContain('Cancelled');
     expect(screen.getByText(/Plan changed/)).toBeInTheDocument();
-    // Doctor/patient context line on each card (real API fields).
-    expect(screen.getAllByText(/Doctor #1 · Patient #1350/)).toHaveLength(2);
+    // Doctor context line on each card (real API display names).
+    expect(screen.getAllByText('Dr. Sarah Wells')).toHaveLength(2);
     // Fee is rendered with two decimals on both cards.
     expect(screen.getAllByText('$500.00')).toHaveLength(2);
   });
@@ -150,16 +160,27 @@ describe('MyAppointmentsPage', () => {
     expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
 
-  it('navigates to the appointment detail page when a card is clicked', async () => {
+  it('moves between status tabs with the arrow keys', async () => {
     const user = userEvent.setup();
     mockedGetMyAppointments.mockResolvedValueOnce([appointmentA]);
     renderPage();
 
-    await waitFor(() => {
-      expect(screen.getByText('Appointment #1101')).toBeInTheDocument();
-    });
-    await user.click(screen.getByText('Appointment #1101'));
+    const allTab = await screen.findByRole('tab', { name: /All/ });
+    allTab.focus();
+    await user.keyboard('{ArrowRight}');
 
-    expect(navigateMock).toHaveBeenCalledWith('/appointments/1101');
+    expect(screen.getByRole('tab', { name: /Upcoming/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: /Upcoming/ })).toHaveFocus();
+  });
+
+  it('links each card to its appointment detail page', async () => {
+    mockedGetMyAppointments.mockResolvedValueOnce([appointmentA]);
+    renderPage();
+
+    const link = await screen.findByRole('link', { name: /Appointment #1101/i });
+    // A real anchor (not a div with onClick) keeps keyboard, middle-click and
+    // "open in new tab" working — and is what screen readers announce.
+    expect(link).toHaveAttribute('href', '/appointments/1101');
+    expect(navigateMock).not.toHaveBeenCalled();
   });
 });
