@@ -191,10 +191,10 @@ export function HomePage() {
               Create a free account and book your first visit in a few clicks.
             </p>
             <div className="mt-6 flex justify-center gap-3">
-              <ButtonLink to="/register" size="lg" className="bg-white text-brand-700 hover:bg-brand-50">
+              <ButtonLink to="/register" size="lg" variant="onBrand">
                 Create account
               </ButtonLink>
-              <ButtonLink to="/login" size="lg" variant="ghost" className="text-white hover:bg-brand-600">
+              <ButtonLink to="/login" size="lg" variant="onBrandGhost">
                 Sign in
               </ButtonLink>
             </div>
