@@ -348,6 +348,25 @@ class AdminManagementTest {
     }
 
     @Test
+    void createdDoctorCanLogInThroughTheAuthApi() throws Exception {
+        Specialty specialty = createSpecialty("Admin Login Spec");
+
+        mockMvc.perform(post("/api/v1/admin/doctors")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(doctorCreateJson("login-doc@medbook.test", "LIC-LOGIN-1", specialty.getId())))
+                .andExpect(status().isCreated());
+
+        // The complete admin-to-doctor chain: account created by an admin, then used to
+        // sign in through the public login endpoint with the DOCTOR role in the token.
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"login-doc@medbook.test\",\"password\":\"Doctor#Pass1\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty())
+                .andExpect(jsonPath("$.user.roles[0]").value("ROLE_DOCTOR"));
+    }
+
+    @Test
     void duplicateEmailIsRejectedAndNothingIsCreated() throws Exception {
         Specialty specialty = createSpecialty("Admin Dup Email Spec");
         createUserWithRole("taken@medbook.test", "PATIENT");
@@ -604,6 +623,201 @@ class AdminManagementTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"dayOfWeek\":1,\"startTime\":\"09:00\",\"endTime\":\"10:00\"}"))
                 .andExpect(status().isForbidden());
+    }
+
+    // ==================================================================
+    // ADMINISTRATORS (admin account management)
+    // ==================================================================
+
+    private String adminCreateJson(String email) {
+        return """
+                {
+                  "email": "%s",
+                  "password": "Admin#Pass1",
+                  "firstName": "New",
+                  "lastName": "Administrator",
+                  "phoneNumber": "+15550008888"
+                }
+                """.formatted(email);
+    }
+
+    @Test
+    void adminListsAdminAccountsWithoutAnyPasswordMaterial() throws Exception {
+        String body = mockMvc.perform(get("/api/v1/admin/admins"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == " + adminUser.getId() + ")]").exists())
+                .andReturn().getResponse().getContentAsString();
+
+        // DTO-only serialization: no hash, no plaintext, no password-ish field at all.
+        assertThat(body).doesNotContain("password");
+        assertThat(body).doesNotContain("passwordHash");
+        assertThat(body).doesNotContain("$2a$");
+        assertThat(body).doesNotContain("$2b$");
+    }
+
+    @Test
+    void adminCreatesAdminWithUserRoleAndHashedPassword() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/admins")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(adminCreateJson("newadmin@medbook.test")))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", containsString("/api/v1/admin/admins/")))
+                .andExpect(jsonPath("$.id").isNumber())
+                .andExpect(jsonPath("$.email").value("newadmin@medbook.test"))
+                .andExpect(jsonPath("$.firstName").value("New"))
+                .andExpect(jsonPath("$.lastName").value("Administrator"))
+                .andExpect(jsonPath("$.roles[0]").value("ADMIN"))
+                .andReturn();
+
+        // The linked user exists with exactly the ADMIN role and a BCrypt hash.
+        User linked = userRepository.findByEmail("newadmin@medbook.test").orElseThrow();
+        assertThat(linked.hasRole("ADMIN")).isTrue();
+        assertThat(linked.hasRole("DOCTOR")).isFalse();
+        assertThat(linked.hasRole("PATIENT")).isFalse();
+        assertThat(linked.getPasswordHash()).isNotEqualTo("Admin#Pass1");
+        assertThat(linked.getPasswordHash()).startsWith("$2");
+    }
+
+    @Test
+    void createdAdminCanLogInThroughTheAuthApi() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/admins")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(adminCreateJson("login-admin@medbook.test")))
+                .andExpect(status().isCreated());
+
+        // The complete admin-to-admin chain: account created by an admin, then used to
+        // sign in through the public login endpoint with the ADMIN role in the token.
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"login-admin@medbook.test\",\"password\":\"Admin#Pass1\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty())
+                .andExpect(jsonPath("$.user.roles[0]").value("ROLE_ADMIN"));
+    }
+
+    @Test
+    void duplicateAdminEmailIsRejectedWith409() throws Exception {
+        createUserWithRole("taken-admin@medbook.test", "PATIENT");
+
+        mockMvc.perform(post("/api/v1/admin/admins")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(adminCreateJson("taken-admin@medbook.test")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("An account with this email address already exists"));
+    }
+
+    @Test
+    void shortAdminPasswordIsRejectedWith400() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/admins")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "shortpw@medbook.test",
+                                  "password": "short",
+                                  "firstName": "Short",
+                                  "lastName": "Pw",
+                                  "phoneNumber": "+15550008889"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+
+        // Nothing was created.
+        assertThat(userRepository.findByEmail("shortpw@medbook.test")).isEmpty();
+    }
+
+    @Test
+    void patientCannotCreateAdmin() throws Exception {
+        User patient = createUserWithRole("noadmin-pat@medbook.test", "PATIENT");
+        mockMvc.perform(post("/api/v1/admin/admins")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(patient, "ROLE_PATIENT"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(adminCreateJson("blocked@medbook.test")))
+                .andExpect(status().isForbidden());
+
+        assertThat(userRepository.findByEmail("blocked@medbook.test")).isEmpty();
+    }
+
+    @Test
+    void patientCannotListAdminAccounts() throws Exception {
+        User patient = createUserWithRole("noadmin-list-pat@medbook.test", "PATIENT");
+        mockMvc.perform(get("/api/v1/admin/admins")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(patient, "ROLE_PATIENT")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void doctorCannotCreateAdmin() throws Exception {
+        User doctor = createUserWithRole("noadmin-doc@medbook.test", "DOCTOR");
+        mockMvc.perform(post("/api/v1/admin/admins")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(doctor, "ROLE_DOCTOR"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(adminCreateJson("blocked-doc@medbook.test")))
+                .andExpect(status().isForbidden());
+
+        assertThat(userRepository.findByEmail("blocked-doc@medbook.test")).isEmpty();
+    }
+
+    @Test
+    void doctorCannotCreateDoctor() throws Exception {
+        Specialty specialty = createSpecialty("AdminMgmt Doc Guard Spec");
+        User doctor = createUserWithRole("doc-guard@medbook.test", "DOCTOR");
+        mockMvc.perform(post("/api/v1/admin/doctors")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(doctor, "ROLE_DOCTOR"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(doctorCreateJson("selfdoc@medbook.test", "LIC-SELFGUARD", specialty.getId())))
+                .andExpect(status().isForbidden());
+
+        assertThat(userRepository.findByEmail("selfdoc@medbook.test")).isEmpty();
+    }
+
+    @Test
+    void patientCannotCreateDoctor() throws Exception {
+        Specialty specialty = createSpecialty("AdminMgmt Pat Guard Spec");
+        User patient = createUserWithRole("pat-guard@medbook.test", "PATIENT");
+        mockMvc.perform(post("/api/v1/admin/doctors")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(patient, "ROLE_PATIENT"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(doctorCreateJson("selfdoc-pat@medbook.test", "LIC-PATGUARD", specialty.getId())))
+                .andExpect(status().isForbidden());
+
+        assertThat(userRepository.findByEmail("selfdoc-pat@medbook.test")).isEmpty();
+    }
+
+    @Test
+    void anonymousCannotCreateAdmin() throws Exception {
+        MockMvc anonymous = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(springSecurity())
+                .build();
+
+        anonymous.perform(post("/api/v1/admin/admins")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(adminCreateJson("anon-admin@medbook.test")))
+                .andExpect(status().isUnauthorized());
+
+        assertThat(userRepository.findByEmail("anon-admin@medbook.test")).isEmpty();
+    }
+
+    @Test
+    void adminCreationRequestCarriesNoTrustedRoleField() throws Exception {
+        // Even if a client sends a "role" field, the DTO has no such component, so it
+        // is ignored and the server-side fixed ADMIN assignment stands.
+        mockMvc.perform(post("/api/v1/admin/admins")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "rolefield@medbook.test",
+                                  "password": "Admin#Pass1",
+                                  "firstName": "Role",
+                                  "lastName": "Field",
+                                  "phoneNumber": "+15550008890",
+                                  "role": "DOCTOR"
+                                }
+                                """))
+                .andExpect(status().isCreated());
+
+        User linked = userRepository.findByEmail("rolefield@medbook.test").orElseThrow();
+        assertThat(linked.hasRole("ADMIN")).isTrue();
+        assertThat(linked.hasRole("DOCTOR")).isFalse();
     }
 
     // ==================================================================
