@@ -65,11 +65,17 @@ export interface CancelAppointmentRequest {
   cancellationReason: string;
 }
 
-/** Backend AppointmentResponse */
+/**
+ * Backend AppointmentResponse.
+ * Carries the participants' IDs and their safe display names ("First Last") so the
+ * patient/doctor UIs can identify a visit without a second lookup.
+ */
 export interface AppointmentResponse {
   id: number;
   patientId: number;
+  patientName: string;
   doctorId: number;
+  doctorName: string;
   appointmentDate: string;
   startTime: string;
   endTime: string;
