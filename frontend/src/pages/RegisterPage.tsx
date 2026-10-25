@@ -12,11 +12,11 @@ import { todayIso } from '../lib/dates';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 
-/**
- * Registration page, consistent with the login card. Fields exactly match the
- * backend RegisterRequest — no role selection, nothing invented. Grouped into
- * "About you" and "Account security", with password requirements up front.
- */
+
+
+
+
+
 export function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();

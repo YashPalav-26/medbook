@@ -10,12 +10,12 @@ import { formatDate, todayIso } from '../lib/dates';
 import { formatCurrency } from '../lib/format';
 import type { AppointmentResponse } from '../types/appointment';
 
-/**
- * Doctor appointment list (GET /appointments/me — the backend returns only
- * appointments assigned to the authenticated doctor). Same design language as
- * My Appointments: status filter tabs with real counts, responsive cards,
- * click-through to the shared detail page.
- */
+
+
+
+
+
+
 
 type StatusFilter = 'ALL' | 'UPCOMING' | 'CANCELLED';
 const FILTERS: { key: StatusFilter; label: string }[] = [

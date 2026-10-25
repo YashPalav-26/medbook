@@ -17,7 +17,7 @@ describe('navigation primitives', () => {
 
     const link = screen.getByRole('link', { name: 'Book appointment' });
     expect(link).toHaveAttribute('href', '/appointments/new');
-    // An anchor containing a <button> is invalid and produces two controls.
+
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 

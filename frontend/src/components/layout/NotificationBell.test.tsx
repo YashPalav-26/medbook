@@ -7,10 +7,10 @@ import { NotificationBell } from './NotificationBell';
 import * as notificationApi from '../../api/notificationApi';
 import type { NotificationResponse } from '../../types/notification';
 
-/**
- * Step 25 notification bell tests. The API module is mocked; the bell is rendered
- * inside MemoryRouter because item clicks navigate to appointment detail.
- */
+
+
+
+
 
 vi.mock('../../api/notificationApi', () => ({
   getMyNotifications: vi.fn(),
@@ -86,8 +86,8 @@ describe('NotificationBell — rendering', () => {
     mockedApi.getUnreadNotificationCount.mockResolvedValue(3);
     renderBell();
 
-    // MUI Badge renders its span before the count resolves (hidden/empty at 0);
-    // wait for the count, then assert the visible badge content.
+
+
     const badge = await screen.findByTestId('unread-badge');
     await waitFor(() => expect(badge).toHaveTextContent('3'));
     expect(badge).not.toHaveClass('MuiBadge-invisible');
@@ -123,7 +123,7 @@ describe('NotificationBell — rendering', () => {
     expect(screen.getByText('Booked')).toBeInTheDocument();
     expect(screen.getByText('Confirmed')).toBeInTheDocument();
     expect(screen.getAllByText(/2m ago/).length).toBeGreaterThanOrEqual(1);
-    // read/unread distinction is visible in attributes, not just styling
+
     expect(screen.getAllByTestId('notification-item')[0]).toHaveAttribute('data-read', 'false');
     expect(screen.getAllByTestId('notification-item')[1]).toHaveAttribute('data-read', 'true');
   });
@@ -138,7 +138,7 @@ describe('NotificationBell — rendering', () => {
 
     await user.click(screen.getByRole('button', { name: /notifications/i }));
 
-    // Error state replaces the list (loading skeletons appear only transiently).
+
     expect(await screen.findByText('Could not load notifications.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
@@ -154,7 +154,7 @@ describe('NotificationBell — interactions', () => {
     await user.click(await screen.findByTestId('notification-item'));
 
     await waitFor(() => expect(mockedApi.markNotificationRead).toHaveBeenCalledWith(7));
-    // Navigation to the referenced appointment happened; the bell is closed.
+
     expect(await screen.findByText('APPOINTMENT DETAIL PAGE')).toBeInTheDocument();
     expect(screen.queryByTestId('notification-panel')).not.toBeInTheDocument();
   });
@@ -175,9 +175,9 @@ describe('NotificationBell — interactions', () => {
     await user.click(await screen.findByTestId('mark-all-read'));
 
     await waitFor(() => expect(mockedApi.markAllNotificationsRead).toHaveBeenCalled());
-    // The badge span stays mounted but becomes invisible (and empty) at 0 unread.
+
     await waitFor(() => expect(badge).toHaveClass('MuiBadge-invisible'));
-    // Every row is now marked read.
+
     await waitFor(() => {
       screen.getAllByTestId('notification-item').forEach((item) => {
         expect(item).toHaveAttribute('data-read', 'true');

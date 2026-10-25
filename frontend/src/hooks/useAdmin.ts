@@ -12,19 +12,19 @@ import type {
 import type { AdminAppointmentFilters } from '../types/appointment';
 import { useAuth } from './useAuth';
 
-/**
- * React Query hooks for the admin area.
- *
- * Query keys: ['admin', resource, ...] — mutations invalidate every affected
- * resource so lists, detail views and the booking discovery API cache stay
- * consistent without full page reloads.
- */
 
-// ------------------------------------------------------------------
-// Administrators (admin account management)
-// ------------------------------------------------------------------
 
-/** Every administrator account for the Admin Management screen. */
+
+
+
+
+
+
+
+
+
+
+
 export function useAdminAccounts() {
   const { isAuthenticated } = useAuth();
 
@@ -35,7 +35,7 @@ export function useAdminAccounts() {
   });
 }
 
-/** Create an administrator; success refreshes the Admin Management list. */
+
 export function useCreateAdminAccount() {
   const queryClient = useQueryClient();
 
@@ -47,9 +47,9 @@ export function useCreateAdminAccount() {
   });
 }
 
-// ------------------------------------------------------------------
-// Specialties
-// ------------------------------------------------------------------
+
+
+
 
 export function useAdminSpecialties() {
   const { isAuthenticated } = useAuth();
@@ -67,7 +67,7 @@ export function useCreateSpecialty() {
   return useMutation({
     mutationFn: (payload: SpecialtyCreateRequest) => adminApi.createSpecialty(payload),
     onSuccess: () => {
-      // Admin list + the public discovery dropdown both change.
+
       queryClient.invalidateQueries({ queryKey: ['admin', 'specialties'] });
       queryClient.invalidateQueries({ queryKey: ['specialties'] });
     },
@@ -83,7 +83,7 @@ export function useUpdateSpecialty() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'specialties'] });
       queryClient.invalidateQueries({ queryKey: ['specialties'] });
-      queryClient.invalidateQueries({ queryKey: ['doctors'] }); // doctor cards show specialty names
+      queryClient.invalidateQueries({ queryKey: ['doctors'] });
     },
   });
 }
@@ -101,9 +101,9 @@ export function useDeactivateSpecialty() {
   });
 }
 
-// ------------------------------------------------------------------
-// Doctors
-// ------------------------------------------------------------------
+
+
+
 
 export function useAdminDoctors() {
   const { isAuthenticated } = useAuth();
@@ -122,7 +122,7 @@ export function useCreateDoctor() {
     mutationFn: (payload: DoctorCreateRequest) => adminApi.createDoctor(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'doctors'] });
-      queryClient.invalidateQueries({ queryKey: ['doctors'] }); // public discovery
+      queryClient.invalidateQueries({ queryKey: ['doctors'] });
     },
   });
 }
@@ -154,15 +154,15 @@ export function useDeactivateDoctor() {
   });
 }
 
-// ------------------------------------------------------------------
-// Patients (read-only)
-// ------------------------------------------------------------------
 
-/**
- * Every patient, for the booking-on-behalf picker. Static reference data for the
- * session: the list changes only when a new patient registers, and a stale entry
- * is corrected by the backend's 404 validation anyway.
- */
+
+
+
+
+
+
+
+
 export function useAdminPatients() {
   const { isAuthenticated } = useAuth();
 
@@ -174,9 +174,9 @@ export function useAdminPatients() {
   });
 }
 
-// ------------------------------------------------------------------
-// Availability
-// ------------------------------------------------------------------
+
+
+
 
 export function useAdminAvailability(doctorId: number | null) {
   const { isAuthenticated } = useAuth();
@@ -196,7 +196,7 @@ export function useCreateAvailability() {
       adminApi.createAvailability(doctorId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'availability'] });
-      queryClient.invalidateQueries({ queryKey: ['doctorAvailability'] }); // booking page
+      queryClient.invalidateQueries({ queryKey: ['doctorAvailability'] });
     },
   });
 }
@@ -226,15 +226,15 @@ export function useDeactivateAvailability() {
   });
 }
 
-// ------------------------------------------------------------------
-// Appointments
-// ------------------------------------------------------------------
 
-/**
- * Clinic-wide appointment list. The filters object is part of the query key, so
- * every filter combination gets its own cache entry and changing a filter refetches
- * from the backend (server-side filtering, not JavaScript filtering).
- */
+
+
+
+
+
+
+
+
 export function useAdminAppointments(filters: AdminAppointmentFilters = {}) {
   const { isAuthenticated } = useAuth();
 
@@ -245,7 +245,7 @@ export function useAdminAppointments(filters: AdminAppointmentFilters = {}) {
   });
 }
 
-/** One appointment with its status-change audit trail. */
+
 export function useAdminAppointment(id: number | null) {
   const { isAuthenticated } = useAuth();
 
@@ -256,7 +256,7 @@ export function useAdminAppointment(id: number | null) {
   });
 }
 
-/** Real clinic overview metrics for the admin dashboard. */
+
 export function useAdminOverview() {
   const { isAuthenticated } = useAuth();
 
@@ -267,11 +267,11 @@ export function useAdminOverview() {
   });
 }
 
-/**
- * ADMIN support cancellation. Success invalidates every admin appointment view —
- * the filtered lists (all of them, since any may include this row), the detail,
- * and the dashboard overview counts.
- */
+
+
+
+
+
 export function useAdminCancelAppointment() {
   const queryClient = useQueryClient();
 

@@ -11,7 +11,7 @@ import {
 import type { AppointmentStatus } from '../../types/appointment';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 
-/** Same semantic colors as StatusBadge, one per appointment status. */
+
 const STATUS_BAR_COLORS: Record<AppointmentStatus, string> = {
   SCHEDULED: '#38bdf8',     // info
   CONFIRMED: '#16a34a',     // success green (matches the Confirmed chip)
@@ -20,7 +20,7 @@ const STATUS_BAR_COLORS: Record<AppointmentStatus, string> = {
   NO_SHOW:   '#d97706',     // warning-600
 };
 
-/** Management destinations — one array so the cards cannot drift apart. */
+
 const MANAGEMENT_LINKS = [
   {
     to: '/admin/appointments',
@@ -54,17 +54,17 @@ const MANAGEMENT_LINKS = [
   },
 ];
 
-/**
- * ADMIN dashboard — the entry point of the admin area.
- *
- * The overview section shows only metrics the backend actually computes from live
- * appointment rows (GET /admin/appointments/overview): today's appointments, the
- * per-status breakdown and the all-time total. No revenue, growth, percentages or
- * any other number the system cannot derive — fake stats are worse than none.
- */
+
+
+
+
+
+
+
+
 export function AdminDashboardPage() {
   const { user } = useAuth();
-  // The patient dashboard is only reachable/useful with the PATIENT role.
+
   const isPatient = user?.roles?.includes('ROLE_PATIENT') ?? false;
   const managementLinks = MANAGEMENT_LINKS.filter(
     (link) => link.to !== '/dashboard' || isPatient,

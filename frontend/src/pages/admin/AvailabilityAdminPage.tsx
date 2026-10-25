@@ -25,11 +25,11 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import { StatusBadge } from '../../components/admin/AdminUi';
 
-/**
- * Day names for display; values sent to the backend use the MySQL convention
- * the whole project runs on: 0 = Sunday ... 6 = Saturday. The admin never types
- * a number — they pick "Monday" and the form maps it to 1.
- */
+
+
+
+
+
 const DAYS = [
   { value: 0, label: 'Sunday' },
   { value: 1, label: 'Monday' },
@@ -42,7 +42,7 @@ const DAYS = [
 
 const dayLabel = (value: number) => DAYS.find((d) => d.value === value)?.label ?? String(value);
 
-/** Is a window closed (no longer applies to any future date)? */
+
 function isClosed(window: DoctorAvailabilityResponse): boolean {
   if (window.effectiveUntil == null) return false;
   const yesterday = new Date();
@@ -55,7 +55,7 @@ const windowSchema = z.object({
   dayOfWeek: z.number({ error: 'Pick a day' }).min(0).max(6),
   startTime: z.string().min(1, 'Start time is required'),
   endTime: z.string().min(1, 'End time is required'),
-  // String (not boolean) because the UI control is a <select>; converted on submit.
+
   recurringValue: z.enum(['true', 'false']),
   effectiveFrom: z.string().optional(),
   effectiveUntil: z.string().optional(),
@@ -69,12 +69,12 @@ const windowSchema = z.object({
 
 type WindowFormData = z.infer<typeof windowSchema>;
 
-/**
- * ADMIN availability management.
- * Pick a doctor, see their weekly windows (open and closed), add new windows,
- * edit them, or close them. Closing is the schema-native "deactivate": the row
- * keeps its history but stops applying to future dates.
- */
+
+
+
+
+
+
 export function AvailabilityAdminPage() {
   const doctorsQuery = useAdminDoctors();
   const [doctorId, setDoctorId] = useState<number | null>(null);

@@ -29,21 +29,21 @@ import { AdminAppointmentsPage } from './pages/admin/AdminAppointmentsPage';
 import { AdminAppointmentDetailPage } from './pages/admin/AdminAppointmentDetailPage';
 import type { ReactNode } from 'react';
 
-// ------------------------------------------------------------------
-// Route guards
-// ------------------------------------------------------------------
+
+
+
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
 
-/**
- * Admin area guard — UX only, not security. It reads the roles the backend
- * returned at login (already stored by AuthContext) and shows a forbidden card
- * to non-admins. The real boundary is the backend's /api/v1/admin/** → ADMIN
- * role check: every admin API call from these pages would return 403 anyway.
- */
+
+
+
+
+
+
 function AdminRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) {
@@ -71,12 +71,12 @@ function AdminRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/**
- * Doctor area guard — UX only, not security. Doctors see the doctor portal;
- * everyone else gets the same "Access denied" treatment as the admin area.
- * The authoritative check is the backend: /appointments/me is role-aware and
- * every transition endpoint verifies DOCTOR role + assignment from the JWT.
- */
+
+
+
+
+
+
 function DoctorRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) {
@@ -104,11 +104,11 @@ function DoctorRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/**
- * Dashboard route switch: each role lands on its own dashboard after login.
- * ADMIN → clinic overview, DOCTOR → practice dashboard, PATIENT → patient dashboard.
- * Guarded here rather than at login so a direct visit to /dashboard also lands correctly.
- */
+
+
+
+
+
 function DashboardRouter() {
   const { user } = useAuth();
   const isAdmin = user?.roles?.includes('ROLE_ADMIN') ?? false;
@@ -117,9 +117,9 @@ function DashboardRouter() {
   return isDoctor ? <DoctorDashboardPage /> : <DashboardPage />;
 }
 
-// ------------------------------------------------------------------
-// Query client
-// ------------------------------------------------------------------
+
+
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -129,9 +129,9 @@ const queryClient = new QueryClient({
   },
 });
 
-// ------------------------------------------------------------------
-// App
-// ------------------------------------------------------------------
+
+
+
 
 export default function App() {
   return (

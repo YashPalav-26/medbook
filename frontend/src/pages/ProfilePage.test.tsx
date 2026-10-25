@@ -10,7 +10,7 @@ import * as profileApi from '../api/profileApi';
 import type { CurrentUserResponse } from '../types/auth';
 import { formatDate } from '../lib/dates';
 
-// The page calls the real API module; every test controls what it returns.
+
 vi.mock('../api/profileApi', () => ({
   getMyProfile: vi.fn(),
   updateMyAccount: vi.fn(),
@@ -19,7 +19,7 @@ vi.mock('../api/profileApi', () => ({
   changeMyPassword: vi.fn(),
 }));
 
-// Signed-in admin by default; per-test overrides below change the role shape.
+
 vi.mock('../hooks/useAuth', () => ({
   useAuth: () => ({
     isAuthenticated: true,
@@ -118,7 +118,7 @@ describe('ProfilePage — rendering', () => {
     expect(screen.getByText('Ada Admin')).toBeInTheDocument();
     expect(screen.getByText('admin@medbook.test')).toBeInTheDocument();
     expect(screen.getByText('ADMIN')).toBeInTheDocument();
-    // Heading and submit button share the label.
+
     expect(screen.getAllByText('Change Password').length).toBeGreaterThanOrEqual(2);
   });
 
@@ -201,7 +201,7 @@ describe('ProfilePage — account editing', () => {
     await user.type(screen.getByLabelText('First name'), 'Changed');
     await user.click(screen.getByRole('button', { name: /cancel edit/i }));
 
-    // Back in display mode with the original value.
+
     expect(await screen.findByText('Ada Admin')).toBeInTheDocument();
     expect(mockedApi.updateMyAccount).not.toHaveBeenCalled();
   });
@@ -218,7 +218,7 @@ describe('ProfilePage — account editing', () => {
     await user.click(screen.getByRole('button', { name: /save changes/i }));
 
     expect(await screen.findByText('Request validation failed')).toBeInTheDocument();
-    // The form stays open so nothing is lost.
+
     expect(screen.getByLabelText('First name')).toBeInTheDocument();
   });
 });
@@ -229,13 +229,13 @@ describe('ProfilePage — patient profile editing', () => {
     const user = userEvent.setup();
     renderPage();
 
-    // Two Edit buttons exist (Account + Patient sections) — pick the one inside the
-    // Patient Profile card, whose accessible name mentions the section heading.
+
+
     const patientCard = (await screen.findByText('Patient Profile')).closest('div[class*="rounded"]') as HTMLElement;
     await user.click(within(patientCard).getByRole('button', { name: /edit/i }));
     await user.clear(screen.getByLabelText('City'));
     await user.type(screen.getByLabelText('City'), 'Pune');
-    // MUI Select: open the listbox and click the option (no native select).
+
     await pickFromSelect(user, screen, 'Insurance status', 'No insurance');
     await user.click(screen.getByRole('button', { name: /save changes/i }));
 
@@ -254,7 +254,7 @@ describe('ProfilePage — doctor profile editing', () => {
     const user = userEvent.setup();
     renderPage();
 
-    // Scope to the Professional Profile card (the Account card also has an Edit button).
+
     const doctorCard = (await screen.findByText('Professional Profile')).closest('div[class*="rounded"]') as HTMLElement;
     await user.click(within(doctorCard).getByRole('button', { name: /edit/i }));
     expect(screen.getByLabelText('Bio')).toBeInTheDocument();
@@ -274,7 +274,7 @@ describe('ProfilePage — doctor profile editing', () => {
     expect(await screen.findByText('Professional profile updated.')).toBeInTheDocument();
   });
 });describe('ProfilePage — change password', () => {
-  /** Fill the three password fields in one shot per field (controlled RHF inputs). */
+
   function fillPasswords(current: string, next: string, confirm: string) {
     fireEvent.change(screen.getByLabelText('Current password'), { target: { value: current } });
     fireEvent.change(screen.getByLabelText('New password'), { target: { value: next } });
@@ -286,7 +286,7 @@ describe('ProfilePage — doctor profile editing', () => {
     const user = userEvent.setup();
     renderPage();
 
-    // The section heading and the submit button share their label — take the heading.
+
     await screen.findAllByText('Change Password');
     fillPasswords('Current#Pass1', 'New#Secret99', 'Different#1');
     await user.click(screen.getByRole('button', { name: /change password/i }));
@@ -303,7 +303,7 @@ describe('ProfilePage — doctor profile editing', () => {
         newPassword: 'New#Secret99',
       }),
     );
-    // The success note appears twice (toast + inline banner) — both together prove it.
+
     expect((await screen.findAllByText(/Password changed/)).length).toBeGreaterThanOrEqual(1);
   });
 

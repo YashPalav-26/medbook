@@ -8,11 +8,11 @@ import { StatusBadge, EmptyState, Skeleton } from '../components/ui/Feedback';
 import { CalendarDays, ArrowRight, Clock, User, Stethoscope } from 'lucide-react';
 import { formatDate, todayIso } from '../lib/dates';
 
-/**
- * Doctor dashboard. Real data only: today's and upcoming visits come from the
- * role-aware /appointments/me endpoint (the backend returns appointments assigned
- * to the authenticated doctor). No fabricated KPIs, charts or patient counts.
- */
+
+
+
+
+
 export function DoctorDashboardPage() {
   const { user } = useAuth();
   const appointmentsQuery = useMyAppointments();

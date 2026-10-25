@@ -20,14 +20,14 @@ import {
   AlertCircle, History,
 } from 'lucide-react';
 
-/**
- * ADMIN appointment detail (GET /admin/appointments/:id): full visit summary with
- * patient/doctor names and specialty, the status-change audit timeline, and the one
- * explicitly implemented admin action — support cancellation with a required reason.
- *
- * Admins never confirm/complete/no-show (that stays the assigned doctor's workflow);
- * the cancel button only appears for SCHEDULED/CONFIRMED rows, mirroring the backend rule.
- */
+
+
+
+
+
+
+
+
 
 const cancelSchema = z.object({
   cancellationReason: z
@@ -37,7 +37,7 @@ const cancelSchema = z.object({
 });
 type CancelFormData = z.infer<typeof cancelSchema>;
 
-/** One timeline entry: status pill, actor, note, timestamp. */
+
 function HistoryItem({
   status,
   changedByName,
@@ -91,7 +91,7 @@ export function AdminAppointmentDetailPage() {
     defaultValues: { cancellationReason: '' },
   });
 
-  // Toasts come from the Sonner-based facade (lib/toast) — no provider needed.
+
 
   const onCancelSubmit = async (data: CancelFormData) => {
     if (!appointmentId) return;

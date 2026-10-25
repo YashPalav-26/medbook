@@ -20,11 +20,11 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 
-/**
- * Zod schema for the Add Admin form. Mirrors the backend's AdminCreateRequest
- * validation exactly (email, 8-72 char password, names, phone pattern) so the
- * admin gets the same feedback the API would give.
- */
+
+
+
+
+
 const createSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Must be a valid email'),
   password: z.string().min(8, 'At least 8 characters').max(72, 'At most 72 characters'),
@@ -36,16 +36,16 @@ const createSchema = z.object({
 
 type CreateFormData = z.infer<typeof createSchema>;
 
-/**
- * ADMIN account management (GET/POST /api/v1/admin/admins).
- *
- * Lists every administrator (name, email, account status, roles — never any
- * password) and creates additional administrators. Creating an admin provisions
- * their login account with the ADMIN role server-side; the frontend sends no
- * role field because the backend is authoritative. Deactivation with
- * last-admin lockout protection is a documented future feature, so this screen
- * offers list + add only.
- */
+
+
+
+
+
+
+
+
+
+
 export function AdminManagementPage() {
   const adminsQuery = useAdminAccounts();
   const createMutation = useCreateAdminAccount();

@@ -15,15 +15,15 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 
-/**
- * ADMIN patient list (GET /api/v1/admin/patients).
- *
- * Read-only on purpose: patients self-register and administrators book on their behalf.
- * The backend exposes no delete/deactivate endpoint for patients, so this screen offers
- * none — it answers "who is this patient and how do we reach them" and nothing more.
- * The search box filters the already-loaded list client-side (names/email/phone); no
- * extra endpoint is contacted.
- */
+
+
+
+
+
+
+
+
+
 export function AdminPatientsPage() {
   const patientsQuery = useAdminPatients();
   const [search, setSearch] = useState('');

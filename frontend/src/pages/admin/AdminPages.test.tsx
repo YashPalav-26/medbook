@@ -12,7 +12,7 @@ import * as adminApi from '../../api/adminApi';
 import { pickFromSelect } from '../../test/mui';
 import type { SpecialtyResponse } from '../../types/appointment';
 
-// All admin pages call the real API module; every test controls what it returns.
+
 vi.mock('../../api/adminApi', () => ({
   listAdminSpecialties: vi.fn(),
   createSpecialty: vi.fn(),
@@ -35,7 +35,7 @@ vi.mock('../../api/adminApi', () => ({
   createAdminAccount: vi.fn(),
 }));
 
-// Admin pages use the auth context for query gating and the AdminRoute guard.
+
 vi.mock('../../hooks/useAuth', () => ({
   useAuth: () => ({
     isAuthenticated: true,
@@ -44,7 +44,7 @@ vi.mock('../../hooks/useAuth', () => ({
   }),
 }));
 
-// The availability page's <Select> for the doctor picker is controlled by the page.
+
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
 }));
@@ -101,8 +101,8 @@ beforeEach(() => {
   mockedApi.listAdminDoctors.mockResolvedValue(DOCTORS);
   mockedApi.listAdminAvailability.mockResolvedValue(WINDOWS);
   mockedApi.listAdminAccounts.mockResolvedValue(ADMINS);
-  // The dashboard now shows the real clinic overview; default to a benign payload
-  // so the management-card assertions stay focused on navigation.
+
+
   mockedApi.getAdminOverview.mockResolvedValue({
     todayAppointments: 0,
     today: '2026-09-25',
@@ -132,7 +132,7 @@ describe('SpecialtiesAdminPage', () => {
     renderWithRoutes(<SpecialtiesAdminPage />, '/admin/specialties');
     expect(await screen.findByText('Cardiology')).toBeInTheDocument();
     expect(screen.getByText('Old Specialty')).toBeInTheDocument();
-    // Active badge for Cardiology, Inactive for Old Specialty.
+
     expect(screen.getAllByText('Active').length).toBe(1);
     expect(screen.getAllByText('Inactive').length).toBe(1);
   });
@@ -168,7 +168,7 @@ describe('SpecialtiesAdminPage', () => {
     await user.click(screen.getByRole('button', { name: /create specialty/i }));
 
     expect(await screen.findByText(/already exists: Cardiology/)).toBeInTheDocument();
-    // The modal stays open so the admin can fix the name.
+
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
@@ -275,7 +275,7 @@ describe('AdminManagementPage', () => {
     expect(await screen.findByText('Yash Palav')).toBeInTheDocument();
     expect(screen.getByText('yashpalav100@gmail.com')).toBeInTheDocument();
     expect(screen.getAllByText('Active').length).toBeGreaterThan(0);
-    // The page never renders password material (the API response has no such field).
+
     expect(screen.queryByText(/password/i)).not.toBeInTheDocument();
   });
 
@@ -345,7 +345,7 @@ describe('AdminManagementPage', () => {
 
 describe('AvailabilityAdminPage', () => {
   async function pickDoctor(user: ReturnType<typeof userEvent.setup>) {
-    // MUI Select: open the listbox, then click the option once it renders.
+
     fireEvent.mouseDown(await screen.findByLabelText('Doctor'));
     await user.click(await screen.findByRole('option', { name: /Dr\. Alice Smith/ }));
     await screen.findByText('Weekly schedule');
@@ -383,7 +383,7 @@ describe('AvailabilityAdminPage', () => {
     await waitFor(() => expect(mockedApi.createAvailability).toHaveBeenCalledTimes(1));
     const [doctorIdArg, payloadArg] = mockedApi.createAvailability.mock.calls[0];
     expect(doctorIdArg).toBe(20);
-    expect(payloadArg.dayOfWeek).toBe(2); // Tuesday mapped to the MySQL convention
+    expect(payloadArg.dayOfWeek).toBe(2);
     expect(payloadArg.recurring).toBe(true);
   });
 

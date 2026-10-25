@@ -11,12 +11,12 @@ import {
   CalendarClock, Tags, CalendarSearch, UserRound, Menu, LogOut, Users,
 } from 'lucide-react';
 
-/**
- * Authenticated app shell: fixed sidebar on desktop, slide-in drawer on mobile,
- * header with user identity + logout. Navigation is role-aware:
- * patients see booking/appointments, admins additionally see the admin area,
- * doctors see their appointments (no invented workflows).
- */
+
+
+
+
+
+
 
 interface NavItem {
   to: string;
@@ -120,7 +120,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-/** Layout for every authenticated page. */
+
 export function AppShell({ title, children }: { title?: string; children: ReactNode }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();

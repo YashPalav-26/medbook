@@ -1,15 +1,15 @@
 import { createTheme } from '@mui/material/styles';
 
-/**
- * MedBook MUI theme — the single source of truth for MUI components.
- *
- * Every palette value mirrors the MedBook design tokens declared in
- * `src/index.css` (@theme block), so MUI primitives and Tailwind utilities
- * render one coherent visual system: clinic teal brand, desaturated slate-teal
- * ink, soft cool shadows and the same radius/typography. Tailwind remains
- * responsible for layout/spacing/responsive composition; MUI owns the
- * primitives (Button, TextField, Select, Dialog, Alert, Chip, Skeleton…).
- */
+
+
+
+
+
+
+
+
+
+
 
 const brand = {
   50: '#effaf7',
@@ -109,8 +109,8 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 10,
-          // Icons are passed as children rather than startIcon at most call sites;
-          // without this the glyph sits flush against the label.
+
+
           gap: 8,
           whiteSpace: 'nowrap',
           boxShadow: '0 1px 3px rgb(28 36 39 / 0.06)',
@@ -119,12 +119,12 @@ export const theme = createTheme({
         sizeMedium: { padding: '8px 16px', fontSize: '0.875rem' },
         sizeLarge: { padding: '10px 20px', fontSize: '1rem' },
       },
-      // `variants` must sit on the component options (a sibling of styleOverrides).
-      // Nested inside styleOverrides it is treated as a CSS declaration, and the
-      // resulting invalid rule aborts MUI's stylesheet insertion — every rule after
-      // it (hover, floating-label shrink, notch knockout) silently disappears.
+
+
+
+
       variants: [
-        // Primary, solid: darken on hover so the action reads as pressable.
+
         {
           props: { variant: 'contained', color: 'primary' },
           style: {
@@ -132,14 +132,14 @@ export const theme = createTheme({
             '&:active': { backgroundColor: brand[800] },
           },
         },
-        // Primary text/link-style button: a light brand wash, never a neutral wash.
+
         {
           props: { variant: 'text', color: 'primary' },
           style: {
             '&:hover': { backgroundColor: brand[50] },
           },
         },
-        // Outline button: neutral border at rest, one step darker + faint fill on hover.
+
         {
           props: { variant: 'outlined', color: 'inherit' },
           style: {
@@ -152,7 +152,7 @@ export const theme = createTheme({
             },
           },
         },
-        // Ghost button: no resting fill, faint neutral wash on hover.
+
         {
           props: { variant: 'text', color: 'inherit' },
           style: {
@@ -161,7 +161,7 @@ export const theme = createTheme({
             '&:active': { backgroundColor: ink[200] },
           },
         },
-        // Destructive outline (cancel flows): danger outline + a soft danger wash.
+
         {
           props: { variant: 'outlined', color: 'error' },
           style: {
@@ -174,7 +174,7 @@ export const theme = createTheme({
             },
           },
         },
-        // Destructive solid: darken on hover instead of brightening.
+
         {
           props: { variant: 'contained', color: 'error' },
           style: {
@@ -182,10 +182,10 @@ export const theme = createTheme({
             '&:active': { backgroundColor: '#991b1b' },
           },
         },
-        // — On-brand-surface variants (homepage CTA panel).
-        // `info` is only the carrier key (MUI requires a palette key); these
-        // rules fully replace it, so no blue is ever rendered.
-        // Outline on dark/brand surfaces.
+
+
+
+
         {
           props: { variant: 'outlined', color: 'info' },
           style: {
@@ -197,7 +197,7 @@ export const theme = createTheme({
             },
           },
         },
-        // Solid white action on the brand panel.
+
         {
           props: { variant: 'contained', color: 'info' },
           style: {
@@ -208,7 +208,7 @@ export const theme = createTheme({
             '&:active': { backgroundColor: brand[100] },
           },
         },
-        // Ghost text action on the brand panel: white label, white wash on hover.
+
         {
           props: { variant: 'text', color: 'info' },
           style: {
@@ -236,7 +236,7 @@ export const theme = createTheme({
     },
     MuiIconButton: {
       variants: [
-        // Destructive row action (deactivate/close): danger glyph, soft danger wash.
+
         {
           props: { color: 'error' },
           style: {
@@ -289,7 +289,7 @@ export const theme = createTheme({
   },
 });
 
-/** Semantic status colors shared by chips/badges and chart series. */
+
 export const statusColors = {
   SCHEDULED: '#38bdf8', // info
   CONFIRMED: '#16a34a', // success green

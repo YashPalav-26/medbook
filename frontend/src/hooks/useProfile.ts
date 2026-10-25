@@ -8,15 +8,15 @@ import type {
   ChangePasswordRequest,
 } from '../types/auth';
 
-/**
- * React Query hooks for the own-profile page.
- *
- * Query family: ['me', ...]. The profile query is the source of truth for the page;
- * account updates also refresh the AuthContext copy (the sidebar/header read it) via
- * the mutation's onSuccess sync below — no duplicate fetching, no parallel state.
- */
 
-/** The caller's own profile (account + role-specific block). */
+
+
+
+
+
+
+
+
 export function useMyProfile() {
   const { isAuthenticated } = useAuth();
 
@@ -27,10 +27,10 @@ export function useMyProfile() {
   });
 }
 
-/**
- * Account update (name + phone). On success the profile cache is refreshed AND the
- * AuthContext user copy is synced so the header/sidebar show the new name immediately.
- */
+
+
+
+
 export function useUpdateAccount() {
   const queryClient = useQueryClient();
   const { updateUser } = useAuth();
@@ -44,7 +44,7 @@ export function useUpdateAccount() {
   });
 }
 
-/** Patient profile update (self-service fields; the backend rejects non-patients with 403). */
+
 export function useUpdatePatientProfile() {
   const queryClient = useQueryClient();
 
@@ -56,7 +56,7 @@ export function useUpdatePatientProfile() {
   });
 }
 
-/** Doctor profile update (bio + picture; specialty/license/fee stay admin-controlled). */
+
 export function useUpdateDoctorProfile() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -67,7 +67,7 @@ export function useUpdateDoctorProfile() {
   });
 }
 
-/** Password change. The token model is stateless: the current JWT stays valid until expiry. */
+
 export function useChangePassword() {
   return useMutation({
     mutationFn: (payload: ChangePasswordRequest) => profileApi.changeMyPassword(payload),

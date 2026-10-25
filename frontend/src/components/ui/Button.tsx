@@ -23,7 +23,7 @@ interface ButtonProps
   children: React.ReactNode;
 }
 
-/** One mapping for both Button and ButtonLink, so the two can never diverge. */
+
 function applyVariant(variant: MedBookVariant, target: MuiButtonProps & Record<string, unknown>) {
   switch (variant) {
     case 'primary':
@@ -51,8 +51,8 @@ function applyVariant(variant: MedBookVariant, target: MuiButtonProps & Record<s
       target.color = 'error';
       break;
     case 'onBrand':
-      // `info` is the palette key MUI accepts; the theme's variant for this
-      // combination renders white-on-brand, never blue.
+
+
       target.variant = 'contained';
       target.color = 'info';
       break;
@@ -67,16 +67,16 @@ function muiSizeOf(size: MedBookSize) {
   return size === 'sm' ? 'small' : size === 'lg' ? 'large' : 'medium';
 }
 
-/**
- * MedBook button — a thin adapter over MUI Button.
- *
- * MedBook variants map onto MUI's `color`/`variant` props, so the real
- * implementation (ripple, focus-visible, disabled semantics, keyboard
- * handling) comes from the third-party library while the call-site API stays
- * unchanged across the app. The resting and hover colours live in the theme's
- * `variants` — never as Tailwind classes on the element, because MUI's
- * (unlayered) rules outrank Tailwind's utilities layer.
- */
+
+
+
+
+
+
+
+
+
+
 export function Button({
   variant = 'primary',
   size = 'md',
@@ -95,18 +95,18 @@ export function Button({
 }
 
 interface ButtonLinkProps extends Omit<ButtonProps, 'type' | 'onClick'> {
-  /** Router destination — rendered as a real anchor, never a button. */
+
   to: string;
 }
 
-/**
- * Navigation styled as a MedBook button.
- *
- * Use this instead of wrapping `<Button>` in `<Link>`: an anchor may not contain
- * a button (invalid HTML, and keyboard/screen-reader users get two conflicting
- * controls). This renders a single MUI-styled anchor through React Router, so
- * middle-click, "open in new tab" and focus behaviour stay intact.
- */
+
+
+
+
+
+
+
+
 export function ButtonLink({ to, variant = 'primary', size = 'md', className = '', children, ...props }: ButtonLinkProps) {
   const muiProps: MuiButtonProps & Record<string, unknown> = { ...props };
   applyVariant(variant, muiProps);

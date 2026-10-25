@@ -12,7 +12,7 @@ coverage
 
 npm-debug.log*
 
-# editor/tooling noise
+
 
 .vscode/*
 !.vscode/extensions.json

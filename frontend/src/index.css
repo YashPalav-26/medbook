@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
-/* Emotion (MUI's styling engine) must come before Tailwind's preflight, or the
-   preflight resets MUI styles (e.g. solid buttons rendered as plain text). */
+
+
 @layer theme, base, components, utilities;
 
-/* ------------------------------------------------------------------
-   MedBook design tokens (Tailwind CSS v4 @theme)
-   Single source of truth for color, type, radius and shadows.
-   Docs: docs/ui-ux-system.md
------------------------------------------------------------------- */
+
+
+
+
+
 @theme {
-  /* Brand — clinic teal: calm, clinical, trustworthy */
+
   --color-brand-50: #effaf7;
   --color-brand-100: #d7f2ec;
   --color-brand-200: #b0e5da;
@@ -22,7 +22,7 @@
   --color-brand-800: #134c49;
   --color-brand-900: #123f3d;
 
-  /* Ink — desaturated slate-teal text/backgrounds */
+
   --color-ink-50: #f6f8f8;
   --color-ink-100: #eceff0;
   --color-ink-200: #d5dcde;
@@ -35,7 +35,7 @@
   --color-ink-900: #343e42;
   --color-ink-950: #1c2427;
 
-  /* Semantic */
+
   --color-success-100: #d1fae5;
   --color-success-700: #067a55;
   --color-warning-100: #fef3c7;
@@ -46,27 +46,27 @@
   --color-info-100: #dbeafe;
   --color-info-700: #1d4ed8;
 
-  /* Radius */
+
   --radius-card: 0.875rem;
   --radius-field: 0.625rem;
 
-  /* Elevation — soft, cool shadows */
+
   --shadow-card: 0 1px 3px rgb(28 36 39 / 0.06), 0 1px 2px rgb(28 36 39 / 0.04);
   --shadow-lift: 0 6px 16px -4px rgb(28 36 39 / 0.14), 0 2px 6px -2px rgb(28 36 39 / 0.08);
   --shadow-modal: 0 24px 60px -12px rgb(28 36 39 / 0.35);
 
-  /* Type families */
+
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
 }
 
-/* Base layer — body, focus, reduced motion.
 
-   Note: Tailwind's preflight already resets margins/padding/box-sizing. A
-   blanket `* { margin: 0; padding: 0 }` here is deliberately NOT repeated —
-   it competes with MUI's own element rules (notched-outline legend, outlined
-   fieldset) and is what knocked out the gap the floating label uses to sit
-   clear of the border. */
+
+
+
+
+
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -83,7 +83,7 @@
     min-height: 100vh;
   }
 
-  /* One consistent keyboard-focus treatment app-wide */
+
   :focus-visible {
     outline: 2px solid var(--color-brand-500);
     outline-offset: 2px;
@@ -98,9 +98,9 @@
   }
 }
 
-/* Self-hosted display/utility webfonts (public/fonts) — the app renders with the
-   intended typography even with no internet connection; system fallbacks above
-   keep tests offline-safe too. */
+
+
+
 @font-face {
   font-family: "Inter";
   font-style: normal;
@@ -116,7 +116,7 @@
   src: url("/fonts/source-serif-4.woff2") format("woff2");
 }
 
-/* Subtle entrance for modals/toasts; disabled under reduced motion */
+
 @keyframes mb-rise {
   from { opacity: 0; transform: translateY(6px) scale(0.99); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -125,7 +125,7 @@
   animation: mb-rise 160ms ease-out both;
 }
 
-/* Page-shell entrance */
+
 @keyframes mb-fade {
   from { opacity: 0; }
   to { opacity: 1; }

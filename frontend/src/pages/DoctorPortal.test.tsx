@@ -194,7 +194,7 @@ describe('AppointmentDetailPage (role-aware doctor actions)', () => {
     const dialog = await screen.findByRole('dialog');
     await user.click(within(dialog).getByRole('button', { name: 'Mark No-Show' }));
     await waitFor(() => expect(mockedNoShow).toHaveBeenCalledWith(3100));
-    expect(await screen.findByText('No show')).toBeInTheDocument(); // chip label is humanized
+    expect(await screen.findByText('No show')).toBeInTheDocument();
   });
 
   it('surfaces a transition error (409) inside the dialog', async () => {

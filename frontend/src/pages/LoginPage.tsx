@@ -11,10 +11,10 @@ import { Spinner } from '../components/ui/Feedback';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 
-/**
- * Sign-in page. Centered card on desktop, compact single column on mobile.
- * Functionality unchanged: AuthContext.login → navigate('/dashboard').
- */
+
+
+
+
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();

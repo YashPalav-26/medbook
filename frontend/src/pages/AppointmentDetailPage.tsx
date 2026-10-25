@@ -49,8 +49,8 @@ export function AppointmentDetailPage() {
   const { data: appointment, isLoading, error } = useAppointment(appointmentId);
   const cancelMutation = useCancelAppointment();
 
-  // Doctor lifecycle actions (server still enforces role + ownership + transition rules;
-  // these buttons are convenience, not security).
+
+
   const { user } = useAuth();
   const isDoctor = user?.roles?.includes('ROLE_DOCTOR') ?? false;
   const confirmMutation = useConfirmAppointment();
@@ -67,7 +67,7 @@ export function AppointmentDetailPage() {
     resolver: zodResolver(cancelSchema),
   });
 
-  // Toasts come from the Sonner-based facade (lib/toast) — no provider needed.
+
 
   const onCancelSubmit = async (data: CancelFormData) => {
     if (!appointmentId) return;

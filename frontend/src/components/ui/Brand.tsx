@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom';
 
-/**
- * MedBook brand wordmark.
- *
- * The glyph is a rounded square carrying a cross-and-bookmark mark — a clinical
- * cross whose stem ends in a bookmark, for "booking". Drawn inline (no image
- * assets), sized by font size so it scales from sidebar to mobile header.
- * `to` renders it as a link; omit for a static mark (e.g. inside the sidebar).
- */
+
+
+
+
+
+
+
+
 export function Brand({
   to,
   compact = false,
@@ -15,7 +15,7 @@ export function Brand({
 }: {
   to?: string;
   compact?: boolean;
-  /** Optional click handler — the mobile drawer uses it to close itself. */
+
   onClick?: () => void;
 }) {
   const mark = (

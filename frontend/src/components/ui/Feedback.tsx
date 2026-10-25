@@ -6,15 +6,15 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Button from '@mui/material/Button';
 import { RefreshCw } from 'lucide-react';
 
-/**
- * Shared feedback primitives used on every data-driven page, so loading, empty,
- * error and status states look identical across patient and admin areas.
- *
- * These are now adapters over MUI primitives — Alert, Chip, Skeleton,
- * CircularProgress — with MedBook token styling from the central MUI theme.
- */
 
-/** Appointment/status colors: never color alone — the chip carries the words. */
+
+
+
+
+
+
+
+
 const STATUS_CHIP: Record<string, { color: 'info' | 'success' | 'default' | 'error' | 'warning'; label: string }> = {
   SCHEDULED: { color: 'info', label: 'Scheduled' },
   CONFIRMED: { color: 'success', label: 'Confirmed' },
@@ -27,7 +27,7 @@ const STATUS_CHIP: Record<string, { color: 'info' | 'success' | 'default' | 'err
   Closed: { color: 'default', label: 'Closed' },
 };
 
-/** Appointment/status badge — color plus a word, never color alone (a11y). */
+
 export function StatusBadge({ status }: { status: string }) {
   const chip = STATUS_CHIP[status];
   return (
@@ -40,12 +40,12 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
-/** Boolean active/inactive pill for admin lists. */
+
 export function ActiveBadge({ active }: { active: boolean }) {
   return <StatusBadge status={active ? 'Active' : 'Inactive'} />;
 }
 
-/** Centered empty/loading placeholder with an optional action. */
+
 export function EmptyState({
   icon,
   title,
@@ -77,7 +77,7 @@ export function EmptyState({
   );
 }
 
-/** Inline error callout (MUI Alert), with optional retry — never a raw dump. */
+
 export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <Alert
@@ -102,15 +102,15 @@ export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () =
   );
 }
 
-/** Skeleton line for loading placeholders (MUI Skeleton). */
+
 export function SkeletonLine({ className = 'h-4 w-full' }: { className?: string }) {
   return <Skeleton className={className} />;
 }
 export { SkeletonLine as Skeleton };
 
-/** Small inline spinner for buttons and inline waits (MUI CircularProgress). */
+
 export function Spinner({ className = '' }: { className?: string }) {
-  // `inherit` makes the ring take the surrounding button's label colour — inside
-  // a solid teal button that is white, without per-call-site colour classes.
+
+
   return <CircularProgress size={16} color="inherit" className={className} aria-hidden="true" />;
 }

@@ -30,11 +30,11 @@ export function useCreateAppointment() {
   });
 }
 
-/**
- * ADMIN support booking (POST /appointments/admin — book on behalf of a patient).
- * Invalidates the admin appointment lists and the dashboard overview so the new
- * booking appears everywhere the admin looks.
- */
+
+
+
+
+
 export function useCreateAppointmentForPatient() {
   const queryClient = useQueryClient();
 
@@ -62,10 +62,10 @@ export function useCancelAppointment() {
   });
 }
 
-/**
- * Active specialties for the booking dropdown.
- * Static reference data: never stale within a session, so no refetch churn.
- */
+
+
+
+
 export function useSpecialties() {
   const { isAuthenticated } = useAuth();
 
@@ -73,22 +73,22 @@ export function useSpecialties() {
     queryKey: ['specialties'],
     queryFn: appointmentApi.getSpecialties,
     enabled: isAuthenticated,
-    // Refetch at most once a minute. (staleTime: Infinity here previously kept an
-    // empty list cached forever if the page was opened before any specialty existed.)
+
+
     staleTime: 60 * 1000,
   });
 }
 
-/**
- * Active doctors, optionally narrowed to one specialty.
- * The specialtyId is part of the query key, so switching specialties in the
- * booking form fetches exactly the doctors of that specialty.
- */
+
+
+
+
+
 export function useDoctors(specialtyId: number | null) {
   const { isAuthenticated } = useAuth();
 
-  // An empty <option> registers as NaN with valueAsNumber: treat any non-finite
-  // id as "no specialty" instead of firing a request keyed on NaN.
+
+
   const validSpecialtyId = specialtyId !== null && Number.isFinite(specialtyId) ? specialtyId : null;
 
   return useQuery({
@@ -99,11 +99,11 @@ export function useDoctors(specialtyId: number | null) {
   });
 }
 
-/**
- * A doctor's availability, optionally for one date.
- * The booking page passes the selected date so the UI shows only windows
- * actually in force that day. Guidance only — the backend re-validates at submit.
- */
+
+
+
+
+
 export function useDoctorAvailability(doctorId: number | null, date: string | null) {
   const { isAuthenticated } = useAuth();
 
@@ -117,10 +117,10 @@ export function useDoctorAvailability(doctorId: number | null, date: string | nu
   });
 }
 
-/**
- * Shared invalidation for doctor lifecycle transitions: the detail view, the list
- * and the dashboards all read from these keys, so updating them is enough.
- */
+
+
+
+
 function useTransitionMutation(
   action: 'confirm' | 'complete' | 'no-show',
 ) {
@@ -140,17 +140,17 @@ function useTransitionMutation(
   });
 }
 
-/** Doctor action: SCHEDULED → CONFIRMED. */
+
 export function useConfirmAppointment() {
   return useTransitionMutation('confirm');
 }
 
-/** Doctor action: CONFIRMED → COMPLETED. */
+
 export function useCompleteAppointment() {
   return useTransitionMutation('complete');
 }
 
-/** Doctor action: CONFIRMED → NO_SHOW. */
+
 export function useNoShowAppointment() {
   return useTransitionMutation('no-show');
 }

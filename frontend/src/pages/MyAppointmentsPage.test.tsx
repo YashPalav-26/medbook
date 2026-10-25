@@ -76,7 +76,7 @@ function renderPage() {
   );
 }
 
-/** Build an AxiosError shaped like the ones the API client produces. */
+
 function axiosError(status: number): AxiosError {
   const response: AxiosResponse = {
     status,
@@ -96,7 +96,7 @@ describe('MyAppointmentsPage', () => {
   it('renders skeleton placeholders while loading (never a bare "Loading...")', () => {
     mockedGetMyAppointments.mockReturnValue(new Promise(() => {}));
     renderPage();
-    // MUI Skeletons are aria-hidden decorative divs; there must be several, and no list yet.
+
     const skeletons = document.querySelectorAll('.MuiSkeleton-root');
     expect(skeletons.length).toBeGreaterThanOrEqual(3);
     expect(screen.queryByText('Appointment #1101')).not.toBeInTheDocument();
@@ -110,14 +110,14 @@ describe('MyAppointmentsPage', () => {
       expect(screen.getByText('Appointment #1101')).toBeInTheDocument();
     });
     expect(screen.getByText('Appointment #1102')).toBeInTheDocument();
-    // Status chips render humanized labels through MUI Chip (never color alone).
+
     const chipLabels = Array.from(document.querySelectorAll('.MuiChip-label')).map((el) => el.textContent);
     expect(chipLabels).toContain('Scheduled');
     expect(chipLabels).toContain('Cancelled');
     expect(screen.getByText(/Plan changed/)).toBeInTheDocument();
-    // Doctor context line on each card (real API display names).
+
     expect(screen.getAllByText('Dr. Sarah Wells')).toHaveLength(2);
-    // Fee is rendered with two decimals on both cards.
+
     expect(screen.getAllByText('$500.00')).toHaveLength(2);
   });
 
@@ -132,18 +132,18 @@ describe('MyAppointmentsPage', () => {
   });
 
   it('renders a generic API error message', async () => {
-    // Reject EVERY call: the hook retries once, and the retry must fail the same way.
+
     mockedGetMyAppointments.mockRejectedValue(axiosError(500));
     renderPage();
 
     await waitFor(
       () => {
-        // The error callout (role=alert) shows the API error, never a raw dump.
+
         expect(screen.getByRole('alert')).toBeInTheDocument();
       },
       { timeout: 4000 },
     );
-    // Errors are actionable: a retry control must exist.
+
     expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
 
@@ -178,8 +178,8 @@ describe('MyAppointmentsPage', () => {
     renderPage();
 
     const link = await screen.findByRole('link', { name: /Appointment #1101/i });
-    // A real anchor (not a div with onClick) keeps keyboard, middle-click and
-    // "open in new tab" working — and is what screen readers announce.
+
+
     expect(link).toHaveAttribute('href', '/appointments/1101');
     expect(navigateMock).not.toHaveBeenCalled();
   });

@@ -28,13 +28,13 @@ const specialtySchema = z.object({
 });
 type SpecialtyFormData = z.infer<typeof specialtySchema>;
 
-/**
- * ADMIN specialty management.
- * Lists every specialty (active and inactive) from the real admin API and supports
- * create / edit / deactivate through modals. Mutations invalidate the React Query
- * caches, so the list (and the booking page's discovery dropdown) refresh without
- * any full-page reload.
- */
+
+
+
+
+
+
+
 export function SpecialtiesAdminPage() {
   const specialtiesQuery = useAdminSpecialties();
   const createMutation = useCreateSpecialty();

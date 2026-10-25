@@ -1,15 +1,15 @@
 import type { ReactNode } from 'react';
 
-// Admin pages share the core feedback primitives with the rest of the app.
+
 export { StatusBadge, ActiveBadge, EmptyState, ErrorBox, Skeleton, Spinner } from '../ui/Feedback';
 
-/**
- * Page heading block with icon, title and description — the same header pattern
- * every page uses (patient and admin alike).
- *
- * The icon is passed uncoloured; the header owns the brand tile so admin pages
- * cannot drift into ad-hoc icon colours.
- */
+
+
+
+
+
+
+
 export function PageHeader({ icon, title, description }: { icon: ReactNode; title: string; description: string }) {
   return (
     <div className="mb-8 flex items-start gap-4">

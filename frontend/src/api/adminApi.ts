@@ -10,12 +10,12 @@ import type {
 } from '../types/appointment';
 import { api } from './client';
 
-/**
- * Admin management endpoints (ADMIN role required — enforced by the backend).
- * Shapes mirror the backend admin DTOs exactly.
- */
 
-/** A doctor in the admin list/detail view: profile plus account linkage. */
+
+
+
+
+
 export interface DoctorAdminResponse {
   id: number;
   email: string;
@@ -41,7 +41,7 @@ export interface AdminCreateRequest {
   phoneNumber: string;
 }
 
-/** An administrator account in the Admin Management view — never any password field. */
+
 export interface AdminAccountResponse {
   id: number;
   email: string;
@@ -104,25 +104,25 @@ export interface AvailabilityUpdateRequest {
   effectiveUntil?: string;
 }
 
-// ------------------------------------------------------------------
-// Administrators (admin account management)
-// ------------------------------------------------------------------
 
-/** Every administrator account with role names (GET /admin/admins). */
+
+
+
+
 export async function listAdminAccounts(): Promise<AdminAccountResponse[]> {
   const response: AxiosResponse<AdminAccountResponse[]> = await api.get('/admin/admins');
   return response.data;
 }
 
-/** Create an administrator (POST /admin/admins); the backend assigns ADMIN server-side. */
+
 export async function createAdminAccount(payload: AdminCreateRequest): Promise<AdminAccountResponse> {
   const response: AxiosResponse<AdminAccountResponse> = await api.post('/admin/admins', payload);
   return response.data;
 }
 
-// ------------------------------------------------------------------
-// Specialties
-// ------------------------------------------------------------------
+
+
+
 
 export async function listAdminSpecialties(): Promise<SpecialtyResponse[]> {
   const response: AxiosResponse<SpecialtyResponse[]> = await api.get('/admin/specialties');
@@ -145,9 +145,9 @@ export async function deactivateSpecialty(id: number): Promise<SpecialtyResponse
   return response.data;
 }
 
-// ------------------------------------------------------------------
-// Doctors
-// ------------------------------------------------------------------
+
+
+
 
 export async function listAdminDoctors(): Promise<DoctorAdminResponse[]> {
   const response: AxiosResponse<DoctorAdminResponse[]> = await api.get('/admin/doctors');
@@ -175,19 +175,19 @@ export async function deactivateDoctor(id: number): Promise<DoctorAdminResponse>
   return response.data;
 }
 
-// ------------------------------------------------------------------
-// Patients (read-only — patients self-register; admins book on their behalf)
-// ------------------------------------------------------------------
 
-/** Every patient (active and inactive) with account linkage (GET /admin/patients). */
+
+
+
+
 export async function listAdminPatients(): Promise<PatientAdminResponse[]> {
   const response: AxiosResponse<PatientAdminResponse[]> = await api.get('/admin/patients');
   return response.data;
 }
 
-// ------------------------------------------------------------------
-// Availability
-// ------------------------------------------------------------------
+
+
+
 
 export async function listAdminAvailability(doctorId: number): Promise<DoctorAvailabilityResponse[]> {
   const response: AxiosResponse<DoctorAvailabilityResponse[]> =
@@ -219,11 +219,11 @@ export async function deactivateAvailability(id: number): Promise<DoctorAvailabi
   return response.data;
 }
 
-// ------------------------------------------------------------------
-// Appointments (clinic-wide visibility + support cancellation)
-// ------------------------------------------------------------------
 
-/** Build a clean query string: empty/undefined filters are never sent. */
+
+
+
+
 function appointmentParams(filters: AdminAppointmentFilters): Record<string, string | number> {
   const params: Record<string, string | number> = {};
   if (filters.date) params.date = filters.date;
@@ -233,10 +233,10 @@ function appointmentParams(filters: AdminAppointmentFilters): Record<string, str
   return params;
 }
 
-/**
- * Clinic-wide appointment list with optional filters (GET /admin/appointments).
- * Filters are applied server-side — the backend does the querying, not JavaScript.
- */
+
+
+
+
 export async function listAdminAppointments(
   filters: AdminAppointmentFilters = {},
 ): Promise<AdminAppointmentResponse[]> {
@@ -245,24 +245,24 @@ export async function listAdminAppointments(
   return response.data;
 }
 
-/** One appointment with its full status-change audit trail (GET /admin/appointments/:id). */
+
 export async function getAdminAppointment(id: number): Promise<AdminAppointmentDetailResponse> {
   const response: AxiosResponse<AdminAppointmentDetailResponse> =
     await api.get(`/admin/appointments/${id}`);
   return response.data;
 }
 
-/** Real clinic overview metrics for the dashboard (GET /admin/appointments/overview). */
+
 export async function getAdminOverview(): Promise<AdminOverviewResponse> {
   const response: AxiosResponse<AdminOverviewResponse> =
     await api.get('/admin/appointments/overview');
   return response.data;
 }
 
-/**
- * ADMIN support cancellation (POST /admin/appointments/:id/cancel).
- * A reason is required; the backend records the authenticated admin as the actor.
- */
+
+
+
+
 export async function cancelAppointmentAsAdmin(
   id: number,
   cancellationReason: string,

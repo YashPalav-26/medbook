@@ -9,11 +9,11 @@ import { CalendarPlus, CalendarDays, ArrowRight, Clock, Stethoscope, UserRound }
 import { formatDate, todayIso } from '../lib/dates';
 import { formatCurrency } from '../lib/format';
 
-/**
- * Patient dashboard. Personalized welcome, quick actions, and the next upcoming
- * appointment pulled from the real /appointments/me data (no fabricated stats).
- * The upcoming card links into the full appointment list.
- */
+
+
+
+
+
 export function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();

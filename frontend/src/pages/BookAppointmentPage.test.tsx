@@ -10,12 +10,12 @@ import * as appointmentApi from '../api/appointmentApi';
 import { formatDate } from '../lib/dates';
 import type { AppointmentResponse } from '../types/appointment';
 
-// The hooks read authentication state to decide whether queries may run.
+
 vi.mock('../hooks/useAuth', () => ({
   useAuth: () => ({ isAuthenticated: true, user: { id: 42 } }),
 }));
 
-// All server access is mocked; the page is tested against the contract below.
+
 vi.mock('../api/appointmentApi', () => ({
   getSpecialties: vi.fn(),
   getDoctors: vi.fn(),
@@ -25,11 +25,11 @@ vi.mock('../api/appointmentApi', () => ({
 
 const mockedApi = vi.mocked(appointmentApi);
 
-/**
- * A booking date comfortably in the future, computed at run time.
- * The page rejects past dates, so a hardcoded literal goes stale the day after
- * it is written — this keeps the suite green on any day it runs.
- */
+
+
+
+
+
 const BOOKING_DATE = (() => {
   const d = new Date();
   d.setDate(d.getDate() + 30);
@@ -92,9 +92,9 @@ function renderPage() {
   );
 }
 
-/** Select specialty → doctor, then set date and times through the real form controls. */
+
 async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
-  // MUI Selects: open the listbox, then click the option once it renders.
+
   await pickFromSelect(user, screen, 'Specialty', 'Cardiology');
   await pickFromSelect(user, screen, 'Doctor', /Dr\. Alice Smith/);
   const dateInput = screen.getByLabelText('Appointment date');
@@ -116,18 +116,18 @@ describe('BookAppointmentPage (secure patient self-booking)', () => {
     renderPage();
     const user = userEvent.setup();
 
-    // Specialties load into the MUI listbox.
+
     await pickFromSelect(user, screen, 'Specialty', 'Cardiology');
 
-    // Doctors of that specialty load into the second dropdown.
+
     const doctorSelect = await screen.findByLabelText('Doctor');
-    // MUI v9 conveys disabled via aria-disabled; jest-dom's toBeDisabled ignores it.
+
     await waitFor(() => expect(doctorSelect.getAttribute('aria-disabled')).not.toBe('true'));
 
-    // The doctor query was narrowed to the selected specialty.
+
     expect(mockedApi.getDoctors).toHaveBeenCalledWith(5);
 
-    // The doctor option renders inside MUI's open listbox.
+
     fireEvent.mouseDown(doctorSelect);
     expect(await screen.findByRole('option', { name: /Dr\. Alice Smith/ })).toBeInTheDocument();
   });
@@ -176,7 +176,7 @@ describe('BookAppointmentPage (secure patient self-booking)', () => {
 
     await waitFor(() => expect(mockedApi.createAppointment).toHaveBeenCalledTimes(1));
     const payload = mockedApi.createAppointment.mock.calls[0][0];
-    // The JWT is the only identity source: no patientId may be sent, ever.
+
     expect('patientId' in payload).toBe(false);
     expect(payload.doctorId).toBe(7);
     expect(payload.appointmentDate).toBe(BOOKING_DATE);
@@ -198,7 +198,7 @@ describe('BookAppointmentPage (secure patient self-booking)', () => {
     await user.click(screen.getByRole('button', { name: /book appointment/i }));
 
     expect(await screen.findByText(/already has an appointment overlapping/i)).toBeInTheDocument();
-    // The user stays on the form to correct the choice.
+
     expect(screen.getByLabelText('Specialty')).toBeInTheDocument();
   });
 
@@ -221,11 +221,11 @@ describe('BookAppointmentPage (secure patient self-booking)', () => {
     const user = userEvent.setup();
     await fillValidForm(user);
 
-    // Step 3 heading is the confirmation summary (wizard style since Step 20).
+
     expect(await screen.findByText('Confirm your visit')).toBeInTheDocument();
-    // "Dr. Alice Smith" appears in the doctor card AND the summary — assert both.
+
     expect(screen.getAllByText('Dr. Alice Smith').length).toBeGreaterThanOrEqual(1);
-    // Date · time line and the fee line are distinct elements.
+
     expect(screen.getByText(new RegExp(`${formatDate(BOOKING_DATE)} · 09:00–09:30`))).toBeInTheDocument();
     expect(screen.getByText(/Consultation fee: \$500/)).toBeInTheDocument();
   });

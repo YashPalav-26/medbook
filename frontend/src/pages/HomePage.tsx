@@ -7,11 +7,11 @@ import {
   CalendarPlus, Stethoscope, CalendarClock, ShieldCheck, ArrowRight, CheckCircle2,
 } from 'lucide-react';
 
-/**
- * Public homepage. Factual copy only — MedBook is a clinic scheduling demo:
- * it books appointments, shows real availability, and protects accounts with
- * JWT sign-in. No invented certifications or usage numbers.
- */
+
+
+
+
+
 
 const FEATURES = [
   {
@@ -52,10 +52,10 @@ const STEPS = [
 ];
 
 export function HomePage() {
-  // The hero is plain, always-visible markup. An earlier GSAP entrance set the
-  // headline to opacity 0 until requestAnimationFrame ran, which left the primary
-  // content invisible in background tabs and headless renders. Content first;
-  // the page-level fade in AppShell is the only motion here.
+
+
+
+
   return (
     <div className="min-h-screen bg-ink-50">
       {/* Header */}

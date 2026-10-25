@@ -17,7 +17,7 @@ import { formatCurrency } from '../lib/format';
 import { Calendar, Stethoscope, CheckCircle2, Clock, User } from 'lucide-react';
 
 const bookingSchema = z.object({
-  // UI-only field: narrows the doctor dropdown. Never sent to the backend.
+
   specialtyId: z.number({ error: 'Select a specialty' }).min(1, 'Select a specialty'),
   doctorId: z.number({ error: 'Select a doctor' }).min(1, 'Select a doctor'),
   appointmentDate: z.string().min(1, 'Date is required').refine(
@@ -36,7 +36,7 @@ type BookingFormData = z.infer<typeof bookingSchema>;
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-/** Wizard step indicator: shows where the patient is and what is completed. */
+
 function Stepper({ current }: { current: 1 | 2 | 3 }) {
   const steps = [
     { n: 1, label: 'Doctor' },
@@ -72,15 +72,15 @@ function Stepper({ current }: { current: 1 | 2 | 3 }) {
   );
 }
 
-/**
- * Patient booking page (/appointments/new), styled as a guided flow:
- * Step 1 specialty + doctor (cards), Step 2 date + availability + time,
- * Step 3 confirmation summary before submit. Identity stays JWT-derived —
- * no patient ID anywhere. All backend rules untouched.
- */
+
+
+
+
+
+
 export function BookAppointmentPage() {
   const navigate = useNavigate();
-  // Toasts come from the Sonner-based facade (lib/toast) — no provider needed.
+
   const createMutation = useCreateAppointment();
 
   const specialtiesQuery = useSpecialties();
@@ -140,7 +140,7 @@ export function BookAppointmentPage() {
 
   const apiError = createMutation.error ? toApiError(createMutation.error) : null;
 
-  // Derive the current wizard step from how far the patient has gotten.
+
   const step: 1 | 2 | 3 = !doctorId ? 1 : !startTime ? 2 : 3;
 
   return (

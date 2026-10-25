@@ -10,17 +10,17 @@ import { useNotifications, useUnreadNotificationCount, useMarkNotificationRead, 
 import { ErrorBox, Skeleton } from '../ui/Feedback';
 import type { NotificationType } from '../../types/notification';
 
-/**
- * The header notification bell (Step 25).
- *
- * - badge: unread count, polled every 30s (documented in useNotifications.ts);
- * - panel: opens on click, always fetches the fresh list;
- * - item click: marks read and navigates to the referenced appointment;
- * - "Mark all read": one click clears the badge.
- *
- * Types get icon + text (never color alone); colors reuse the design-system
- * status palette (info/brand/danger/success/warning) already used by StatusBadge.
- */
+
+
+
+
+
+
+
+
+
+
+
 
 const TYPE_STYLES: Record<NotificationType, { icon: typeof Bell; classes: string }> = {
   APPOINTMENT_CREATED: { icon: CalendarPlus, classes: 'bg-info-100 text-info-700' },
@@ -38,7 +38,7 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   APPOINTMENT_NO_SHOW: 'No-show',
 };
 
-/** Compact relative timestamp ("just now", "5m ago", "2h ago", "3d ago", or a date). */
+
 function timeAgo(iso: string): string {
   const then = new Date(iso).getTime();
   if (Number.isNaN(then)) return '';
@@ -66,8 +66,8 @@ export function NotificationBell() {
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
 
-  // The panel is announced as a dialog, so focus must move into it on open and
-  // return to the bell when it closes (otherwise focus lands on <body>).
+
+
   useEffect(() => {
     if (open) {
       panelRef.current?.focus();
@@ -77,7 +77,7 @@ export function NotificationBell() {
     wasOpen.current = open;
   }, [open]);
 
-  // Close on outside click and on Escape.
+
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: MouseEvent | TouchEvent) => {
@@ -122,8 +122,8 @@ export function NotificationBell() {
           badgeContent={unreadCount > 99 ? '99+' : unreadCount}
           color="error"
           slotProps={
-            // The test hook rides on the badge span at runtime; MUI v9's strict
-            // slot types need the cast.
+
+
             { badge: { 'data-testid': 'unread-badge' } } as object
           }
         >

@@ -4,12 +4,12 @@ import type { AuthResponse, AuthUser, LoginRequest, RegisterRequest } from '../t
 import { clearAuth, getStoredToken, getStoredUser, saveAuth } from '../lib/storage';
 import * as authApi from '../api/authApi';
 
-/**
- * Authentication state for the whole app (Context + hooks, no Redux).
- *
- * State is initialized from localStorage so a page refresh keeps the user signed in, and
- * login/register/logout keep both the context and the stored copy in sync.
- */
+
+
+
+
+
+
 export interface AuthContextValue {
   user: AuthUser | null;
   token: string | null;
@@ -17,7 +17,7 @@ export interface AuthContextValue {
   login: (input: LoginRequest) => Promise<void>;
   register: (input: RegisterRequest) => Promise<void>;
   logout: () => void;
-  /** Merge fields into the signed-in user (e.g. a new name after a profile update). */
+
   updateUser: (patch: Partial<Pick<AuthUser, 'firstName' | 'lastName'>>) => void;
 }
 
@@ -27,14 +27,14 @@ export interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-/** Persist the token/user, then return the user for the context state. */
+
 function applyAuthResponse(response: AuthResponse): AuthUser {
   saveAuth(response.token, response.user);
   return response.user;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Restore the session from storage on first render (survives page refreshes).
+
   const [token, setToken] = useState<string | null>(() => getStoredToken());
   const [user, setUser] = useState<AuthUser | null>(() => getStoredUser());
 
@@ -56,13 +56,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  /** Merge a patch into the user state and the stored copy (header shows the new name). */
+
   const updateUser = useCallback(
     (patch: Partial<Pick<AuthUser, 'firstName' | 'lastName'>>) => {
       setUser((current) => {
         if (!current) return current;
         const next = { ...current, ...patch };
-        // Keep the stored copy in step so a refresh keeps the updated name too.
+
         const storedToken = getStoredToken();
         if (storedToken) saveAuth(storedToken, next);
         return next;

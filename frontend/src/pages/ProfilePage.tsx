@@ -21,18 +21,18 @@ import {
   Stethoscope, HeartPulse, ShieldCheck,
 } from 'lucide-react';
 
-/**
- * My Profile (/profile) — the caller's own account and role-specific profile.
- *
- * Sections instead of one giant form: Account (name/phone), the role profile
- * (patient medical/contact or doctor professional) and Change Password. Each card is
- * read-only until "Edit" is pressed; the backend re-validates every field and the
- * ownership rule (a profile row is reachable only through the JWT subject).
- */
 
-// ------------------------------------------------------------------
-// Schemas
-// ------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
 
 const accountSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100, 'At most 100 characters'),
@@ -82,11 +82,11 @@ const passwordSchema = z
   });
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
-// ------------------------------------------------------------------
-// Building blocks
-// ------------------------------------------------------------------
 
-/** Read-only label/value line used by every display view. */
+
+
+
+
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-4 py-1.5">
@@ -96,7 +96,7 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-/** Password field with a visibility toggle (a11y-labelled, never a plain textbox). */
+
 function PasswordInput({
   label,
   error,
@@ -139,7 +139,7 @@ function PasswordInput({
   );
 }
 
-/** Card heading with the Edit/Cancel toggle. */
+
 function SectionHeader({
   icon,
   title,
@@ -174,7 +174,7 @@ function SectionHeader({
   );
 }
 
-/** Shared Save/Cancel row for the edit forms. */
+
 function FormActions({ onCancel, saving, onCancelLabel = 'Cancel' }: { onCancel: () => void; saving: boolean; onCancelLabel?: string }) {
   return (
     <div className="flex gap-3 pt-2">
@@ -190,19 +190,19 @@ function FormActions({ onCancel, saving, onCancelLabel = 'Cancel' }: { onCancel:
   );
 }
 
-// ------------------------------------------------------------------
-// Page
-// ------------------------------------------------------------------
+
+
+
 
 export function ProfilePage() {
-  // Toasts come from the Sonner-based facade (lib/toast) — no provider needed.
+
   const { data: profile, isLoading, isError, error, refetch } = useMyProfile();
 
   const isPatient = Boolean(profile?.patient);
   const isDoctor = Boolean(profile?.doctor);
   const isAdminOnly = Boolean(profile && !isPatient && !isDoctor && profile.roles.includes('ROLE_ADMIN'));
 
-  // ----- Account -----
+
   const [editingAccount, setEditingAccount] = useState(false);
   const accountForm = useForm<AccountFormData>({ resolver: zodResolver(accountSchema) });
   const updateAccount = useUpdateAccount();
@@ -227,14 +227,14 @@ export function ProfilePage() {
   };
   const accountError = updateAccount.error ? toApiError(updateAccount.error) : null;
 
-  // ----- Patient -----
+
   const [editingPatient, setEditingPatient] = useState(false);
   const patientForm = useForm<PatientProfileFormData>({ resolver: zodResolver(patientProfileSchema) });
   const updatePatient = useUpdatePatientProfile();
   const watchHasInsurance = patientForm.watch('hasInsurance');
 
   const startPatientEdit = () => {
-    // The insurance select is controlled — watch() keeps the reveal conditional in sync.
+
     patientForm.reset({
       addressLine1: profile?.patient?.addressLine1 ?? '',
       addressLine2: profile?.patient?.addressLine2 ?? '',
@@ -263,7 +263,7 @@ export function ProfilePage() {
   };
   const patientError = updatePatient.error ? toApiError(updatePatient.error) : null;
 
-  // ----- Doctor -----
+
   const [editingDoctor, setEditingDoctor] = useState(false);
   const doctorForm = useForm<DoctorProfileFormData>({ resolver: zodResolver(doctorProfileSchema) });
   const updateDoctor = useUpdateDoctorProfile();
@@ -287,7 +287,7 @@ export function ProfilePage() {
   };
   const doctorError = updateDoctor.error ? toApiError(updateDoctor.error) : null;
 
-  // ----- Password -----
+
   const passwordForm = useForm<PasswordFormData>({ resolver: zodResolver(passwordSchema) });
   const changePassword = useChangePassword();
   const [passwordChanged, setPasswordChanged] = useState(false);

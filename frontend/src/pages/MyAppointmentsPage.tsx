@@ -10,11 +10,11 @@ import { formatDate, todayIso } from '../lib/dates';
 import { formatCurrency } from '../lib/format';
 import type { AppointmentResponse } from '../types/appointment';
 
-/**
- * My Appointments — appointment management view.
- * Status filter tabs (counts from real data), responsive cards (list collapses to
- * single column on mobile, no wide table), click-through to detail preserved.
- */
+
+
+
+
+
 
 type StatusFilter = 'ALL' | 'UPCOMING' | 'CANCELLED';
 const FILTERS: { key: StatusFilter; label: string }[] = [
@@ -26,8 +26,8 @@ const FILTERS: { key: StatusFilter; label: string }[] = [
 function matchesFilter(appointment: AppointmentResponse, filter: StatusFilter): boolean {
   if (filter === 'ALL') return true;
   if (filter === 'CANCELLED') return appointment.status === 'CANCELLED';
-  // "Upcoming" means still open AND not in the past — a stale SCHEDULED row from
-  // last month is not an upcoming visit.
+
+
   const open = appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED';
   return open && appointment.appointmentDate >= todayIso();
 }
@@ -57,8 +57,8 @@ export function MyAppointmentsPage() {
     CANCELLED: all.filter((a) => matchesFilter(a, 'CANCELLED')).length,
   };
 
-  // Arrow-key navigation is expected of a tablist; without it the roles promise
-  // behaviour the widget does not deliver.
+
+
   const onTabKeyDown = (event: React.KeyboardEvent, index: number) => {
     const delta = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
     if (delta === 0) return;

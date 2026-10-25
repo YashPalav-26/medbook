@@ -6,12 +6,12 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import { X } from 'lucide-react';
 
-/**
- * Shared modal dialog — MUI Dialog. The third-party implementation provides
- * the focus trap, Escape/backdrop dismissal, scroll locking and aria-modal
- * semantics; this adapter keeps the MedBook API (title + description +
- * children) and the token styling (radius-card, shadow-modal).
- */
+
+
+
+
+
+
 export function Modal({
   title,
   description,
@@ -53,11 +53,11 @@ export function Modal({
   );
 }
 
-/**
- * Confirmation dialog for destructive actions (cancel appointment, deactivate…):
- * warns, explains the consequence, requires an explicit choice. Buttons are
- * MUI Buttons (error-colored confirm), Escape and backdrop both cancel.
- */
+
+
+
+
+
 export function ConfirmDialog({
   title,
   description,

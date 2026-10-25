@@ -41,15 +41,15 @@ const bookingSchema = z.object({
 type BookingFormData = z.input<typeof bookingSchema>;
 type BookingOutputData = z.output<typeof bookingSchema>;
 
-/**
- * ADMIN appointment management — clinic-wide list with server-side filters
- * (GET /admin/appointments?date=&status=&doctorId=).
- *
- * Every filter change refetches from the backend (the filters object is part of the
- * React Query key); nothing is filtered in JavaScript. Desktop shows a table, small
- * screens the same rows as cards. Rows link to the admin detail view with the
- * status-history timeline.
- */
+
+
+
+
+
+
+
+
+
 
 const STATUS_OPTIONS: AppointmentStatus[] = [
   'SCHEDULED',
@@ -97,12 +97,12 @@ function AppointmentCards({ appointments }: { appointments: AdminAppointmentResp
   );
 }
 
-/**
- * "Book for a patient" modal — the frontend face of POST /api/v1/appointments/admin
- * (the ADMIN support path for patients who cannot use the app). Doctor discovery and
- * availability guidance reuse the same public APIs the booking page uses; the
- * backend re-validates everything (role, patient, doctor, availability, conflicts).
- */
+
+
+
+
+
+
 function BookForPatientModal({
   onClose,
   onBooked,
@@ -120,7 +120,7 @@ function BookForPatientModal({
   const doctorsQuery = useDoctors(specialtyId);
   const availabilityQuery = useDoctorAvailability(doctorId, form.appointmentDate ?? null);
   const bookingMutation = useCreateAppointmentForPatient();
-  // Toasts come from the Sonner-based facade (lib/toast) — no provider needed.
+
 
   const setField = (field: keyof BookingFormData, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -289,7 +289,7 @@ export function AdminAppointmentsPage() {
   const [doctorId, setDoctorId] = useState('');
   const [bookingOpen, setBookingOpen] = useState(false);
 
-  // "" means "no filter" — the API call simply omits that param.
+
   const filters = {
     date: date || undefined,
     status: (status || undefined) as '' | AppointmentStatus | undefined,

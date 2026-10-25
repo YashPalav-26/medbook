@@ -10,24 +10,24 @@ import type {
 } from '../types/appointment';
 import { api } from './client';
 
-/**
- * Appointment + discovery endpoints. Shapes mirror the backend DTOs exactly.
- */
 
-/**
- * Book an appointment as the authenticated PATIENT (POST /appointments).
- * No patientId is sent — the backend books for the JWT caller.
- */
+
+
+
+
+
+
+
 export async function createAppointment(payload: CreateAppointmentRequest): Promise<AppointmentResponse> {
   const response: AxiosResponse<AppointmentResponse> = await api.post('/appointments', payload);
   return response.data;
 }
 
-/**
- * ADMIN support path (POST /appointments/admin): book on behalf of a patient who
- * cannot use the app. Backend rejects non-admin callers with 403. The booking flow
- * notifies the patient exactly like a self-booking — no special handling needed.
- */
+
+
+
+
+
 export async function createAppointmentForPatient(
   payload: AdminCreateAppointmentRequest,
 ): Promise<AppointmentResponse> {
@@ -40,12 +40,12 @@ export async function getAppointment(id: number): Promise<AppointmentResponse> {
   return response.data;
 }
 
-/**
- * The authenticated caller's appointments (GET /appointments/me).
- *
- * The backend decides what "mine" means from the JWT (patient → booked by me,
- * doctor → assigned to me); no user ID is sent from the client.
- */
+
+
+
+
+
+
 export async function getMyAppointments(): Promise<AppointmentResponse[]> {
   const response: AxiosResponse<AppointmentResponse[]> = await api.get('/appointments/me');
   return response.data;
@@ -56,11 +56,11 @@ export async function cancelAppointment(id: number, payload: CancelAppointmentRe
   return response.data;
 }
 
-/**
- * Doctor lifecycle transitions (POST /appointments/:id/confirm|complete|no-show).
- * No body and no caller identity: the backend resolves the doctor from the JWT and
- * enforces assignment + the SCHEDULED→CONFIRMED→COMPLETED/NO_SHOW transition rules.
- */
+
+
+
+
+
 export async function confirmAppointment(id: number): Promise<AppointmentResponse> {
   const response: AxiosResponse<AppointmentResponse> = await api.post(`/appointments/${id}/confirm`);
   return response.data;
@@ -76,20 +76,20 @@ export async function markAppointmentNoShow(id: number): Promise<AppointmentResp
   return response.data;
 }
 
-/** Active specialties for the booking dropdown (GET /specialties). */
+
 export async function getSpecialties(): Promise<SpecialtyResponse[]> {
   const response: AxiosResponse<SpecialtyResponse[]> = await api.get('/specialties');
   return response.data;
 }
 
-/** Active doctors, optionally filtered by specialty (GET /doctors?specialtyId=...). */
+
 export async function getDoctors(specialtyId?: number): Promise<DoctorSummaryResponse[]> {
   const response: AxiosResponse<DoctorSummaryResponse[]> =
     await api.get('/doctors', { params: specialtyId ? { specialtyId } : undefined });
   return response.data;
 }
 
-/** A doctor's availability, optionally for one date (GET /doctors/:id/availability?date=...). */
+
 export async function getDoctorAvailability(doctorId: number, date?: string): Promise<DoctorAvailabilityResponse[]> {
   const response: AxiosResponse<DoctorAvailabilityResponse[]> =
     await api.get(`/doctors/${doctorId}/availability`, { params: date ? { date } : undefined });

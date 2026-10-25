@@ -13,7 +13,7 @@ import { pickFromSelect } from '../../test/mui';
 import { formatDate } from '../../lib/dates';
 import type { AdminAppointmentResponse, AdminAppointmentDetailResponse } from '../../types/appointment';
 
-// The pages under test call the real API module; every test controls what it returns.
+
 vi.mock('../../api/adminApi', () => ({
   listAdminSpecialties: vi.fn(),
   createSpecialty: vi.fn(),
@@ -35,7 +35,7 @@ vi.mock('../../api/adminApi', () => ({
   cancelAppointmentAsAdmin: vi.fn(),
 }));
 
-// Admin pages gate queries on the auth context (admin user here).
+
 vi.mock('../../hooks/useAuth', () => ({
   useAuth: () => ({
     isAuthenticated: true,
@@ -46,7 +46,7 @@ vi.mock('../../hooks/useAuth', () => ({
 
 const mockedApi = vi.mocked(adminApi);
 
-// The "Book for a patient" modal uses the public discovery APIs + the support booking.
+
 vi.mock('../../api/appointmentApi', () => ({
   getSpecialties: vi.fn(),
   getDoctors: vi.fn(),
@@ -127,11 +127,11 @@ function renderWithRoutes(ui: React.ReactElement, initialPath: string) {
   );
 }
 
-/**
- * Render only the list page at its route. Used by tests that click through to the
- * detail route: mounting both pages at once would duplicate every list/detail text
- * in the DOM and break single-element queries.
- */
+
+
+
+
+
 function renderListThenNavigate(ui: React.ReactElement, listPath: string) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -149,7 +149,7 @@ function renderListThenNavigate(ui: React.ReactElement, listPath: string) {
   );
 }
 
-/** The desktop table body — mobile cards duplicate the same texts in the DOM. */
+
 function tableBody() {
   return screen.getByText('ID').closest('table')!.querySelector('tbody')!;
 }
@@ -208,13 +208,13 @@ describe('AdminAppointmentsPage', () => {
     renderWithRoutes(<AdminAppointmentsPage />, '/admin/appointments');
 
     expect(await screen.findByText('John Reed')).toBeInTheDocument();
-    // Scope to the desktop table: the mobile cards render the same texts.
+
     const body = tableBody();
     expect(within(body).getByText('Mary Sue')).toBeInTheDocument();
     expect(within(body).getByText('Dr. Sarah Wells')).toBeInTheDocument();
     expect(within(body).getAllByText('Cardiology')).toHaveLength(1);
     expect(within(body).getByText(formatDate('2026-09-28'))).toBeInTheDocument();
-    // Status chips render humanized labels through MUI Chip (never color alone).
+
     expect(within(body).getAllByText('Scheduled')).toHaveLength(1);
     expect(within(body).getAllByText('Cancelled')).toHaveLength(1);
   });
@@ -243,8 +243,8 @@ describe('AdminAppointmentsPage', () => {
     renderWithRoutes(<AdminAppointmentsPage />, '/admin/appointments');
     await screen.findByText('John Reed');
 
-    // fireEvent.change: userEvent.type does not commit into a controlled
-    // <input type="date"> under jsdom (the suite uses this idiom elsewhere too).
+
+
     fireEvent.change(screen.getByLabelText('Filter by date'), {
       target: { value: '2026-09-28' },
     });
@@ -261,7 +261,7 @@ describe('AdminAppointmentsPage', () => {
     renderWithRoutes(<AdminAppointmentsPage />, '/admin/appointments');
     await screen.findByText('John Reed');
 
-    // The status filter's items are humanized like the page's own option labels.
+
     await pickFromSelect(user, screen, 'Filter by status', 'CONFIRMED');
 
     await waitFor(() =>
@@ -351,7 +351,7 @@ describe('AdminAppointmentDetailPage', () => {
     );
 
     expect(await screen.findByText('Appointment #101')).toBeInTheDocument();
-    // "John Reed" appears in both the participant card and the history actor line.
+
     expect(screen.getAllByText(/John Reed/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Dr\. Sarah Wells/)).toBeInTheDocument();
     expect(screen.getByText('Cardiology')).toBeInTheDocument();
@@ -363,7 +363,7 @@ describe('AdminAppointmentDetailPage', () => {
     renderWithRoutes(<AdminAppointmentDetailPage />, '/admin/appointments/101');
 
     expect(await screen.findByText('Status history')).toBeInTheDocument();
-    // Timeline entries render humanized status chips through StatusBadge.
+
     expect(screen.getAllByText('Scheduled').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Confirmed').length).toBeGreaterThan(0);
     expect(screen.getByText('Appointment created')).toBeInTheDocument();
@@ -411,14 +411,14 @@ describe('AdminAppointmentDetailPage', () => {
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toBeInTheDocument();
 
-    // Submitting without a reason is blocked client-side.
+
     await user.click(screen.getByRole('button', { name: /confirm cancellation/i }));
     expect(await screen.findByText('Cancellation reason is required')).toBeInTheDocument();
     expect(mockedApi.cancelAppointmentAsAdmin).not.toHaveBeenCalled();
 
-    // With a reason, the mutation is called and a toast confirms it.
-    // fireEvent.change sets the whole value in one shot — userEvent.type races the
-    // controlled re-render of the react-hook-form field here.
+
+
+
     fireEvent.change(screen.getByLabelText('Cancellation reason'), {
       target: { value: 'Patient contacted support' },
     });
@@ -456,7 +456,7 @@ describe('AdminAppointmentDetailPage', () => {
     await user.click(screen.getByRole('button', { name: /confirm cancellation/i }));
 
     expect(await screen.findByText(/already cancelled/i)).toBeInTheDocument();
-    // The modal stays open so the admin can close it deliberately.
+
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });
@@ -465,8 +465,8 @@ describe('AdminDashboardPage (real metrics)', () => {
   it('shows the real clinic overview numbers', async () => {
     renderWithRoutes(<AdminDashboardPage />, '/admin');
 
-    // The two big figures — scoped by their unique supporting captions because bare
-    // numbers ("2") also occur in the per-status list.
+
+
     expect(await screen.findByText('appointments booked')).toBeInTheDocument();
     expect(screen.getByText('appointments booked')).toBeInTheDocument();
     const bigNumbers = screen
@@ -481,7 +481,7 @@ describe('AdminDashboardPage (real metrics)', () => {
 
     const section = screen.getByLabelText('Clinic overview');
     await within(section).findByText('appointments booked');
-    // Status chips show humanized labels; the count sits in the same list item.
+
     expect(within(section).getByText('Scheduled').closest('li')).toHaveTextContent('3');
     expect(within(section).getByText('Confirmed').closest('li')).toHaveTextContent('1');
     expect(within(section).getByText('No show').closest('li')).toHaveTextContent('0');
@@ -508,7 +508,7 @@ describe('AdminDashboardPage (real metrics)', () => {
 
 describe('AdminAppointmentsPage — book for a patient (support path)', () => {
   beforeEach(() => {
-    // The modal's patient picker reads the admin patients endpoint.
+
     mockedApi.listAdminPatients.mockResolvedValue([
       {
         id: 11, email: 'john@medbook.test', firstName: 'John', lastName: 'Reed',
@@ -525,11 +525,11 @@ describe('AdminAppointmentsPage — book for a patient (support path)', () => {
     await user.click(screen.getByRole('button', { name: /book for a patient/i }));
     const dialog = await screen.findByRole('dialog', { name: /book for a patient/i });
 
-    // MUI renders the open listbox in a body-level portal: pickFromSelect
-    // waits for the async options itself (no pre-wait inside the dialog DOM).
+
+
     await pickFromSelect(user, within(dialog), 'Patient', /John Reed \(john@medbook\.test\)/);
     await pickFromSelect(user, within(dialog), 'Specialty', 'Cardiology');
-    // Doctor options arrive after the specialty is chosen.
+
     await pickFromSelect(user, within(dialog), 'Doctor', /Dr\. Sarah Wells/);
     fireEvent.change(within(dialog).getByLabelText('Date'), { target: { value: '2026-09-28' } });
     fireEvent.change(within(dialog).getByLabelText('Start'), { target: { value: '10:00' } });
@@ -569,7 +569,7 @@ describe('AdminAppointmentsPage — book for a patient (support path)', () => {
     await user.click(within(dialog).getByRole('button', { name: /book appointment/i }));
 
     expect(await screen.findByText(/clashes/i)).toBeInTheDocument();
-    // Modal stays open so the admin can correct the slot.
+
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });
