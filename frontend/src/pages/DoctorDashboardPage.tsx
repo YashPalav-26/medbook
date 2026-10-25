@@ -6,6 +6,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { StatusBadge, EmptyState, Skeleton } from '../components/ui/Feedback';
 import { CalendarDays, ArrowRight, Clock, User, Stethoscope } from 'lucide-react';
+import { formatDate, todayIso } from '../lib/dates';
 
 /**
  * Doctor dashboard. Real data only: today's and upcoming visits come from the
@@ -17,12 +18,12 @@ export function DoctorDashboardPage() {
   const appointmentsQuery = useMyAppointments();
 
   const appointments = appointmentsQuery.data ?? [];
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const today = todayIso();
   const todays = appointments
-    .filter((a) => a.appointmentDate === todayIso)
+    .filter((a) => a.appointmentDate === today)
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
   const upcoming = appointments
-    .filter((a) => (a.status === 'SCHEDULED' || a.status === 'CONFIRMED') && a.appointmentDate > todayIso)
+    .filter((a) => (a.status === 'SCHEDULED' || a.status === 'CONFIRMED') && a.appointmentDate > today)
     .sort((a, b) => (a.appointmentDate + a.startTime).localeCompare(b.appointmentDate + b.startTime));
 
   return (
@@ -95,7 +96,7 @@ export function DoctorDashboardPage() {
                           <p className="text-sm font-medium text-ink-900">
                             {a.startTime} – {a.endTime}
                           </p>
-                          <p className="text-sm text-ink-500">Patient #{a.patientId}</p>
+                          <p className="text-sm text-ink-500">{a.patientName}</p>
                         </div>
                       </div>
                       <StatusBadge status={a.status} />
@@ -129,9 +130,9 @@ export function DoctorDashboardPage() {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-ink-900">
-                            {a.appointmentDate} · {a.startTime} – {a.endTime}
+                            {formatDate(a.appointmentDate)} · {a.startTime} – {a.endTime}
                           </p>
-                          <p className="text-sm text-ink-500">Patient #{a.patientId}</p>
+                          <p className="text-sm text-ink-500">{a.patientName}</p>
                         </div>
                       </div>
                       <StatusBadge status={a.status} />
