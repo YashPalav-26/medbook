@@ -354,7 +354,7 @@ export function ProfilePage() {
             onToggle={() => (editingAccount ? setEditingAccount(false) : startAccountEdit())}
           />
           {editingAccount ? (
-            <form onSubmit={accountForm.handleSubmit(onAccountSubmit)} className="space-y-4">
+            <form onSubmit={accountForm.handleSubmit(onAccountSubmit)} className="flex flex-col gap-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <Input label="First name" {...accountForm.register('firstName')} error={accountForm.formState.errors.firstName?.message} />
                 <Input label="Last name" {...accountForm.register('lastName')} error={accountForm.formState.errors.lastName?.message} />
@@ -400,7 +400,7 @@ export function ProfilePage() {
               onToggle={() => (editingPatient ? setEditingPatient(false) : startPatientEdit())}
             />
             {editingPatient ? (
-              <form onSubmit={patientForm.handleSubmit(onPatientSubmit)} className="space-y-4">
+              <form onSubmit={patientForm.handleSubmit(onPatientSubmit)} className="flex flex-col gap-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Input label="Address line 1" {...patientForm.register('addressLine1')} error={patientForm.formState.errors.addressLine1?.message} />
                   <Input label="Address line 2" {...patientForm.register('addressLine2')} error={patientForm.formState.errors.addressLine2?.message} />
@@ -479,7 +479,7 @@ export function ProfilePage() {
               onToggle={() => (editingDoctor ? setEditingDoctor(false) : startDoctorEdit())}
             />
             {editingDoctor ? (
-              <form onSubmit={doctorForm.handleSubmit(onDoctorSubmit)} className="space-y-4">
+              <form onSubmit={doctorForm.handleSubmit(onDoctorSubmit)} className="flex flex-col gap-4">
                 <Input
                   label="Bio"
                   multiline
@@ -529,7 +529,7 @@ export function ProfilePage() {
               Password changed. Your current session stays signed in.
             </div>
           )}
-          <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="max-w-md space-y-4">
+          <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="max-w-md flex flex-col gap-4">
             <PasswordInput
               label="Current password"
               registration={passwordForm.register('currentPassword')}
