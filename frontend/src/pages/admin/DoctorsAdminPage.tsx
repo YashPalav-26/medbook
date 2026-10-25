@@ -10,9 +10,19 @@ import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Modal } from '../../components/ui/Modal';
 import { AppShell } from '../../components/layout/AppShell';
-import { PageHeader, ActiveBadge, EmptyState, ErrorBox } from '../../components/admin/AdminUi';
+import { PageHeader, ActiveBadge, EmptyState, ErrorBox, Spinner } from '../../components/admin/AdminUi';
 import { toApiError } from '../../api/client';
-import { UserCog, PlusCircle, Loader2, Ban, Pencil } from 'lucide-react';
+import { formatCurrency } from '../../lib/format';
+import { UserCog, PlusCircle, Ban, Pencil } from 'lucide-react';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 
 /**
  * Shared Zod schema for the doctor form. Creation requires the password field;
@@ -138,7 +148,7 @@ export function DoctorsAdminPage() {
     <AppShell>
       <div className="mx-auto max-w-5xl">
         <PageHeader
-          icon={<UserCog className="w-8 h-8 text-blue-600" />}
+          icon={<UserCog className="h-6 w-6 text-brand-600" />}
           title="Manage Doctors"
           description="Doctor profiles with their login accounts. Creating a doctor provisions a DOCTOR account automatically."
         />
@@ -159,58 +169,60 @@ export function DoctorsAdminPage() {
             <ErrorBox message={toApiError(doctorsQuery.error).message} />
           ) : doctors.length === 0 ? (
             <EmptyState
-              icon={<UserCog className="w-8 h-8 text-gray-400" />}
+              icon={<UserCog className="h-6 w-6 text-ink-300" />}
               message="No doctors yet. Create the first one — they will appear in booking discovery immediately."
             />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-gray-500 border-b border-gray-200">
-                    <th className="py-2 pr-4 font-medium">Doctor</th>
-                    <th className="py-2 pr-4 font-medium">Specialty</th>
-                    <th className="py-2 pr-4 font-medium">License</th>
-                    <th className="py-2 pr-4 font-medium">Fee</th>
-                    <th className="py-2 pr-4 font-medium">Experience</th>
-                    <th className="py-2 pr-4 font-medium">Status</th>
-                    <th className="py-2 font-medium text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <TableContainer component={Paper} className="overflow-x-auto !bg-transparent !shadow-none">
+              <Table size="small" aria-label="Doctors">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Doctor</TableCell>
+                    <TableCell>Specialty</TableCell>
+                    <TableCell className="hidden md:table-cell">License</TableCell>
+                    <TableCell>Fee</TableCell>
+                    <TableCell className="hidden md:table-cell">Experience</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {doctors.map((doctor) => (
-                    <tr key={doctor.id} className="border-b border-gray-100 last:border-0">
-                      <td className="py-3 pr-4">
-                        <div className="font-medium text-gray-900">Dr. {doctor.firstName} {doctor.lastName}</div>
-                        <div className="text-gray-500">{doctor.email}</div>
-                      </td>
-                      <td className="py-3 pr-4 text-gray-700">{doctor.specialty}</td>
-                      <td className="py-3 pr-4 text-gray-700">{doctor.medicalLicenseNumber}</td>
-                      <td className="py-3 pr-4 text-gray-700">${doctor.consultationFee}</td>
-                      <td className="py-3 pr-4 text-gray-700">{doctor.yearsExperience} yrs</td>
-                      <td className="py-3 pr-4">
-                        <ActiveBadge active={doctor.active && doctor.userActive} />
-                      </td>
-                      <td className="py-3 text-right whitespace-nowrap">
-                        <Button variant="outline" className="mr-2 !py-1.5 !px-3 text-sm" onClick={() => openEdit(doctor)} aria-label={`Edit Dr. ${doctor.lastName}`}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
+                    <TableRow key={doctor.id} hover>
+                      <TableCell>
+                        <div className="font-medium text-ink-900">Dr. {doctor.firstName} {doctor.lastName}</div>
+                        <div className="text-ink-500">{doctor.email}</div>
+                      </TableCell>
+                      <TableCell className="text-ink-700">{doctor.specialty}</TableCell>
+                      <TableCell className="hidden text-ink-700 md:table-cell">{doctor.medicalLicenseNumber}</TableCell>
+                      <TableCell className="text-ink-700">{formatCurrency(doctor.consultationFee)}</TableCell>
+                      <TableCell className="hidden text-ink-700 md:table-cell">{doctor.yearsExperience} yrs</TableCell>
+                      <TableCell><ActiveBadge active={doctor.active && doctor.userActive} /></TableCell>
+                      <TableCell align="right" className="whitespace-nowrap">
+                        <Tooltip title={`Edit Dr. ${doctor.lastName}`}>
+                          <IconButton size="small" onClick={() => openEdit(doctor)} aria-label={`Edit Dr. ${doctor.lastName}`}>
+                            <Pencil className="w-4 h-4" />
+                          </IconButton>
+                        </Tooltip>
                         {doctor.active && (
-                          <Button
-                            variant="outline"
-                            className="!py-1.5 !px-3 text-sm text-red-600 hover:bg-red-50"
-                            onClick={() => deactivate(doctor)}
-                            disabled={deactivateMutation.isPending}
-                            aria-label={`Deactivate Dr. ${doctor.lastName}`}
-                          >
-                            <Ban className="w-4 h-4" />
-                          </Button>
+                          <Tooltip title={`Deactivate Dr. ${doctor.lastName}`}>
+                            <IconButton
+                              size="small"
+                              onClick={() => deactivate(doctor)}
+                              disabled={deactivateMutation.isPending}
+                              aria-label={`Deactivate Dr. ${doctor.lastName}`}
+                              className="text-danger-700 hover:bg-danger-100"
+                            >
+                              <Ban className="w-4 h-4" />
+                            </IconButton>
+                          </Tooltip>
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
+            </TableContainer>
           )}
         </Card>
       </div>
@@ -218,7 +230,7 @@ export function DoctorsAdminPage() {
       {modalOpen && !editing && (
         <Modal title="New Doctor" onClose={() => setModalOpen(false)}>
           <form onSubmit={createForm.handleSubmit(submitCreate)} className="space-y-4">
-            <p className="text-sm text-gray-600 bg-blue-50 border border-blue-100 rounded-lg p-3">
+            <p className="text-sm text-ink-600 bg-info-100/60 border border-info-100 rounded-field p-3">
               Creating a doctor also creates their <strong>login account</strong> with the
               DOCTOR role. They will sign in with the email and password you set here.
             </p>
@@ -244,7 +256,7 @@ export function DoctorsAdminPage() {
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={pending}>
-                {pending ? <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Creating...</span> : 'Create Doctor'}
+                {pending ? <span className="flex items-center gap-2"><Spinner className="text-white" /> Creating...</span> : 'Create Doctor'}
               </Button>
             </div>
           </form>
@@ -254,7 +266,7 @@ export function DoctorsAdminPage() {
       {modalOpen && editing && (
         <Modal title={`Edit Dr. ${editing.lastName}`} onClose={() => setModalOpen(false)}>
           <form onSubmit={editForm.handleSubmit(submitEdit)} className="space-y-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-ink-600">
               Editing the profile of <strong>Dr. {editing.firstName} {editing.lastName}</strong>
               {' '}({editing.email}). Login credentials are managed separately, not here.
             </p>
@@ -275,7 +287,7 @@ export function DoctorsAdminPage() {
             <div className="flex justify-end gap-3 pt-2">
               <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={pending}>
-                {pending ? <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Saving...</span> : 'Save Changes'}
+                {pending ? <span className="flex items-center gap-2"><Spinner className="text-white" /> Saving...</span> : 'Save Changes'}
               </Button>
             </div>
           </form>
