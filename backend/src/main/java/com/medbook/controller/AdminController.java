@@ -2,6 +2,8 @@ package com.medbook.controller;
 
 import com.medbook.dto.AdminAppointmentDetailResponse;
 import com.medbook.dto.AdminAppointmentResponse;
+import com.medbook.dto.AdminAccountResponse;
+import com.medbook.dto.AdminCreateRequest;
 import com.medbook.dto.AdminOverviewResponse;
 import com.medbook.dto.AvailabilityCreateRequest;
 import com.medbook.dto.AvailabilityUpdateRequest;
@@ -15,6 +17,7 @@ import com.medbook.dto.SpecialtyResponse;
 import com.medbook.dto.SpecialtyUpdateRequest;
 import com.medbook.entity.AppointmentStatus;
 import com.medbook.service.AdminAppointmentService;
+import com.medbook.service.AdminAdminService;
 import com.medbook.service.AvailabilityAdminService;
 import com.medbook.service.DoctorAdminService;
 import com.medbook.service.PatientAdminService;
@@ -56,17 +59,48 @@ public class AdminController {
     private final AvailabilityAdminService availabilityAdminService;
     private final AdminAppointmentService adminAppointmentService;
     private final PatientAdminService patientAdminService;
+    private final AdminAdminService adminAdminService;
 
     public AdminController(SpecialtyAdminService specialtyAdminService,
                            DoctorAdminService doctorAdminService,
                            AvailabilityAdminService availabilityAdminService,
                            AdminAppointmentService adminAppointmentService,
-                           PatientAdminService patientAdminService) {
+                           PatientAdminService patientAdminService,
+                           AdminAdminService adminAdminService) {
         this.specialtyAdminService = specialtyAdminService;
         this.doctorAdminService = doctorAdminService;
         this.availabilityAdminService = availabilityAdminService;
         this.adminAppointmentService = adminAppointmentService;
         this.patientAdminService = patientAdminService;
+        this.adminAdminService = adminAdminService;
+    }
+
+    // ------------------------------------------------------------------
+    // Administrators (admin account management)
+    // ------------------------------------------------------------------
+
+    /**
+     * List every administrator account (active and inactive) with role names.
+     * Passwords — hashed or otherwise — are never part of the response.
+     */
+    @GetMapping("/admins")
+    public ResponseEntity<List<AdminAccountResponse>> listAdmins() {
+        return ResponseEntity.ok(adminAdminService.listAll().stream()
+                .map(AdminAccountResponse::from)
+                .toList());
+    }
+
+    /**
+     * Create an administrator with their login account and ADMIN role — one
+     * transaction. The role is assigned server-side; the request carries no role
+     * field. 409 duplicate email.
+     */
+    @PostMapping("/admins")
+    public ResponseEntity<AdminAccountResponse> createAdmin(@Valid @RequestBody AdminCreateRequest request) {
+        AdminAccountResponse response = AdminAccountResponse.from(adminAdminService.create(request));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header("Location", "/api/v1/admin/admins/" + response.id())
+                .body(response);
     }
 
     // ------------------------------------------------------------------
