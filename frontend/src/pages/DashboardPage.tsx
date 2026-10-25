@@ -55,7 +55,7 @@ export function DashboardPage() {
             <h2 className="font-medium text-ink-900">Upcoming appointment</h2>
             <Link
               to="/appointments/me"
-              className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline"
+              className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:text-brand-800 hover:underline"
             >
               View all
               <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
