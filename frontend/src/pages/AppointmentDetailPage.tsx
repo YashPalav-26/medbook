@@ -17,7 +17,9 @@ import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { StatusBadge, ErrorBox, EmptyState, Skeleton, Spinner } from '../components/ui/Feedback';
-import { useToast } from '../components/ui/Toast';
+import { toast } from '../lib/toast';
+import { formatDate } from '../lib/dates';
+import { formatCurrency } from '../lib/format';
 import { toApiError } from '../api/client';
 import {
   Calendar,
@@ -26,7 +28,7 @@ import {
   Stethoscope,
   AlertCircle,
   XCircle,
-  IndianRupee,
+  DollarSign,
   CheckCircle2,
   BadgeCheck,
   UserX,
@@ -65,7 +67,7 @@ export function AppointmentDetailPage() {
     resolver: zodResolver(cancelSchema),
   });
 
-  const toast = useToast();
+  // Toasts come from the Sonner-based facade (lib/toast) — no provider needed.
 
   const onCancelSubmit = async (data: CancelFormData) => {
     if (!appointmentId) return;
@@ -178,7 +180,10 @@ export function AppointmentDetailPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="font-display text-2xl font-semibold text-ink-900">Appointment #{appointment.id}</h2>
-            <p className="mt-1 text-sm text-ink-500">Booked visit details and status.</p>
+            <p className="mt-1 text-sm text-ink-500">
+              {isDoctor ? appointment.patientName : `Dr. ${appointment.doctorName}`} ·{' '}
+              {formatDate(appointment.appointmentDate)}
+            </p>
           </div>
           <StatusBadge status={appointment.status} />
         </div>
@@ -192,7 +197,7 @@ export function AppointmentDetailPage() {
               </div>
               <div>
                 <p className="text-sm text-ink-500">Patient</p>
-                <p className="font-medium text-ink-900">Patient #{appointment.patientId}</p>
+                <p className="font-medium text-ink-900">{appointment.patientName}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-field border border-ink-100 bg-ink-50 p-4">
@@ -201,7 +206,7 @@ export function AppointmentDetailPage() {
               </div>
               <div>
                 <p className="text-sm text-ink-500">Doctor</p>
-                <p className="font-medium text-ink-900">Doctor #{appointment.doctorId}</p>
+                <p className="font-medium text-ink-900">Dr. {appointment.doctorName}</p>
               </div>
             </div>
           </div>
@@ -214,7 +219,7 @@ export function AppointmentDetailPage() {
                 <p className="flex items-center gap-1.5 text-xs text-ink-500">
                   <Calendar className="h-3.5 w-3.5" aria-hidden="true" /> Date
                 </p>
-                <p className="mt-0.5 font-medium text-ink-900">{appointment.appointmentDate}</p>
+                <p className="mt-0.5 font-medium text-ink-900">{formatDate(appointment.appointmentDate)}</p>
               </div>
               <div className="rounded-field border border-ink-100 p-3">
                 <p className="flex items-center gap-1.5 text-xs text-ink-500">
@@ -234,11 +239,11 @@ export function AppointmentDetailPage() {
           {/* Fee */}
           <div className="flex items-center justify-between rounded-field border border-brand-100 bg-brand-50 p-4">
             <p className="flex items-center gap-2 text-sm font-medium text-ink-700">
-              <IndianRupee className="h-4 w-4 text-brand-600" aria-hidden="true" />
+              <DollarSign className="h-4 w-4 text-brand-600" aria-hidden="true" />
               Consultation fee
             </p>
             <p className="font-display text-2xl font-semibold text-brand-700">
-              ${appointment.consultationFeeSnapshot.toFixed(2)}
+              {formatCurrency(appointment.consultationFeeSnapshot)}
             </p>
           </div>
 
