@@ -52,7 +52,7 @@ export function LoginPage() {
               Patients, doctors, and administrators all use the same login.
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
+            <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4" noValidate>
               <Input
                 label="Email"
                 type="email"
@@ -96,7 +96,7 @@ export function LoginPage() {
 
             <p className="mt-6 text-center text-sm text-ink-600">
               New to MedBook?{' '}
-              <Link to="/register" className="font-medium text-brand-700 hover:underline">
+              <Link to="/register" className="font-medium text-brand-700 hover:text-brand-800 hover:underline">
                 Create an account
               </Link>
             </p>
