@@ -135,13 +135,14 @@ opt itself in.
   **and** the public discovery caches (`['specialties']`, `['doctors']`,
   `['doctorAvailability']`) so the booking page reflects admin changes without a
   reload. No server state lives in AuthContext.
-- **Routes** (`App.tsx`): `/admin`, `/admin/specialties`, `/admin/doctors`,
-  `/admin/availability` — each wrapped in `AdminRoute`.
+- **Routes** (`App.tsx`): `/admin`, `/admin/appointments`, `/admin/appointments/:id`,
+  `/admin/specialties`, `/admin/doctors`, `/admin/patients`, `/admin/availability` — each
+  wrapped in `AdminRoute`.
 - **Role handling** (`AdminRoute`): reads `user.roles` from AuthContext (populated
   by the backend at login) and shows a friendly "Access denied" card to non-admins.
   **This is UX, not security** — a non-admin who bypasses the UI and calls the APIs
-  directly still gets 403 from the backend. The dashboard shows the "Admin Area"
-  card only to admins.
+  directly still gets 403 from the backend. Admins land on the admin overview via
+  `DashboardRouter` and reach the rest of the admin area through the sidebar.
 - **Forms**: React Hook Form + Zod on every form (specialty name, doctor
   credentials/profile, availability windows with the start-before-end and
   date-range rules). Errors from the backend (400/401/403/404/409/500) are shown
