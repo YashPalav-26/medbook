@@ -70,15 +70,17 @@ Every page composes these; no page invents its own field or card styles.
 |---|---|
 | `Brand` | Wordmark with a cross-in-roundel icon; links to the app home |
 | `Button` | `primary` / `secondary` / `outline` / `ghost` / `danger` variants, `sm/md/lg` sizes, disabled + spinner states |
+| `ButtonLink` | Router navigation rendered as **one anchor** styled as a button. Never wrap `<Button>` in `<Link>` (an anchor may not contain a button) |
 | `Card` | Surface container with optional `hover` (clickable cards get pointer + elevation) |
-| `Input` / `Select` | Label, helper text, error message, focus ring, disabled state — always label-associated (a11y) |
+| `LinkCard` | Clickable card rendered as a real `<Link>` — Tab/Enter work, screen readers announce a link, middle-click opens a tab. Never attach `onClick` to a plain card |
+| `Input` / `Select` | Label, helper text, error message, focus ring, disabled state — always label-associated (a11y). `Input` also supports `endAdornment` (password toggles) and forwards react-hook-form's `ref` to the real `<input>` |
 | `StatusBadge` | Status pill with color **and** word (`SCHEDULED`, `CANCELLED`, `Active`, `Closed`…) — never color alone |
 | `EmptyState` | Icon + title + explanation + optional action; the universal "nothing here yet" pattern |
 | `ErrorBox` | `role="alert"` callout with optional **Try again** retry |
 | `Skeleton` | aria-hidden pulse lines for loading placeholders |
 | `Spinner` | Small inline `Loader2` for buttons and inline waits |
 | `Modal` / `ConfirmDialog` | Focus-trapped dialog (Escape + backdrop close), title/description/body, cancel + confirm actions, busy state |
-| `ToastProvider` / `useToast` | Lightweight custom toast system (no dependency): success/error feedback for booking, cancellation, admin mutations |
+| `toast` (`src/lib/toast.ts`) | Sonner-backed success/error feedback for booking, cancellation and admin mutations; the `<Toaster>` is mounted once in `App.tsx` |
 
 ---
 
@@ -119,7 +121,9 @@ fields and shows password help text. No unsupported fields, no role picker.
 Personalized welcome, primary **Book Appointment** action, an **Upcoming
 appointment** card built from the real `/appointments/me` data (never fake
 stats or charts), a My Appointments shortcut, and a small profile summary.
-Empty and error states use the shared components with a retry.
+Empty and error states use the shared components with a retry. "Upcoming" means
+still SCHEDULED/CONFIRMED **and** dated today or later — a stale open row from
+last month is not shown as the next visit.
 
 ### Booking (`/appointments/new`)
 A guided flow on one page: a **3-step wizard indicator** (Doctor → Date & time
@@ -144,10 +148,13 @@ the cancellation reason when present. Click-through to detail preserved.
 
 ### Admin area (`/admin/**`)
 Same tokens and components as the patient area, slightly more information-
-dense: dashboard overview cards; specialties/doctors/availability pages built
-on the shared table/list + modal + badge patterns. Availability uses friendly
-day names (mapped to the backend's numeric values) and Open/Closed badges.
-A shared `AdminNav` links the three areas.
+dense: dashboard overview cards; appointments, specialties, doctors, patients,
+admins and availability pages built on the shared table/list + modal + badge
+patterns. Every admin page uses the same `PageHeader` (brand icon tile, `h1`,
+description) and the AppShell navigation sections — no page-specific colour
+palette. Availability uses friendly day names (mapped to the backend's numeric
+values) and Open/Closed badges; effective dates and fees are formatted through
+the shared helpers.
 
 ---
 
@@ -175,6 +182,9 @@ Every data-driven page implements all four with the shared kit:
 - Tap targets stay ≥ ~40px; modals are scrollable and never overflow
   (`max-h-[90vh] overflow-y-auto`).
 - No horizontal overflow: lists/cards instead of wide tables on mobile.
+- Dense admin tables keep their least important columns hidden below `sm`/`md`
+  and sit in an `overflow-x-auto` container, so the page itself never scrolls
+  sideways. The admin appointments list switches to cards entirely below `md`.
 
 ---
 
@@ -189,7 +199,12 @@ Every data-driven page implements all four with the shared kit:
 - Status is conveyed by **word + color** (`StatusBadge`), never color alone.
 - Visible focus rings on all interactive elements; Escape closes modals and
   the drawer; modal panels are `aria-modal` and labelled.
-- Navigation is keyboard-operable throughout (real buttons and links).
+- Navigation is keyboard-operable throughout (real buttons and links), with a
+  **Skip to main content** link as the first focusable element in the shell.
+- Status filter tabs implement the tablist keyboard contract (Tab enters the
+  group, Left/Right move the selection, `aria-selected` follows it).
+- The notification panel is labelled as a dialog; focus moves into it when it
+  opens and returns to the bell when it closes.
 
 ---
 
@@ -203,3 +218,14 @@ Every data-driven page implements all four with the shared kit:
 5. Role-aware UI is convenience; the server is the authority.
 6. Real data only — no fabricated metrics, no mock cards, no invented
    statuses.
+7. Format through the shared helpers: `formatDate` / `formatDateTime`
+   (`src/lib/dates.ts`), `formatCurrency` (`src/lib/format.ts`), `todayIso()`
+   for "today" (never `toISOString().slice(0, 10)`, which is UTC and can be a
+   day off). No hand-rolled `$…` strings and no rupee icons for dollar amounts.
+8. Navigation is a link, action is a button. Use `ButtonLink` for
+   "button-looking navigation" and `LinkCard` for clickable cards.
+9. JS-driven entrance animations are avoided: content is visible by default and
+   motion comes from the CSS keyframes, which also respect
+   `prefers-reduced-motion`. A hero that starts at `opacity: 0` until
+   `requestAnimationFrame` runs leaves the primary content invisible in
+   background tabs and headless renders.
