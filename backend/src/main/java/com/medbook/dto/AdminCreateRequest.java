@@ -5,21 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record AdminCreateRequest(
 
         @NotBlank(message = "email is required")
