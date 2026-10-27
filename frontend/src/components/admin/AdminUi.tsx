@@ -1,14 +1,6 @@
 import type { ReactNode } from 'react';
 
-
 export { StatusBadge, ActiveBadge, EmptyState, ErrorBox, Skeleton, Spinner } from '../ui/Feedback';
-
-
-
-
-
-
-
 
 export function PageHeader({ icon, title, description }: { icon: ReactNode; title: string; description: string }) {
   return (
