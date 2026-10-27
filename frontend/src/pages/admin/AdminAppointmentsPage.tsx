@@ -41,16 +41,6 @@ const bookingSchema = z.object({
 type BookingFormData = z.input<typeof bookingSchema>;
 type BookingOutputData = z.output<typeof bookingSchema>;
 
-
-
-
-
-
-
-
-
-
-
 const STATUS_OPTIONS: AppointmentStatus[] = [
   'SCHEDULED',
   'CONFIRMED',
@@ -97,12 +87,6 @@ function AppointmentCards({ appointments }: { appointments: AdminAppointmentResp
   );
 }
 
-
-
-
-
-
-
 function BookForPatientModal({
   onClose,
   onBooked,
@@ -120,7 +104,6 @@ function BookForPatientModal({
   const doctorsQuery = useDoctors(specialtyId);
   const availabilityQuery = useDoctorAvailability(doctorId, form.appointmentDate ?? null);
   const bookingMutation = useCreateAppointmentForPatient();
-
 
   const setField = (field: keyof BookingFormData, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -288,7 +271,6 @@ export function AdminAppointmentsPage() {
   const [status, setStatus] = useState('');
   const [doctorId, setDoctorId] = useState('');
   const [bookingOpen, setBookingOpen] = useState(false);
-
 
   const filters = {
     date: date || undefined,
