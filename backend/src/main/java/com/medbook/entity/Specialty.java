@@ -9,24 +9,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 import java.util.UUID;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @Entity
 @Table(
@@ -49,17 +32,8 @@ public class Specialty {
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
-
-
-
-
-
-
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
-
-
-
 
     public Specialty() {
     }
@@ -100,10 +74,6 @@ public class Specialty {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
-
-
-
-
 
     @Override
     public boolean equals(Object o) {
