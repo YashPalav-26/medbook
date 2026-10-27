@@ -15,18 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.List;
 
-
-
-
-
-
-
-
-
-
-
-
-
 @RestController
 @RequestMapping("/api/v1")
 public class DoctorController {
@@ -39,36 +27,11 @@ public class DoctorController {
         this.availabilityService = availabilityService;
     }
 
-
-
-
-
-
-
-
-
-
-
     @GetMapping("/doctors")
     public ResponseEntity<List<DoctorSummaryResponse>> listDoctors(
             @RequestParam(name = "specialtyId", required = false) Long specialtyId) {
         return ResponseEntity.ok(doctorService.listActiveDoctors(specialtyId));
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     @GetMapping("/doctors/{doctorId}/availability")
     public ResponseEntity<List<DoctorAvailabilityResponse>> getAvailability(
