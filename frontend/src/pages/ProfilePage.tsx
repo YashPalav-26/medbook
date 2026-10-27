@@ -21,19 +21,6 @@ import {
   Stethoscope, HeartPulse, ShieldCheck,
 } from 'lucide-react';
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 const accountSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100, 'At most 100 characters'),
   lastName: z.string().min(1, 'Last name is required').max(100, 'At most 100 characters'),
@@ -82,11 +69,6 @@ const passwordSchema = z
   });
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
-
-
-
-
-
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex justify-between gap-4 py-1.5">
@@ -95,7 +77,6 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
     </div>
   );
 }
-
 
 function PasswordInput({
   label,
@@ -139,7 +120,6 @@ function PasswordInput({
   );
 }
 
-
 function SectionHeader({
   icon,
   title,
@@ -174,7 +154,6 @@ function SectionHeader({
   );
 }
 
-
 function FormActions({ onCancel, saving, onCancelLabel = 'Cancel' }: { onCancel: () => void; saving: boolean; onCancelLabel?: string }) {
   return (
     <div className="flex gap-3 pt-2">
@@ -190,10 +169,6 @@ function FormActions({ onCancel, saving, onCancelLabel = 'Cancel' }: { onCancel:
   );
 }
 
-
-
-
-
 export function ProfilePage() {
 
   const { data: profile, isLoading, isError, error, refetch } = useMyProfile();
@@ -201,7 +176,6 @@ export function ProfilePage() {
   const isPatient = Boolean(profile?.patient);
   const isDoctor = Boolean(profile?.doctor);
   const isAdminOnly = Boolean(profile && !isPatient && !isDoctor && profile.roles.includes('ROLE_ADMIN'));
-
 
   const [editingAccount, setEditingAccount] = useState(false);
   const accountForm = useForm<AccountFormData>({ resolver: zodResolver(accountSchema) });
@@ -226,7 +200,6 @@ export function ProfilePage() {
     }
   };
   const accountError = updateAccount.error ? toApiError(updateAccount.error) : null;
-
 
   const [editingPatient, setEditingPatient] = useState(false);
   const patientForm = useForm<PatientProfileFormData>({ resolver: zodResolver(patientProfileSchema) });
@@ -263,7 +236,6 @@ export function ProfilePage() {
   };
   const patientError = updatePatient.error ? toApiError(updatePatient.error) : null;
 
-
   const [editingDoctor, setEditingDoctor] = useState(false);
   const doctorForm = useForm<DoctorProfileFormData>({ resolver: zodResolver(doctorProfileSchema) });
   const updateDoctor = useUpdateDoctorProfile();
@@ -286,7 +258,6 @@ export function ProfilePage() {
     }
   };
   const doctorError = updateDoctor.error ? toApiError(updateDoctor.error) : null;
-
 
   const passwordForm = useForm<PasswordFormData>({ resolver: zodResolver(passwordSchema) });
   const changePassword = useChangePassword();
