@@ -3,13 +3,6 @@ package com.medbook.service;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-
-
-
-
-
-
-
 public class AppointmentConflictException extends RuntimeException {
 
     public AppointmentConflictException(Long doctorId, LocalDate date, LocalTime startTime, LocalTime endTime) {
