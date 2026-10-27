@@ -2,18 +2,6 @@ package com.medbook.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
-
-
-
-
-
-
-
-
-
-
-
-
 public record LoginRequest(
 
         @NotBlank(message = "email is required")
