@@ -3,20 +3,6 @@ package com.medbook.bootstrap;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Component
 public class BootstrapProperties {
 
@@ -39,10 +25,6 @@ public class BootstrapProperties {
         this.adminLastName = adminLastName;
         this.adminPhoneNumber = adminPhoneNumber;
     }
-
-
-
-
 
     public boolean isConfigured() {
         return adminEmail != null && !adminEmail.isBlank()
