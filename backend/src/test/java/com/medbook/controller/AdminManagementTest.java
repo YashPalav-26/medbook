@@ -53,15 +53,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
-
-
-
-
-
-
-
-
 @SpringBootTest
 @Transactional
 class AdminManagementTest {
@@ -106,11 +97,9 @@ class AdminManagementTest {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .apply(springSecurity())
 
-
                 .defaultRequest(get("/").header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .build();
     }
-
 
     private String createTestToken(String subject, String... roles) {
         Instant now = Instant.now();
@@ -152,10 +141,6 @@ class AdminManagementTest {
                 new BigDecimal("100.00")));
     }
 
-
-
-
-
     @Test
     void adminListsPatientsWithAccountLinkage() throws Exception {
         String suffix = String.valueOf(System.nanoTime());
@@ -175,8 +160,6 @@ class AdminManagementTest {
         String body = mockMvc.perform(get("/api/v1/admin/patients"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-
-
 
         assertThat(body).doesNotContain("passwordHash");
         assertThat(body).doesNotContain("$2a$");
@@ -203,10 +186,6 @@ class AdminManagementTest {
                 .andExpect(status().isUnauthorized());
     }
 
-
-
-
-
     @Test
     void adminCreatesSpecialtyAndItAppearsInList() throws Exception {
         mockMvc.perform(post("/api/v1/admin/specialties")
@@ -216,7 +195,6 @@ class AdminManagementTest {
                 .andExpect(jsonPath("$.id").isNumber())
                 .andExpect(jsonPath("$.name").value("Admin Cardio"))
                 .andExpect(jsonPath("$.description").value("created by test"));
-
 
         mockMvc.perform(get("/api/v1/admin/specialties")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
@@ -258,7 +236,6 @@ class AdminManagementTest {
                 .andDo(result -> assertThat(specialtyRepository.findById(specialty.getId()).orElseThrow().isActive())
                         .isFalse());
 
-
         mockMvc.perform(get("/api/v1/specialties")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isOk())
@@ -293,10 +270,6 @@ class AdminManagementTest {
         anonymous.perform(get("/api/v1/admin/specialties"))
                 .andExpect(status().isUnauthorized());
     }
-
-
-
-
 
     private String doctorCreateJson(String email, String license, Long specialtyId) {
         return """
@@ -333,13 +306,11 @@ class AdminManagementTest {
 
         long doctorId = ((Number) JsonPath.read(result.getResponse().getContentAsString(), "$.id")).longValue();
 
-
         User linked = userRepository.findByEmail("house@medbook.test").orElseThrow();
         assertThat(linked.hasRole("DOCTOR")).isTrue();
         assertThat(linked.hasRole("ADMIN")).isFalse();
         assertThat(linked.getPasswordHash()).isNotEqualTo("Doctor#Pass1");
         assertThat(linked.getPasswordHash()).startsWith("$2");
-
 
         DoctorAdminResponse adminView = DoctorAdminResponse.from(doctorRepository.findByIdWithUserAndSpecialty(doctorId).orElseThrow());
         assertThat(adminView.medicalLicenseNumber()).isEqualTo("LIC-HOUSE-1");
@@ -355,8 +326,6 @@ class AdminManagementTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(doctorCreateJson("login-doc@medbook.test", "LIC-LOGIN-1", specialty.getId())))
                 .andExpect(status().isCreated());
-
-
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -377,7 +346,6 @@ class AdminManagementTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("An account with this email address already exists"));
 
-
         assertThat(doctorRepository.findByMedicalLicenseNumber("LIC-DUP-EMAIL")).isEmpty();
     }
 
@@ -391,7 +359,6 @@ class AdminManagementTest {
                         .content(doctorCreateJson("newdoc@medbook.test", existing.getMedicalLicenseNumber(), specialty.getId())))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value(containsString("already exists")));
-
 
         assertThat(userRepository.findByEmail("newdoc@medbook.test")).isEmpty();
     }
@@ -435,7 +402,6 @@ class AdminManagementTest {
 
         assertThat(doctorRepository.findById(doctor.getId()).orElseThrow().isActive()).isFalse();
 
-
         String body = mockMvc.perform(get("/api/v1/doctors")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .andExpect(status().isOk())
@@ -474,10 +440,6 @@ class AdminManagementTest {
                         .content(doctorCreateJson("anon@medbook.test", "LIC-ANON", 1L)))
                 .andExpect(status().isUnauthorized());
     }
-
-
-
-
 
     @Test
     void adminCreatesAvailabilityForDoctor() throws Exception {
@@ -590,7 +552,6 @@ class AdminManagementTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.effectiveUntil").value(LocalDate.now().minusDays(1).toString()));
 
-
         LocalDate nextMonday = LocalDate.now().plusDays(((8 - LocalDate.now().getDayOfWeek().getValue()) % 7) + 7);
         mockMvc.perform(get("/api/v1/doctors/" + doctor.getId() + "/availability?date=" + nextMonday)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
@@ -625,10 +586,6 @@ class AdminManagementTest {
                 .andExpect(status().isForbidden());
     }
 
-
-
-
-
     private String adminCreateJson(String email) {
         return """
                 {
@@ -647,7 +604,6 @@ class AdminManagementTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.id == " + adminUser.getId() + ")]").exists())
                 .andReturn().getResponse().getContentAsString();
-
 
         assertThat(body).doesNotContain("password");
         assertThat(body).doesNotContain("passwordHash");
@@ -669,7 +625,6 @@ class AdminManagementTest {
                 .andExpect(jsonPath("$.roles[0]").value("ADMIN"))
                 .andReturn();
 
-
         User linked = userRepository.findByEmail("newadmin@medbook.test").orElseThrow();
         assertThat(linked.hasRole("ADMIN")).isTrue();
         assertThat(linked.hasRole("DOCTOR")).isFalse();
@@ -684,8 +639,6 @@ class AdminManagementTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(adminCreateJson("login-admin@medbook.test")))
                 .andExpect(status().isCreated());
-
-
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -720,7 +673,6 @@ class AdminManagementTest {
                                 }
                                 """))
                 .andExpect(status().isBadRequest());
-
 
         assertThat(userRepository.findByEmail("shortpw@medbook.test")).isEmpty();
     }
@@ -800,7 +752,6 @@ class AdminManagementTest {
     @Test
     void adminCreationRequestCarriesNoTrustedRoleField() throws Exception {
 
-
         mockMvc.perform(post("/api/v1/admin/admins")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -820,10 +771,6 @@ class AdminManagementTest {
         assertThat(linked.hasRole("DOCTOR")).isFalse();
     }
 
-
-
-
-
     @Test
     void failedDoctorCreationLeavesNoUserAndNoDoctorRows() throws Exception {
         Specialty specialty = createSpecialty("Admin Tx Spec");
@@ -836,7 +783,6 @@ class AdminManagementTest {
                         .content(doctorCreateJson("txnewdoc@medbook.test", conflictingLicense, specialty.getId())))
                 .andExpect(status().isConflict());
 
-
         assertThat(userRepository.findByEmail("txnewdoc@medbook.test")).isEmpty();
         assertThat(doctorRepository.findByMedicalLicenseNumber(conflictingLicense))
                 .map(Doctor::getId)
@@ -845,7 +791,6 @@ class AdminManagementTest {
 
     @Test
     void doctorLifecycleKeepsExistingAppointmentBehaviourIntact() throws Exception {
-
 
         Specialty specialty = createSpecialty("Admin Lifecycle Spec");
         Doctor doctor = createDoctor("lifecycle-doc@medbook.test", specialty);
@@ -867,10 +812,8 @@ class AdminManagementTest {
                 patient, doctor, date, LocalTime.of(10, 0), LocalTime.of(10, 30),
                 doctor.getConsultationFee()));
 
-
         mockMvc.perform(patch("/api/v1/admin/doctors/" + doctor.getId() + "/deactivate"))
                 .andExpect(status().isOk());
-
 
         Appointment stored = appointmentRepository.findById(appointment.getId()).orElseThrow();
         assertThat(stored.getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
