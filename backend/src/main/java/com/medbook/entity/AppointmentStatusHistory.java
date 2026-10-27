@@ -15,21 +15,6 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Entity
 @Table(name = "appointment_status_history")
 public class AppointmentStatusHistory {
@@ -39,52 +24,23 @@ public class AppointmentStatusHistory {
     @Column(name = "id")
     private Long id;
 
-
-
-
-
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "appointment_id", nullable = false)
     private Appointment appointment;
-
-
-
-
 
     @Column(name = "status", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private AppointmentStatus status;
 
-
-
-
-
-
-
-
-
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "changed_by_user_id")
     private User changedByUser;
 
-
-
-
-
     @Column(name = "notes", length = 500)
     private String notes;
 
-
-
-
-
-
     @Column(name = "changed_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime changedAt;
-
-
-
 
     public AppointmentStatusHistory() {
     }
