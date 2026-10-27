@@ -10,18 +10,8 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-
-
-
-
-
-
-
-
-
 
 @Entity
 @Table(
@@ -41,17 +31,8 @@ public class Role {
     @Column(name = "description", length = 255)
     private String description;
 
-
-
-
-
     @ManyToMany(mappedBy = "roles")
     private Set<User> users = new HashSet<>();
-
-
-
-
-
 
     public Role() {
     }
@@ -85,11 +66,6 @@ public class Role {
         return users;
     }
 
-
-
-
-
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -110,10 +86,6 @@ public class Role {
 
         return id == null ? UUID.randomUUID().hashCode() : id.hashCode();
     }
-
-
-
-
 
     @Override
     public String toString() {
