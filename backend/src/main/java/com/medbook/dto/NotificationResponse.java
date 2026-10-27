@@ -5,21 +5,6 @@ import com.medbook.entity.NotificationType;
 
 import java.time.LocalDateTime;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record NotificationResponse(
         Long id,
         NotificationType type,
@@ -29,11 +14,6 @@ public record NotificationResponse(
         boolean read,
         LocalDateTime createdAt
 ) {
-
-
-
-
-
 
     public static NotificationResponse from(Notification notification) {
         return new NotificationResponse(
