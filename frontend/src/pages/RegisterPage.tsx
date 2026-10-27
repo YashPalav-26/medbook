@@ -12,11 +12,6 @@ import { todayIso } from '../lib/dates';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 
-
-
-
-
-
 export function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
