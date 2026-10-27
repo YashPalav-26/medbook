@@ -10,17 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
 
-
-
-
-
-
-
-
-
-
-
-
 @Service
 public class MedbookUserDetailsService implements UserDetailsService {
 
@@ -29,13 +18,6 @@ public class MedbookUserDetailsService implements UserDetailsService {
     public MedbookUserDetailsService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
-
-
-
-
-
-
-
 
     @Override
     @Transactional(readOnly = true)
