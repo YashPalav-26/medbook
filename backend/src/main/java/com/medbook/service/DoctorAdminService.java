@@ -13,22 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @Service
 public class DoctorAdminService {
@@ -51,30 +36,15 @@ public class DoctorAdminService {
         this.passwordEncoder = passwordEncoder;
     }
 
-
-
-
     @Transactional(readOnly = true)
     public List<Doctor> listAll() {
         return doctorRepository.findAllWithUserAndSpecialty();
     }
 
-
-
-
-
-
     @Transactional(readOnly = true)
     public Doctor get(Long id) {
         return requireDoctor(id);
     }
-
-
-
-
-
-
-
 
     @Transactional
     public Doctor create(DoctorCreateRequest request) {
@@ -88,7 +58,6 @@ public class DoctorAdminService {
         var specialty = specialtyRepository.findById(request.specialtyId())
                 .orElseThrow(() -> new SpecialtyNotFoundException(request.specialtyId()));
 
-
         User user = new User(normalizedEmail, passwordEncoder.encode(request.password()),
                 request.firstName().trim(), request.lastName().trim(), request.phoneNumber().trim());
         Role doctorRole = roleRepository.findByName("DOCTOR")
@@ -96,22 +65,12 @@ public class DoctorAdminService {
         user.addRole(doctorRole);
         User savedUser = userRepository.save(user);
 
-
         Doctor doctor = new Doctor(savedUser, specialty, request.medicalLicenseNumber().trim(),
                 request.yearsExperience(), request.consultationFee());
         doctor.setBio(request.bio());
         doctor.setProfilePictureUrl(request.profilePictureUrl());
         return doctorRepository.save(doctor);
     }
-
-
-
-
-
-
-
-
-
 
     @Transactional
     public Doctor update(Long id, DoctorUpdateRequest request) {
@@ -130,13 +89,6 @@ public class DoctorAdminService {
         doctor.setProfilePictureUrl(request.profilePictureUrl());
         return doctorRepository.save(doctor);
     }
-
-
-
-
-
-
-
 
     @Transactional
     public Doctor deactivate(Long id) {
