@@ -11,10 +11,6 @@ import { Spinner } from '../components/ui/Feedback';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 
-
-
-
-
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
