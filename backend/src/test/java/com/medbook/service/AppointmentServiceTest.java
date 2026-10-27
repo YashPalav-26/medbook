@@ -32,23 +32,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 @SpringBootTest
 @Transactional
 class AppointmentServiceTest {
-
 
     private static final BigDecimal TEST_FEE = new BigDecimal("500.00");
 
@@ -82,20 +68,9 @@ class AppointmentServiceTest {
     @Autowired
     private EntityManager entityManager;
 
-
-
-
-
-
-
-
-
     private static LocalDate futureDate() {
         return LocalDate.now().plusDays(7);
     }
-
-
-
 
     private static LocalDate nextDateOnWeekday(DayOfWeek weekday) {
         LocalDate date = LocalDate.now().plusDays(1);
@@ -104,10 +79,6 @@ class AppointmentServiceTest {
         }
         return date;
     }
-
-
-
-
 
     private static byte toMysqlDayOfWeek(LocalDate date) {
         int javaDayOfWeek = date.getDayOfWeek().getValue();
@@ -133,7 +104,6 @@ class AppointmentServiceTest {
     private Doctor createTestDoctor(String email, String specialtyName) {
         User user = createTestDoctorUser(email);
 
-
         Specialty specialty = specialtyRepository.save(
                 new Specialty(specialtyName + "-" + System.nanoTime(), "Test specialty"));
         return doctorRepository.save(
@@ -145,10 +115,6 @@ class AppointmentServiceTest {
         return patientRepository.save(new Patient(user, LocalDate.of(1990, 1, 1)));
     }
 
-
-
-
-
     private DoctorAvailability createRecurringAvailability(
             Doctor doctor, LocalDate date, LocalTime start, LocalTime end) {
         DoctorAvailability availability =
@@ -156,10 +122,6 @@ class AppointmentServiceTest {
         availability.setRecurring(true);
         return availabilityRepository.save(availability);
     }
-
-
-
-
 
     @Test
     void createAppointmentSavesAppointmentAsScheduled() {
@@ -176,7 +138,6 @@ class AppointmentServiceTest {
         assertThat(appointment.getAppointmentDate()).isEqualTo(date);
         assertThat(appointment.getStartTime()).isEqualTo(LocalTime.of(10, 0));
         assertThat(appointment.getEndTime()).isEqualTo(LocalTime.of(11, 0));
-
 
         entityManager.flush();
         entityManager.clear();
@@ -212,10 +173,6 @@ class AppointmentServiceTest {
         assertThat(history).hasSize(1);
         assertThat(history.get(0).getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
     }
-
-
-
-
 
     @Test
     void createAppointmentThrowsWhenDoctorNotFound() {
@@ -269,10 +226,6 @@ class AppointmentServiceTest {
                 .isInstanceOf(PatientInactiveException.class);
     }
 
-
-
-
-
     @Test
     void createAppointmentThrowsWhenDateInPast() {
         Doctor doctor = createTestDoctor("doc-error-4@medbook.test", "Gastroenterology");
@@ -296,10 +249,6 @@ class AppointmentServiceTest {
                 .hasMessageContaining("Start time");
     }
 
-
-
-
-
     @Test
     void createAppointmentThrowsWhenOutsideAvailabilityWindow() {
         Doctor doctor = createTestDoctor("doc-avail-1@medbook.test", "Oncology");
@@ -319,7 +268,6 @@ class AppointmentServiceTest {
         LocalDate date = futureDate();
         createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(12, 0));
 
-
         assertThatThrownBy(() -> appointmentService.createAppointment(
                 patient.getId(), doctor.getId(), date, LocalTime.of(11, 30), LocalTime.of(12, 30)))
                 .isInstanceOf(DoctorUnavailableException.class);
@@ -330,7 +278,6 @@ class AppointmentServiceTest {
         Doctor doctor = createTestDoctor("doc-avail-3@medbook.test", "Endocrinology");
         Patient patient = createTestPatient("pat-avail-3@medbook.test");
         LocalDate date = futureDate();
-
 
         createRecurringAvailability(doctor, date.plusDays(1), LocalTime.of(9, 0), LocalTime.of(17, 0));
 
@@ -359,10 +306,8 @@ class AppointmentServiceTest {
         mondaySlot.setRecurring(true);
         availabilityRepository.save(mondaySlot);
 
-
         Appointment sundayAppointment = appointmentService.createAppointment(
                 patient.getId(), sundayDoctor.getId(), sunday, LocalTime.of(10, 0), LocalTime.of(11, 0));
-
 
         Appointment mondayAppointment = appointmentService.createAppointment(
                 patient.getId(), mondayDoctor.getId(), monday, LocalTime.of(10, 0), LocalTime.of(11, 0));
@@ -378,7 +323,6 @@ class AppointmentServiceTest {
         LocalDate date = futureDate();
         byte dayOfWeek = toMysqlDayOfWeek(date);
 
-
         DoctorAvailability notYetEffective =
                 new DoctorAvailability(doctor, dayOfWeek, LocalTime.of(9, 0), LocalTime.of(17, 0));
         notYetEffective.setRecurring(true);
@@ -390,7 +334,6 @@ class AppointmentServiceTest {
                 patient.getId(), doctor.getId(), date, LocalTime.of(10, 0), LocalTime.of(11, 0)))
                 .isInstanceOf(DoctorUnavailableException.class);
 
-
         DoctorAvailability expired =
                 new DoctorAvailability(doctor, dayOfWeek, LocalTime.of(10, 0), LocalTime.of(16, 0));
         expired.setRecurring(true);
@@ -401,7 +344,6 @@ class AppointmentServiceTest {
         assertThatThrownBy(() -> appointmentService.createAppointment(
                 patient.getId(), doctor.getId(), date, LocalTime.of(10, 0), LocalTime.of(11, 0)))
                 .isInstanceOf(DoctorUnavailableException.class);
-
 
         DoctorAvailability inRange =
                 new DoctorAvailability(doctor, dayOfWeek, LocalTime.of(8, 0), LocalTime.of(18, 0));
@@ -431,22 +373,16 @@ class AppointmentServiceTest {
         oneOffSlot.setEffectiveUntil(oneOffDate);
         availabilityRepository.save(oneOffSlot);
 
-
         assertThatThrownBy(() -> appointmentService.createAppointment(
                 patient.getId(), doctor.getId(), sameWeekdayNextWeek,
                 LocalTime.of(10, 0), LocalTime.of(11, 0)))
                 .isInstanceOf(DoctorUnavailableException.class);
-
 
         Appointment appointment = appointmentService.createAppointment(
                 patient.getId(), doctor.getId(), oneOffDate, LocalTime.of(10, 0), LocalTime.of(11, 0));
 
         assertThat(appointment.getId()).isNotNull();
     }
-
-
-
-
 
     @Test
     void createAppointmentThrowsWhenOverlappingExistingAppointment() {
@@ -476,7 +412,6 @@ class AppointmentServiceTest {
         appointmentService.createAppointment(
                 patient1.getId(), doctor.getId(), date, LocalTime.of(10, 0), LocalTime.of(11, 0));
 
-
         Appointment second = appointmentService.createAppointment(
                 patient2.getId(), doctor.getId(), date, LocalTime.of(11, 0), LocalTime.of(12, 0));
 
@@ -498,7 +433,6 @@ class AppointmentServiceTest {
                 patient2.getId(), doctor.getId(), date, LocalTime.of(10, 15), LocalTime.of(10, 45)))
                 .isInstanceOf(AppointmentConflictException.class);
 
-
         List<Appointment> appointmentsForDoctor = appointmentRepository.findByDoctorId(doctor.getId());
         assertThat(appointmentsForDoctor).hasSize(1);
         assertThat(appointmentsForDoctor.get(0).getId()).isEqualTo(first.getId());
@@ -518,17 +452,12 @@ class AppointmentServiceTest {
 
         appointmentService.cancelAppointment(first.getId(), "Patient rescheduled the visit");
 
-
         Appointment second = appointmentService.createAppointment(
                 patient2.getId(), doctor.getId(), date, LocalTime.of(10, 0), LocalTime.of(11, 0));
 
         assertThat(second.getId()).isNotNull();
         assertThat(second.getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
     }
-
-
-
-
 
     @Test
     void cancelAppointmentUpdatesStatusAndCancellationReason() {
@@ -566,7 +495,6 @@ class AppointmentServiceTest {
         appointmentService.cancelAppointment(appointment.getId(), "Patient feeling better");
 
         var history = statusHistoryRepository.findByAppointmentIdOrderByChangedAtAsc(appointment.getId());
-
 
         assertThat(history).hasSize(2);
         assertThat(history).extracting(AppointmentStatusHistory::getStatus)
@@ -613,7 +541,6 @@ class AppointmentServiceTest {
                 .isInstanceOf(InvalidAppointmentStatusException.class)
                 .hasMessageContaining("already cancelled");
 
-
         assertThat(statusHistoryRepository.findByAppointmentId(appointment.getId())).hasSize(2);
     }
 
@@ -626,8 +553,6 @@ class AppointmentServiceTest {
 
         Appointment appointment = appointmentService.createAppointment(
                 patient.getId(), doctor.getId(), date, LocalTime.of(10, 0), LocalTime.of(11, 0));
-
-
 
         appointment.setStatus(AppointmentStatus.COMPLETED);
         appointmentRepository.save(appointment);
