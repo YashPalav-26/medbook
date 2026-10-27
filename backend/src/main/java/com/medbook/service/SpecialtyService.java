@@ -7,15 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-
-
-
-
-
-
-
-
-
 @Service
 public class SpecialtyService {
 
@@ -24,11 +15,6 @@ public class SpecialtyService {
     public SpecialtyService(SpecialtyRepository specialtyRepository) {
         this.specialtyRepository = specialtyRepository;
     }
-
-
-
-
-
 
     @Transactional(readOnly = true)
     public List<SpecialtyResponse> listActiveSpecialties() {
