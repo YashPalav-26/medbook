@@ -13,18 +13,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-
-
-
-
-
-
-
-
-
-
-
-
 class AdminBootstrapRunnerTest {
 
     private static BootstrapProperties properties(String email, String password) {
@@ -62,7 +50,6 @@ class AdminBootstrapRunnerTest {
 
     @Test
     void stillDelegatesWhenAnotherAdminAlreadyExists() {
-
 
         BootstrapAccountService service = mock(BootstrapAccountService.class);
         User existing = new User("bootstrap@medbook.test", "existing-hash", "Clinic", "Admin", "+1");
