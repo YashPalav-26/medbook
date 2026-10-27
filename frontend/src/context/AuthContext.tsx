@@ -4,12 +4,6 @@ import type { AuthResponse, AuthUser, LoginRequest, RegisterRequest } from '../t
 import { clearAuth, getStoredToken, getStoredUser, saveAuth } from '../lib/storage';
 import * as authApi from '../api/authApi';
 
-
-
-
-
-
-
 export interface AuthContextValue {
   user: AuthUser | null;
   token: string | null;
@@ -26,7 +20,6 @@ export interface AuthContextType {
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
 
 function applyAuthResponse(response: AuthResponse): AuthUser {
   saveAuth(response.token, response.user);
@@ -55,7 +48,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setUser(null);
   }, []);
-
 
   const updateUser = useCallback(
     (patch: Partial<Pick<AuthUser, 'firstName' | 'lastName'>>) => {
