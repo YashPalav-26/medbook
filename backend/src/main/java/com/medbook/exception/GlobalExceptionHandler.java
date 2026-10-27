@@ -30,36 +30,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.util.List;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-
-
 
     @ExceptionHandler({
             DoctorNotFoundException.class,
@@ -72,10 +44,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException exception, HttpServletRequest request) {
         return build(HttpStatus.NOT_FOUND, exception, request);
     }
-
-
-
-
 
     @ExceptionHandler({
             DoctorInactiveException.class,
@@ -91,23 +59,11 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, exception, request);
     }
 
-
-
-
-
-
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(org.springframework.security.access.AccessDeniedException exception,
                                                             HttpServletRequest request) {
         return build(HttpStatus.FORBIDDEN, exception, request);
     }
-
-
-
-
-
-
-
 
     @ExceptionHandler({
             InvalidCredentialsException.class,
@@ -119,29 +75,17 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.UNAUTHORIZED, exception, request);
     }
 
-
-
-
-
     @ExceptionHandler(EmailAlreadyRegisteredException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateEmail(EmailAlreadyRegisteredException exception,
                                                               HttpServletRequest request) {
         return build(HttpStatus.CONFLICT, exception, request);
     }
 
-
-
-
-
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException exception,
                                                                HttpServletRequest request) {
         return build(HttpStatus.BAD_REQUEST, exception, request);
     }
-
-
-
-
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationFailure(MethodArgumentNotValidException exception,
@@ -158,10 +102,6 @@ public class GlobalExceptionHandler {
         ));
     }
 
-
-
-
-
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleUnreadableBody(HttpMessageNotReadableException exception,
                                                               HttpServletRequest request) {
@@ -171,9 +111,6 @@ public class GlobalExceptionHandler {
                 request.getRequestURI()
         ));
     }
-
-
-
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException exception,
