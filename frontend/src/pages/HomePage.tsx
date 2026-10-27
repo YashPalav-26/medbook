@@ -7,12 +7,6 @@ import {
   CalendarPlus, Stethoscope, CalendarClock, ShieldCheck, ArrowRight, CheckCircle2,
 } from 'lucide-react';
 
-
-
-
-
-
-
 const FEATURES = [
   {
     icon: <CalendarPlus className="h-5 w-5" aria-hidden="true" />,
@@ -52,9 +46,6 @@ const STEPS = [
 ];
 
 export function HomePage() {
-
-
-
 
   return (
     <div className="min-h-screen bg-ink-50">
