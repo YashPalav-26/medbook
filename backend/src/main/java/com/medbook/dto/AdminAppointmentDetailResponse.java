@@ -4,31 +4,10 @@ import com.medbook.entity.Appointment;
 
 import java.util.List;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record AdminAppointmentDetailResponse(
         AdminAppointmentResponse appointment,
         List<AppointmentStatusHistoryResponse> history
 ) {
-
-
-
-
-
-
-
-
 
     public static AdminAppointmentDetailResponse from(Appointment appointment,
                                                       List<AppointmentStatusHistoryResponse> history) {
