@@ -15,18 +15,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
-
-
-
-
-
-
-
-
-
-
-
 @SpringBootTest
 @Transactional
 class DoctorRepositoryTest {
@@ -46,10 +34,6 @@ class DoctorRepositoryTest {
     @Autowired
     private EntityManager entityManager;
 
-
-
-
-
     private User createTestDoctorUser(String email) {
         Role doctorRole = roleRepository.findByName("DOCTOR")
                 .orElseThrow(() -> new IllegalStateException("DOCTOR role not seeded"));
@@ -60,18 +44,13 @@ class DoctorRepositoryTest {
         return userRepository.save(user);
     }
 
-
-
-
     private Specialty createTestSpecialty(String name) {
-
 
         return specialtyRepository.save(new Specialty(name + "-" + System.nanoTime(), "Test specialty"));
     }
 
     @Test
     void findAllExecutesAgainstRealSchema() {
-
 
         assertThat(doctorRepository.findAll()).isNotNull();
     }
@@ -109,9 +88,6 @@ class DoctorRepositoryTest {
     @Test
     void findBySpecialtyNameTraversesNestedProperty() {
 
-
-
-
         User user1 = createTestDoctorUser("doctor3@medbook.test");
         User user2 = createTestDoctorUser("doctor4@medbook.test");
         Specialty cardiology = createTestSpecialty("Cardiology");
@@ -124,8 +100,6 @@ class DoctorRepositoryTest {
         doctorRepository.save(doc1);
         doctorRepository.save(doc2);
         doctorRepository.save(doc3);
-
-
 
         List<Doctor> cardiologists = doctorRepository.findBySpecialtyName(cardiology.getName());
 
@@ -176,8 +150,6 @@ class DoctorRepositoryTest {
     @Test
     void doctorRelationshipToUserIsNavigable() {
 
-
-
         User user = createTestDoctorUser("doctor9@medbook.test");
         Specialty specialty = createTestSpecialty("Pediatrics");
 
@@ -185,14 +157,9 @@ class DoctorRepositoryTest {
         Doctor saved = doctorRepository.save(doctor);
         Long doctorId = saved.getId();
 
-
         entityManager.clear();
 
-
         Doctor reloaded = doctorRepository.findById(doctorId).orElseThrow();
-
-
-
 
         User loadedUser = reloaded.getUser();
 
@@ -204,9 +171,6 @@ class DoctorRepositoryTest {
     @Test
     void doctorRelationshipToSpecialtyIsNavigable() {
 
-
-
-
         User user = createTestDoctorUser("doctor10@medbook.test");
         Specialty urology = createTestSpecialty("Urology");
 
@@ -217,7 +181,6 @@ class DoctorRepositoryTest {
         entityManager.clear();
 
         Doctor reloaded = doctorRepository.findById(doctorId).orElseThrow();
-
 
         Specialty loadedSpecialty = reloaded.getSpecialty();
 
