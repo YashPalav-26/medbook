@@ -10,11 +10,9 @@ import * as appointmentApi from '../api/appointmentApi';
 import { formatDate } from '../lib/dates';
 import type { AppointmentResponse } from '../types/appointment';
 
-
 vi.mock('../hooks/useAuth', () => ({
   useAuth: () => ({ isAuthenticated: true, user: { id: 42 } }),
 }));
-
 
 vi.mock('../api/appointmentApi', () => ({
   getSpecialties: vi.fn(),
@@ -24,11 +22,6 @@ vi.mock('../api/appointmentApi', () => ({
 }));
 
 const mockedApi = vi.mocked(appointmentApi);
-
-
-
-
-
 
 const BOOKING_DATE = (() => {
   const d = new Date();
@@ -92,7 +85,6 @@ function renderPage() {
   );
 }
 
-
 async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
 
   await pickFromSelect(user, screen, 'Specialty', 'Cardiology');
@@ -116,17 +108,13 @@ describe('BookAppointmentPage (secure patient self-booking)', () => {
     renderPage();
     const user = userEvent.setup();
 
-
     await pickFromSelect(user, screen, 'Specialty', 'Cardiology');
-
 
     const doctorSelect = await screen.findByLabelText('Doctor');
 
     await waitFor(() => expect(doctorSelect.getAttribute('aria-disabled')).not.toBe('true'));
 
-
     expect(mockedApi.getDoctors).toHaveBeenCalledWith(5);
-
 
     fireEvent.mouseDown(doctorSelect);
     expect(await screen.findByRole('option', { name: /Dr\. Alice Smith/ })).toBeInTheDocument();
@@ -220,7 +208,6 @@ describe('BookAppointmentPage (secure patient self-booking)', () => {
     renderPage();
     const user = userEvent.setup();
     await fillValidForm(user);
-
 
     expect(await screen.findByText('Confirm your visit')).toBeInTheDocument();
 
