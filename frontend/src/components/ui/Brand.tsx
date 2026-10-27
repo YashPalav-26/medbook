@@ -1,13 +1,5 @@
 import { Link } from 'react-router-dom';
 
-
-
-
-
-
-
-
-
 export function Brand({
   to,
   compact = false,
