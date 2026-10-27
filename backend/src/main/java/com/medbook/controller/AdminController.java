@@ -38,18 +38,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.List;
 
-
-
-
-
-
-
-
-
-
-
-
-
 @RestController
 @RequestMapping("/api/v1/admin")
 public class AdminController {
@@ -75,25 +63,12 @@ public class AdminController {
         this.adminAdminService = adminAdminService;
     }
 
-
-
-
-
-
-
-
-
     @GetMapping("/admins")
     public ResponseEntity<List<AdminAccountResponse>> listAdmins() {
         return ResponseEntity.ok(adminAdminService.listAll().stream()
                 .map(AdminAccountResponse::from)
                 .toList());
     }
-
-
-
-
-
 
     @PostMapping("/admins")
     public ResponseEntity<AdminAccountResponse> createAdmin(@Valid @RequestBody AdminCreateRequest request) {
@@ -103,22 +78,12 @@ public class AdminController {
                 .body(response);
     }
 
-
-
-
-
-
     @GetMapping("/patients")
     public ResponseEntity<List<PatientAdminResponse>> listPatients() {
         return ResponseEntity.ok(patientAdminService.listAll().stream()
                 .map(PatientAdminResponse::from)
                 .toList());
     }
-
-
-
-
-
 
     @GetMapping("/specialties")
     public ResponseEntity<List<SpecialtyResponse>> listSpecialties() {
@@ -127,13 +92,11 @@ public class AdminController {
                 .toList());
     }
 
-
     @PostMapping("/specialties")
     public ResponseEntity<SpecialtyResponse> createSpecialty(@Valid @RequestBody SpecialtyCreateRequest request) {
         SpecialtyResponse response = SpecialtyResponse.from(specialtyAdminService.create(request));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-
 
     @PutMapping("/specialties/{id}")
     public ResponseEntity<SpecialtyResponse> updateSpecialty(
@@ -141,16 +104,10 @@ public class AdminController {
         return ResponseEntity.ok(SpecialtyResponse.from(specialtyAdminService.update(id, request)));
     }
 
-
     @PatchMapping("/specialties/{id}/deactivate")
     public ResponseEntity<SpecialtyResponse> deactivateSpecialty(@PathVariable Long id) {
         return ResponseEntity.ok(SpecialtyResponse.from(specialtyAdminService.deactivate(id)));
     }
-
-
-
-
-
 
     @GetMapping("/doctors")
     public ResponseEntity<List<DoctorAdminResponse>> listDoctors() {
@@ -159,15 +116,10 @@ public class AdminController {
                 .toList());
     }
 
-
     @GetMapping("/doctors/{id}")
     public ResponseEntity<DoctorAdminResponse> getDoctor(@PathVariable Long id) {
         return ResponseEntity.ok(DoctorAdminResponse.from(doctorAdminService.get(id)));
     }
-
-
-
-
 
     @PostMapping("/doctors")
     public ResponseEntity<DoctorAdminResponse> createDoctor(@Valid @RequestBody DoctorCreateRequest request) {
@@ -177,23 +129,16 @@ public class AdminController {
                 .body(response);
     }
 
-
     @PutMapping("/doctors/{id}")
     public ResponseEntity<DoctorAdminResponse> updateDoctor(
             @PathVariable Long id, @Valid @RequestBody DoctorUpdateRequest request) {
         return ResponseEntity.ok(DoctorAdminResponse.from(doctorAdminService.update(id, request)));
     }
 
-
     @PatchMapping("/doctors/{id}/deactivate")
     public ResponseEntity<DoctorAdminResponse> deactivateDoctor(@PathVariable Long id) {
         return ResponseEntity.ok(DoctorAdminResponse.from(doctorAdminService.deactivate(id)));
     }
-
-
-
-
-
 
     @GetMapping("/doctors/{doctorId}/availability")
     public ResponseEntity<List<com.medbook.dto.DoctorAvailabilityResponse>> listAvailability(
@@ -203,7 +148,6 @@ public class AdminController {
                 .toList());
     }
 
-
     @PostMapping("/doctors/{doctorId}/availability")
     public ResponseEntity<com.medbook.dto.DoctorAvailabilityResponse> createAvailability(
             @PathVariable Long doctorId, @Valid @RequestBody AvailabilityCreateRequest request) {
@@ -212,7 +156,6 @@ public class AdminController {
                         availabilityAdminService.create(doctorId, request)));
     }
 
-
     @PutMapping("/availability/{id}")
     public ResponseEntity<com.medbook.dto.DoctorAvailabilityResponse> updateAvailability(
             @PathVariable Long id, @Valid @RequestBody AvailabilityUpdateRequest request) {
@@ -220,31 +163,11 @@ public class AdminController {
                 availabilityAdminService.update(id, request)));
     }
 
-
-
-
-
     @PatchMapping("/availability/{id}/deactivate")
     public ResponseEntity<com.medbook.dto.DoctorAvailabilityResponse> deactivateAvailability(@PathVariable Long id) {
         return ResponseEntity.ok(com.medbook.dto.DoctorAvailabilityResponse.from(
                 availabilityAdminService.close(id)));
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     @GetMapping("/appointments")
     public ResponseEntity<List<AdminAppointmentResponse>> listAppointments(
@@ -255,32 +178,15 @@ public class AdminController {
         return ResponseEntity.ok(adminAppointmentService.listAppointments(date, status, doctorId, patientId));
     }
 
-
-
-
-
-
-
     @GetMapping("/appointments/overview")
     public ResponseEntity<AdminOverviewResponse> getOverview() {
         return ResponseEntity.ok(adminAppointmentService.getOverview());
     }
 
-
-
-
-
     @GetMapping("/appointments/{id}")
     public ResponseEntity<AdminAppointmentDetailResponse> getAppointmentDetail(@PathVariable Long id) {
         return ResponseEntity.ok(adminAppointmentService.getAppointmentDetail(id));
     }
-
-
-
-
-
-
-
 
     @PostMapping("/appointments/{id}/cancel")
     public ResponseEntity<AdminAppointmentResponse> cancelAppointment(
