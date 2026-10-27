@@ -48,14 +48,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
-
-
-
-
-
-
-
 @SpringBootTest
 @Transactional
 class AdminAppointmentsTest {
@@ -114,7 +106,6 @@ class AdminAppointmentsTest {
         patientMary = createPatient("adminappt-mary@medbook.test", "Mary", "Sue");
     }
 
-
     private String createTestToken(String subject, String... roles) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -163,10 +154,6 @@ class AdminAppointmentsTest {
         return appointmentRepository.save(appointment);
     }
 
-
-
-
-
     @Test
     void adminCanListAppointments() throws Exception {
         createAppointment(patientJohn, doctorA, LocalDate.now().plusDays(3), LocalTime.of(10, 0),
@@ -208,10 +195,6 @@ class AdminAppointmentsTest {
         anonymous.perform(get("/api/v1/admin/appointments"))
                 .andExpect(status().isUnauthorized());
     }
-
-
-
-
 
     @Test
     void listReturnsCorrectPatientAndDoctorInformation() throws Exception {
@@ -329,15 +312,10 @@ class AdminAppointmentsTest {
                 .andExpect(status().isBadRequest());
     }
 
-
-
-
-
     @Test
     void detailReturnsAppointmentWithParticipantsAndHistory() throws Exception {
         Appointment appointment = createAppointment(patientJohn, doctorA, LocalDate.now().plusDays(3),
                 LocalTime.of(10, 0), AppointmentStatus.CONFIRMED);
-
 
         AppointmentStatusHistory history = new AppointmentStatusHistory(appointment, AppointmentStatus.CONFIRMED);
         history.setNotes("Appointment created");
@@ -372,7 +350,6 @@ class AdminAppointmentsTest {
                 .andExpect(jsonPath("$.history[0].changedByName").value("Ada Admin"))
                 .andReturn().getResponse().getContentAsString();
 
-
         assertThat(body).doesNotContain(adminUser.getEmail());
         assertThat(body).doesNotContain("passwordHash");
         assertThat(body).doesNotContain("\"changedByUserId\"");
@@ -385,13 +362,8 @@ class AdminAppointmentsTest {
                 .andExpect(jsonPath("$.message", containsString("999999999")));
     }
 
-
-
-
-
     @Test
     void overviewReportsRealPerStatusCountsIncludingToday() throws Exception {
-
 
         MvcResult before = mockMvc.perform(get("/api/v1/admin/appointments/overview"))
                 .andExpect(status().isOk())
@@ -400,7 +372,6 @@ class AdminAppointmentsTest {
                 "$.statusCounts.SCHEDULED")).intValue();
         long totalBefore = ((Number) JsonPath.read(before.getResponse().getContentAsString(),
                 "$.totalAppointments")).longValue();
-
 
         createAppointment(patientJohn, doctorA, LocalDate.now(), LocalTime.of(15, 0),
                 AppointmentStatus.SCHEDULED);
@@ -419,12 +390,10 @@ class AdminAppointmentsTest {
         assertThat(scheduledAfter).isEqualTo(scheduledBefore + 2);
         assertThat(totalAfter).isEqualTo(totalBefore + 2);
 
-
         java.util.Map<String, Object> statusCounts = com.jayway.jsonpath.JsonPath.parse(body)
                 .read("$.statusCounts", java.util.Map.class);
         assertThat(statusCounts.keySet()).containsExactlyInAnyOrder(
                 "SCHEDULED", "CONFIRMED", "COMPLETED", "CANCELLED", "NO_SHOW");
-
 
         LocalDate today = LocalDate.now();
         mockMvc.perform(get("/api/v1/admin/appointments").param("date", today.toString()))
@@ -434,13 +403,8 @@ class AdminAppointmentsTest {
                     assertThat(todayCount).isGreaterThanOrEqualTo(todaysIds.size() - 1);
                 });
 
-
         assertThat(JsonPath.<String>read(body, "$.today")).isEqualTo(today.toString());
     }
-
-
-
-
 
     @Test
     void adminCancelsScheduledAppointmentWithReason() throws Exception {
@@ -523,7 +487,6 @@ class AdminAppointmentsTest {
                         .content("{}"))
                 .andExpect(status().isBadRequest());
 
-
         assertThat(appointmentRepository.findById(appointment.getId()).orElseThrow().getStatus())
                 .isEqualTo(AppointmentStatus.SCHEDULED);
     }
@@ -539,7 +502,6 @@ class AdminAppointmentsTest {
     @Test
     void adminCancellationDoesNotCreateResidueOnRollback() throws Exception {
 
-
         Appointment appointment = createAppointment(patientJohn, doctorA, LocalDate.now().plusDays(3),
                 LocalTime.of(10, 0), AppointmentStatus.CANCELLED);
 
@@ -553,7 +515,6 @@ class AdminAppointmentsTest {
 
     @Test
     void existingPatientCancelEndpointStillRejectsAdmins() throws Exception {
-
 
         Appointment appointment = createAppointment(patientJohn, doctorA, LocalDate.now().plusDays(3),
                 LocalTime.of(10, 0), AppointmentStatus.SCHEDULED);
