@@ -49,15 +49,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
-
-
-
-
-
-
-
-
 @SpringBootTest
 @Transactional
 class SecurityFilterTest {
@@ -91,11 +82,6 @@ class SecurityFilterTest {
 
     private MockMvc mockMvc;
 
-
-
-
-
-
     private User callerUser;
 
     @BeforeEach
@@ -107,10 +93,6 @@ class SecurityFilterTest {
                 .build();
         SecurityContextHolder.clearContext();
     }
-
-
-
-
 
     private String mintToken(String subject, String email, List<String> roles,
                              Instant issuedAt, Instant expiresAt) {
@@ -127,7 +109,6 @@ class SecurityFilterTest {
                 .getTokenValue();
     }
 
-
     private String validToken(String... roles) {
         Instant now = Instant.now();
         return mintToken(String.valueOf(callerUser.getId()), callerUser.getEmail(),
@@ -137,10 +118,6 @@ class SecurityFilterTest {
     private String bearer(String token) {
         return "Bearer " + token;
     }
-
-
-
-
 
     @Test
     void protectedAppointmentEndpointWithoutTokenReturns401Json() throws Exception {
@@ -168,10 +145,6 @@ class SecurityFilterTest {
 
                 .andExpect(jsonPath("$.message").value("Invalid email or password"));
     }
-
-
-
-
 
     @Test
     void garbageTokenReturns401JsonWithoutLeakingInternals() throws Exception {
@@ -236,19 +209,13 @@ class SecurityFilterTest {
                         .header(HttpHeaders.AUTHORIZATION, "Token " + validToken("ROLE_PATIENT")))
                 .andExpect(status().isUnauthorized());
 
-
         mockMvc.perform(get("/api/v1/appointments/1")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer "))
                 .andExpect(status().isUnauthorized());
     }
 
-
-
-
-
     @Test
     void validPatientTokenReachesProtectedEndpoints() throws Exception {
-
 
         mockMvc.perform(get("/api/v1/appointments/987654321")
                         .header(HttpHeaders.AUTHORIZATION, bearer(validToken("ROLE_PATIENT"))))
@@ -258,7 +225,6 @@ class SecurityFilterTest {
 
     @Test
     void tokenForUnknownUserIsRejectedByOwnershipCheck() throws Exception {
-
 
         Instant now = Instant.now();
         String ghost = mintToken("999999999", "ghost@medbook.test", List.of("ROLE_PATIENT"),
@@ -297,10 +263,6 @@ class SecurityFilterTest {
                         .value("You do not have permission to access this resource"));
     }
 
-
-
-
-
     @Test
     void currentUserProviderReadsTheJwtCaller() {
         Map<String, Object> claims = Map.of("sub", "2", "email", "filter@medbook.test",
@@ -308,8 +270,6 @@ class SecurityFilterTest {
         Jwt jwt = new Jwt("test-token", Instant.now(), Instant.now().plusSeconds(60),
                 Map.of("alg", "HS256"), claims);
         assertThat(jwt.getSubject()).isEqualTo("2");
-
-
 
         SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt,
                 java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_PATIENT"))));
@@ -328,10 +288,6 @@ class SecurityFilterTest {
         assertThatThrownBy(() -> currentUserProvider.requireCurrentUserId())
                 .isInstanceOf(InsufficientAuthenticationException.class);
     }
-
-
-
-
 
     @Test
     void registeredPatientTokenCanBookAnAppointment() throws Exception {
@@ -374,7 +330,6 @@ class SecurityFilterTest {
         availability.setRecurring(true);
         availabilityRepository.save(availability);
 
-
         mockMvc.perform(post("/api/v1/appointments")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -390,8 +345,6 @@ class SecurityFilterTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.patientId").value(patientId))
                 .andExpect(jsonPath("$.status").value("SCHEDULED"));
-
-
 
         User registeredUser = userRepository.findByEmail("filter-book@medbook.test").orElseThrow();
         Patient profile = patientRepository.findByUserId(registeredUser.getId()).orElseThrow();
