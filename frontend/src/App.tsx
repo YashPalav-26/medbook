@@ -29,20 +29,10 @@ import { AdminAppointmentsPage } from './pages/admin/AdminAppointmentsPage';
 import { AdminAppointmentDetailPage } from './pages/admin/AdminAppointmentDetailPage';
 import type { ReactNode } from 'react';
 
-
-
-
-
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
 }
-
-
-
-
-
-
 
 function AdminRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, user } = useAuth();
@@ -71,12 +61,6 @@ function AdminRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-
-
-
-
-
-
 function DoctorRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) {
@@ -104,11 +88,6 @@ function DoctorRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-
-
-
-
-
 function DashboardRouter() {
   const { user } = useAuth();
   const isAdmin = user?.roles?.includes('ROLE_ADMIN') ?? false;
@@ -117,10 +96,6 @@ function DashboardRouter() {
   return isDoctor ? <DoctorDashboardPage /> : <DashboardPage />;
 }
 
-
-
-
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -128,10 +103,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-
-
-
 
 export default function App() {
   return (
