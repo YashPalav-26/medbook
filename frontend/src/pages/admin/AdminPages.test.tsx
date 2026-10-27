@@ -12,7 +12,6 @@ import * as adminApi from '../../api/adminApi';
 import { pickFromSelect } from '../../test/mui';
 import type { SpecialtyResponse } from '../../types/appointment';
 
-
 vi.mock('../../api/adminApi', () => ({
   listAdminSpecialties: vi.fn(),
   createSpecialty: vi.fn(),
@@ -35,7 +34,6 @@ vi.mock('../../api/adminApi', () => ({
   createAdminAccount: vi.fn(),
 }));
 
-
 vi.mock('../../hooks/useAuth', () => ({
   useAuth: () => ({
     isAuthenticated: true,
@@ -43,7 +41,6 @@ vi.mock('../../hooks/useAuth', () => ({
     login: vi.fn(), register: vi.fn(), logout: vi.fn(),
   }),
 }));
-
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
@@ -101,7 +98,6 @@ beforeEach(() => {
   mockedApi.listAdminDoctors.mockResolvedValue(DOCTORS);
   mockedApi.listAdminAvailability.mockResolvedValue(WINDOWS);
   mockedApi.listAdminAccounts.mockResolvedValue(ADMINS);
-
 
   mockedApi.getAdminOverview.mockResolvedValue({
     todayAppointments: 0,
