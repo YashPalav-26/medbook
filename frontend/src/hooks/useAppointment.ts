@@ -30,11 +30,6 @@ export function useCreateAppointment() {
   });
 }
 
-
-
-
-
-
 export function useCreateAppointmentForPatient() {
   const queryClient = useQueryClient();
 
@@ -62,10 +57,6 @@ export function useCancelAppointment() {
   });
 }
 
-
-
-
-
 export function useSpecialties() {
   const { isAuthenticated } = useAuth();
 
@@ -74,20 +65,12 @@ export function useSpecialties() {
     queryFn: appointmentApi.getSpecialties,
     enabled: isAuthenticated,
 
-
     staleTime: 60 * 1000,
   });
 }
 
-
-
-
-
-
 export function useDoctors(specialtyId: number | null) {
   const { isAuthenticated } = useAuth();
-
-
 
   const validSpecialtyId = specialtyId !== null && Number.isFinite(specialtyId) ? specialtyId : null;
 
@@ -98,11 +81,6 @@ export function useDoctors(specialtyId: number | null) {
     staleTime: 5 * 60 * 1000,
   });
 }
-
-
-
-
-
 
 export function useDoctorAvailability(doctorId: number | null, date: string | null) {
   const { isAuthenticated } = useAuth();
@@ -116,10 +94,6 @@ export function useDoctorAvailability(doctorId: number | null, date: string | nu
     staleTime: 60 * 1000,
   });
 }
-
-
-
-
 
 function useTransitionMutation(
   action: 'confirm' | 'complete' | 'no-show',
@@ -140,16 +114,13 @@ function useTransitionMutation(
   });
 }
 
-
 export function useConfirmAppointment() {
   return useTransitionMutation('confirm');
 }
 
-
 export function useCompleteAppointment() {
   return useTransitionMutation('complete');
 }
-
 
 export function useNoShowAppointment() {
   return useTransitionMutation('no-show');
