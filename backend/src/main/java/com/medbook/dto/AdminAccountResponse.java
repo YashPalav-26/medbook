@@ -4,23 +4,6 @@ import com.medbook.entity.User;
 
 import java.util.List;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record AdminAccountResponse(
         Long id,
         String email,
@@ -31,7 +14,6 @@ public record AdminAccountResponse(
         boolean locked,
         List<String> roles
 ) {
-
 
     public static AdminAccountResponse from(User user) {
         return new AdminAccountResponse(
