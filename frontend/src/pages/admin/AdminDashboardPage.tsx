@@ -11,7 +11,6 @@ import {
 import type { AppointmentStatus } from '../../types/appointment';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 
-
 const STATUS_BAR_COLORS: Record<AppointmentStatus, string> = {
   SCHEDULED: '#38bdf8',     // info
   CONFIRMED: '#16a34a',     // success green (matches the Confirmed chip)
@@ -19,7 +18,6 @@ const STATUS_BAR_COLORS: Record<AppointmentStatus, string> = {
   CANCELLED: '#dc2626',     // danger-600
   NO_SHOW:   '#d97706',     // warning-600
 };
-
 
 const MANAGEMENT_LINKS = [
   {
@@ -53,14 +51,6 @@ const MANAGEMENT_LINKS = [
     description: 'Open your own patient dashboard',
   },
 ];
-
-
-
-
-
-
-
-
 
 export function AdminDashboardPage() {
   const { user } = useAuth();
