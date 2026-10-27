@@ -28,59 +28,20 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
-
     private static final int MIN_SECRET_LENGTH = 32;
 
-
     private static final String HMAC_ALGORITHM = "HmacSHA256";
-
-
-
-
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
-
-
-
-
-
-
-
-
 
     @Bean
     public SecretKey jwtSecretKey(JwtProperties properties) throws NoSuchAlgorithmException {
@@ -100,7 +61,6 @@ public class SecurityConfig {
                     + MIN_SECRET_LENGTH + " characters long");
         }
 
-
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] keyBytes = digest.digest(secret.getBytes(StandardCharsets.UTF_8));
         return new SecretKeySpec(keyBytes, HMAC_ALGORITHM);
@@ -118,12 +78,6 @@ public class SecurityConfig {
                 .build();
     }
 
-
-
-
-
-
-
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
@@ -134,26 +88,6 @@ public class SecurityConfig {
         converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
         return converter;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     @Bean
     public SecurityFilterChain securityFilterChain(
