@@ -10,7 +10,6 @@ import * as profileApi from '../api/profileApi';
 import type { CurrentUserResponse } from '../types/auth';
 import { formatDate } from '../lib/dates';
 
-
 vi.mock('../api/profileApi', () => ({
   getMyProfile: vi.fn(),
   updateMyAccount: vi.fn(),
@@ -18,7 +17,6 @@ vi.mock('../api/profileApi', () => ({
   updateMyDoctorProfile: vi.fn(),
   changeMyPassword: vi.fn(),
 }));
-
 
 vi.mock('../hooks/useAuth', () => ({
   useAuth: () => ({
@@ -201,7 +199,6 @@ describe('ProfilePage — account editing', () => {
     await user.type(screen.getByLabelText('First name'), 'Changed');
     await user.click(screen.getByRole('button', { name: /cancel edit/i }));
 
-
     expect(await screen.findByText('Ada Admin')).toBeInTheDocument();
     expect(mockedApi.updateMyAccount).not.toHaveBeenCalled();
   });
@@ -229,8 +226,6 @@ describe('ProfilePage — patient profile editing', () => {
     const user = userEvent.setup();
     renderPage();
 
-
-
     const patientCard = (await screen.findByText('Patient Profile')).closest('div[class*="rounded"]') as HTMLElement;
     await user.click(within(patientCard).getByRole('button', { name: /edit/i }));
     await user.clear(screen.getByLabelText('City'));
@@ -253,7 +248,6 @@ describe('ProfilePage — doctor profile editing', () => {
     mockedApi.getMyProfile.mockResolvedValue(DOCTOR_PROFILE);
     const user = userEvent.setup();
     renderPage();
-
 
     const doctorCard = (await screen.findByText('Professional Profile')).closest('div[class*="rounded"]') as HTMLElement;
     await user.click(within(doctorCard).getByRole('button', { name: /edit/i }));
@@ -285,7 +279,6 @@ describe('ProfilePage — doctor profile editing', () => {
     mockedApi.changeMyPassword.mockResolvedValue(undefined);
     const user = userEvent.setup();
     renderPage();
-
 
     await screen.findAllByText('Change Password');
     fillPasswords('Current#Pass1', 'New#Secret99', 'Different#1');
