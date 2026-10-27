@@ -16,50 +16,7 @@ import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Objects;
 import java.util.UUID;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @Entity
 @Table(
@@ -76,24 +33,9 @@ public class Doctor {
     @Column(name = "id")
     private Long id;
 
-
-
-
-
-
-
-
-
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
-
-
-
-
-
-
-
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "specialty_id", nullable = false)
@@ -102,24 +44,12 @@ public class Doctor {
     @Column(name = "medical_license_number", nullable = false, length = 50, unique = true)
     private String medicalLicenseNumber;
 
-
-
-
-
-
-
-
-
     @Column(name = "years_experience", nullable = false)
     @JdbcTypeCode(SqlTypes.TINYINT)
     private int yearsExperience;
 
     @Column(name = "bio", columnDefinition = "TEXT")
     private String bio;
-
-
-
-
 
     @Column(name = "consultation_fee", nullable = false, precision = 10, scale = 2)
     private BigDecimal consultationFee;
@@ -130,24 +60,11 @@ public class Doctor {
     @Column(name = "profile_picture_url", length = 500)
     private String profilePictureUrl;
 
-
-
-
-
-
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-
-
-
-
-
     @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime updatedAt;
-
-
-
 
     public Doctor() {
     }
@@ -237,10 +154,6 @@ public class Doctor {
         return updatedAt;
     }
 
-
-
-
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -259,10 +172,6 @@ public class Doctor {
     public int hashCode() {
         return id == null ? UUID.randomUUID().hashCode() : id.hashCode();
     }
-
-
-
-
 
     @Override
     public String toString() {
