@@ -51,15 +51,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
-
-
-
-
-
-
-
-
 @SpringBootTest
 @Transactional
 class NotificationsTest {
@@ -110,7 +101,6 @@ class NotificationsTest {
         Role doctorRole = roleRepository.findByName("DOCTOR")
                 .orElseThrow(() -> new IllegalStateException("DOCTOR role not seeded"));
 
-
         String suffix = String.valueOf(System.nanoTime());
         patientUser = new User("notif-pat-" + suffix + "@medbook.test",
                 passwordEncoder.encode(PASSWORD), "Paul", "Patient", "+919111000001");
@@ -127,7 +117,6 @@ class NotificationsTest {
         doctor = doctorRepository.save(new Doctor(doctorUser, specialty,
                 "LIC-NOTIF-" + suffix, 5, new BigDecimal("150.00")));
 
-
         DoctorAvailability availability = new DoctorAvailability(doctor, (byte) 1,
                 LocalTime.of(8, 0), LocalTime.of(18, 0));
         availabilityRepository.save(availability);
@@ -141,7 +130,6 @@ class NotificationsTest {
                 .build();
     }
 
-
     private String createTestToken(String subject, String... roles) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -154,7 +142,6 @@ class NotificationsTest {
         return jwtEncoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
                 .getTokenValue();
     }
-
 
     private Appointment createAppointment(AppointmentStatus status) {
         LocalDate nextMonday = LocalDate.now().plusWeeks(2);
@@ -176,10 +163,6 @@ class NotificationsTest {
         return notificationRepository.save(notification);
     }
 
-
-
-
-
     @Test
     void createdNotificationIsPersistedAndBelongsToItsUser() {
         Notification notification = createNotification(patientUser, NotificationType.APPOINTMENT_CREATED, false);
@@ -189,8 +172,6 @@ class NotificationsTest {
         assertThat(stored.getUser().getId()).isEqualTo(patientUser.getId());
         assertThat(stored.getType()).isEqualTo(NotificationType.APPOINTMENT_CREATED);
         assertThat(stored.isRead()).isFalse();
-
-
 
         notificationRepository.flush();
         entityManager.clear();
@@ -204,10 +185,6 @@ class NotificationsTest {
         Notification newest = createNotification(patientUser, NotificationType.APPOINTMENT_CONFIRMED, false);
 
         createNotification(doctorUser, NotificationType.APPOINTMENT_CANCELLED, false);
-
-
-
-
 
         jakarta.persistence.Query q = entityManager.createQuery(
                 "UPDATE Notification n SET n.createdAt = :t WHERE n.id = :id");
@@ -233,7 +210,6 @@ class NotificationsTest {
     @Test
     void userCannotRetrieveAnotherUsersNotifications() throws Exception {
 
-
         Notification doctorNotification = createNotification(doctorUser, NotificationType.APPOINTMENT_CREATED, false);
 
         mockMvc.perform(get("/api/v1/notifications")
@@ -245,10 +221,6 @@ class NotificationsTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + patientToken))
                 .andExpect(status().isNotFound());
     }
-
-
-
-
 
     @Test
     void unreadCountReflectsOnlyUnreadRowsOfTheCaller() throws Exception {
@@ -301,10 +273,6 @@ class NotificationsTest {
                 .andExpect(status().isNotFound());
     }
 
-
-
-
-
     @Test
     void bookingCreatesNotificationForPatient() throws Exception {
         LocalDate nextMonday = LocalDate.now().plusWeeks(2);
@@ -322,8 +290,6 @@ class NotificationsTest {
 
         long appointmentId = ((Number) com.jayway.jsonpath.JsonPath
                 .read(bookingResult.getResponse().getContentAsString(), "$.id")).longValue();
-
-
 
         entityManager.clear();
 
@@ -388,7 +354,6 @@ class NotificationsTest {
                         .content("{\"cancellationReason\":\"cannot make it\"}"))
                 .andExpect(status().isOk());
 
-
         assertThat(notificationRepository.findByUserIdOrderByCreatedAtDesc(patientUser.getId())).isEmpty();
 
         List<Notification> doctorNotifications =
@@ -426,13 +391,8 @@ class NotificationsTest {
         assertThat(doctorNotifications.get(0).getType()).isEqualTo(NotificationType.APPOINTMENT_CANCELLED);
     }
 
-
-
-
-
     @Test
     void failedBookingLeavesNoNotificationResidue() throws Exception {
-
 
         LocalDate nextMonday = LocalDate.now().plusWeeks(2);
         while (nextMonday.getDayOfWeek().getValue() != 1) {
@@ -447,8 +407,6 @@ class NotificationsTest {
                 .andExpect(status().isBadRequest());
 
         assertThat(notificationRepository.findByUserIdOrderByCreatedAtDesc(patientUser.getId())).isEmpty();
-
-
 
         mockMvc.perform(post("/api/v1/appointments")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -466,7 +424,6 @@ class NotificationsTest {
     @Test
     void invalidTransitionFails409AndCreatesNoNotification() throws Exception {
 
-
         Appointment appointment = createAppointment(AppointmentStatus.SCHEDULED);
         String confirmUrl = "/api/v1/appointments/" + appointment.getId() + "/confirm";
 
@@ -482,10 +439,6 @@ class NotificationsTest {
         assertThat(notificationRepository.findByUserIdOrderByCreatedAtDesc(patientUser.getId()))
                 .hasSize(1);
     }
-
-
-
-
 
     @Test
     void anonymousCallerIsUnauthorized() throws Exception {
