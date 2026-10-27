@@ -11,20 +11,6 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record DoctorUpdateRequest(
 
         @NotNull(message = "specialtyId is required")
