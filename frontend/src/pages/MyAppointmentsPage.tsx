@@ -10,12 +10,6 @@ import { formatDate, todayIso } from '../lib/dates';
 import { formatCurrency } from '../lib/format';
 import type { AppointmentResponse } from '../types/appointment';
 
-
-
-
-
-
-
 type StatusFilter = 'ALL' | 'UPCOMING' | 'CANCELLED';
 const FILTERS: { key: StatusFilter; label: string }[] = [
   { key: 'ALL', label: 'All' },
@@ -26,7 +20,6 @@ const FILTERS: { key: StatusFilter; label: string }[] = [
 function matchesFilter(appointment: AppointmentResponse, filter: StatusFilter): boolean {
   if (filter === 'ALL') return true;
   if (filter === 'CANCELLED') return appointment.status === 'CANCELLED';
-
 
   const open = appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED';
   return open && appointment.appointmentDate >= todayIso();
@@ -56,8 +49,6 @@ export function MyAppointmentsPage() {
     UPCOMING: all.filter((a) => matchesFilter(a, 'UPCOMING')).length,
     CANCELLED: all.filter((a) => matchesFilter(a, 'CANCELLED')).length,
   };
-
-
 
   const onTabKeyDown = (event: React.KeyboardEvent, index: number) => {
     const delta = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
