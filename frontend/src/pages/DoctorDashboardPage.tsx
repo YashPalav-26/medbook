@@ -8,11 +8,6 @@ import { StatusBadge, EmptyState, Skeleton } from '../components/ui/Feedback';
 import { CalendarDays, ArrowRight, Clock, User, Stethoscope } from 'lucide-react';
 import { formatDate, todayIso } from '../lib/dates';
 
-
-
-
-
-
 export function DoctorDashboardPage() {
   const { user } = useAuth();
   const appointmentsQuery = useMyAppointments();
