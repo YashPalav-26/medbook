@@ -20,32 +20,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Service
 public class AuthService {
-
-
-
-
 
     private static final String DEFAULT_ROLE = "PATIENT";
 
@@ -54,10 +30,6 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-
-
-
-
 
     private volatile String dummyHash;
 
@@ -75,13 +47,6 @@ public class AuthService {
         this.jwtService = jwtService;
     }
 
-
-
-
-
-
-
-
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         String email = normalize(request.email());
@@ -92,8 +57,6 @@ public class AuthService {
 
         Role patientRole = roleRepository.findByName(DEFAULT_ROLE)
                 .orElseThrow(() -> new IllegalStateException("PATIENT role is not seeded"));
-
-
 
         String passwordHash = passwordEncoder.encode(request.password());
 
@@ -112,22 +75,12 @@ public class AuthService {
         return buildAuthResponse(savedUser);
     }
 
-
-
-
-
-
-
-
-
-
     @Transactional
     public AuthResponse login(LoginRequest request) {
         String email = normalize(request.email());
         Optional<User> maybeUser = userRepository.findByEmail(email);
 
         if (maybeUser.isEmpty()) {
-
 
             passwordEncoder.matches(request.password(), dummyHash());
             throw new InvalidCredentialsException();
