@@ -24,10 +24,6 @@ import Paper from '@mui/material/Paper';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 
-
-
-
-
 const doctorBaseSchema = {
   specialtyId: z.number({ error: 'Select a specialty' }).min(1, 'Select a specialty'),
   medicalLicenseNumber: z.string().min(1, 'License number is required').max(50, 'At most 50 characters'),
@@ -52,13 +48,6 @@ const editSchema = z.object(doctorBaseSchema);
 
 type CreateFormData = z.infer<typeof createSchema>;
 type EditFormData = z.infer<typeof editSchema>;
-
-
-
-
-
-
-
 
 export function DoctorsAdminPage() {
   const doctorsQuery = useAdminDoctors();
