@@ -16,17 +16,8 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-
-
-
-
-
-
-
-
 
 @Entity
 @Table(
@@ -61,16 +52,6 @@ public class User {
     @Column(name = "is_locked", nullable = false)
     private boolean locked = false;
 
-
-
-
-
-
-
-
-
-
-
     @Column(name = "failed_login_attempts", nullable = false)
     @JdbcTypeCode(SqlTypes.TINYINT)
     private int failedLoginAttempts = 0;
@@ -78,33 +59,11 @@ public class User {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
-
-
-
-
-
-
-
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-
-
-
-
-
-
     @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime updatedAt;
-
-
-
-
-
-
-
-
-
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -113,9 +72,6 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
-
-
-
 
     public User() {
     }
@@ -220,27 +176,13 @@ public class User {
         this.roles = roles;
     }
 
-
-
-
-
     public void addRole(Role role) {
         roles.add(role);
     }
 
-
-
-
-
-
     public boolean hasRole(String roleName) {
         return roles.stream().anyMatch(role -> role.getName().equals(roleName));
     }
-
-
-
-
-
 
     @Override
     public boolean equals(Object o) {
@@ -261,10 +203,6 @@ public class User {
     public int hashCode() {
         return id == null ? UUID.randomUUID().hashCode() : id.hashCode();
     }
-
-
-
-
 
     @Override
     public String toString() {
