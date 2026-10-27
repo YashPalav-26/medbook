@@ -28,13 +28,6 @@ const specialtySchema = z.object({
 });
 type SpecialtyFormData = z.infer<typeof specialtySchema>;
 
-
-
-
-
-
-
-
 export function SpecialtiesAdminPage() {
   const specialtiesQuery = useAdminSpecialties();
   const createMutation = useCreateSpecialty();
