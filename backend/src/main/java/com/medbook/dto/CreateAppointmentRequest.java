@@ -7,31 +7,6 @@ import jakarta.validation.constraints.Positive;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record CreateAppointmentRequest(
 
         @NotNull(message = "patientId is required")
