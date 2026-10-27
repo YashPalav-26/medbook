@@ -10,13 +10,6 @@ import { formatDate, todayIso } from '../lib/dates';
 import { formatCurrency } from '../lib/format';
 import type { AppointmentResponse } from '../types/appointment';
 
-
-
-
-
-
-
-
 type StatusFilter = 'ALL' | 'UPCOMING' | 'CANCELLED';
 const FILTERS: { key: StatusFilter; label: string }[] = [
   { key: 'ALL', label: 'All' },
