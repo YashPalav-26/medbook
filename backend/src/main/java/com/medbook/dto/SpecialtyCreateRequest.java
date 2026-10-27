@@ -3,12 +3,6 @@ package com.medbook.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-
-
-
-
-
-
 public record SpecialtyCreateRequest(
 
         @NotBlank(message = "name is required")
