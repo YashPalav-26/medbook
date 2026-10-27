@@ -6,15 +6,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Button from '@mui/material/Button';
 import { RefreshCw } from 'lucide-react';
 
-
-
-
-
-
-
-
-
-
 const STATUS_CHIP: Record<string, { color: 'info' | 'success' | 'default' | 'error' | 'warning'; label: string }> = {
   SCHEDULED: { color: 'info', label: 'Scheduled' },
   CONFIRMED: { color: 'success', label: 'Confirmed' },
@@ -26,7 +17,6 @@ const STATUS_CHIP: Record<string, { color: 'info' | 'success' | 'default' | 'err
   Open: { color: 'success', label: 'Open' },
   Closed: { color: 'default', label: 'Closed' },
 };
-
 
 export function StatusBadge({ status }: { status: string }) {
   const chip = STATUS_CHIP[status];
@@ -40,11 +30,9 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
-
 export function ActiveBadge({ active }: { active: boolean }) {
   return <StatusBadge status={active ? 'Active' : 'Inactive'} />;
 }
-
 
 export function EmptyState({
   icon,
@@ -77,7 +65,6 @@ export function EmptyState({
   );
 }
 
-
 export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
     <Alert
@@ -102,15 +89,12 @@ export function ErrorBox({ message, onRetry }: { message: string; onRetry?: () =
   );
 }
 
-
 export function SkeletonLine({ className = 'h-4 w-full' }: { className?: string }) {
   return <Skeleton className={className} />;
 }
 export { SkeletonLine as Skeleton };
 
-
 export function Spinner({ className = '' }: { className?: string }) {
-
 
   return <CircularProgress size={16} color="inherit" className={className} aria-hidden="true" />;
 }
