@@ -15,35 +15,15 @@ interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, '
   ref?: React.Ref<HTMLInputElement>;
 }
 
-
-
-
-
-
-
-
-
 export function Input({ label, helper, error, className = '', id, endAdornment, ref, ...props }: InputProps) {
-
-
 
   const { 'aria-label': ariaLabel, ...rest } = props as {
     'aria-label'?: string;
   } & typeof props;
 
-
-
   const inputSlotProps: Record<string, unknown> = {};
   if (ariaLabel) inputSlotProps['aria-label'] = ariaLabel;
   if (endAdornment) inputSlotProps.endAdornment = endAdornment;
-
-
-
-
-
-
-
-
 
   const slotProps: Record<string, Record<string, unknown>> = {
     inputLabel: { shrink: true },
