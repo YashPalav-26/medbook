@@ -6,28 +6,6 @@ import com.medbook.entity.User;
 
 import java.time.LocalDateTime;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record AppointmentStatusHistoryResponse(
         Long id,
         AppointmentStatus status,
@@ -35,14 +13,6 @@ public record AppointmentStatusHistoryResponse(
         String changedByName,
         LocalDateTime changedAt
 ) {
-
-
-
-
-
-
-
-
 
     public static AppointmentStatusHistoryResponse from(AppointmentStatusHistory history) {
         User changedBy = history.getChangedByUser();
