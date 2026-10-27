@@ -45,17 +45,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-
-
-
-
-
-
-
-
-
-
-
 @SpringBootTest
 class AppointmentServiceTransactionTest {
 
@@ -102,8 +91,6 @@ class AppointmentServiceTransactionTest {
     @BeforeEach
     void setUp() {
         transactionTemplate = new TransactionTemplate(transactionManager);
-
-
 
         transactionTemplate.executeWithoutResult(status -> {
             Specialty specialty = specialtyRepository.save(
@@ -172,17 +159,12 @@ class AppointmentServiceTransactionTest {
         return (byte) (javaDayOfWeek == 7 ? 0 : javaDayOfWeek);
     }
 
-
-
-
-
     @Test
     void createAppointmentCommitsAppointmentAndStatusHistory() {
         Appointment created = appointmentService.createAppointment(
                 patientId, doctorId, appointmentDate, LocalTime.of(10, 0), LocalTime.of(11, 0));
 
         assertThat(created.getId()).isNotNull();
-
 
         List<Appointment> persisted = appointmentRepository.findByDoctorId(doctorId);
         assertThat(persisted).hasSize(1);
@@ -202,7 +184,6 @@ class AppointmentServiceTransactionTest {
 
         appointmentService.cancelAppointment(created.getId(), "Committed cancellation");
 
-
         Appointment reloaded = appointmentRepository.findById(created.getId()).orElseThrow();
         assertThat(reloaded.getStatus()).isEqualTo(AppointmentStatus.CANCELLED);
         assertThat(reloaded.getCancellationReason()).isEqualTo("Committed cancellation");
@@ -214,22 +195,15 @@ class AppointmentServiceTransactionTest {
                 .containsExactlyInAnyOrder(AppointmentStatus.SCHEDULED, AppointmentStatus.CANCELLED);
     }
 
-
-
-
-
     @Test
     void createAppointmentRollsBackWhenTheTransactionFailsAfterCreation() {
         LocalTime start = LocalTime.of(11, 0);
         LocalTime end = LocalTime.of(12, 0);
 
-
-
         assertThatThrownBy(() -> transactionTemplate.executeWithoutResult(status -> {
             appointmentService.createAppointment(patientId, doctorId, appointmentDate, start, end);
             throw new IllegalStateException("simulated failure after the appointment was inserted");
         })).isInstanceOf(IllegalStateException.class);
-
 
         assertThat(appointmentRepository.findByDoctorId(doctorId)).isEmpty();
         assertThat(appointmentRepository.findConflictingAppointments(
@@ -241,7 +215,6 @@ class AppointmentServiceTransactionTest {
         appointmentService.createAppointment(
                 patientId, doctorId, appointmentDate, LocalTime.of(10, 0), LocalTime.of(11, 0));
 
-
         assertThatThrownBy(() -> appointmentService.createAppointment(
                 patientId, doctorId, appointmentDate, LocalTime.of(10, 30), LocalTime.of(11, 30)))
                 .isInstanceOf(AppointmentConflictException.class);
@@ -251,17 +224,11 @@ class AppointmentServiceTransactionTest {
         assertThat(statusHistoryRepository.findByAppointmentId(persisted.get(0).getId())).hasSize(1);
     }
 
-
-
-
-
     @Test
     void appointmentServiceMethodsAreTransactional() throws Exception {
         Method create = AppointmentService.class.getMethod(
                 "createAppointment", Long.class, Long.class, LocalDate.class, LocalTime.class, LocalTime.class);
         Method cancel = AppointmentService.class.getMethod("cancelAppointment", Long.class, String.class);
-
-
 
         assertThat(create.isAnnotationPresent(Transactional.class)).isTrue();
         assertThat(cancel.isAnnotationPresent(Transactional.class)).isTrue();
@@ -303,7 +270,6 @@ class AppointmentServiceTransactionTest {
                     .as("first transaction must acquire the doctor row lock")
                     .isTrue();
 
-
             Future<?> blocked = executor.submit(() -> {
                 try {
                     transactionTemplate.executeWithoutResult(
@@ -313,7 +279,6 @@ class AppointmentServiceTransactionTest {
                     secondTransactionFailure.set(failure);
                 }
             });
-
 
             Thread.sleep(700);
             assertThat(secondTransactionFinished.get())
