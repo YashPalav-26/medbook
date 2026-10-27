@@ -5,13 +5,6 @@ import MuiSelect from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormHelperText from '@mui/material/FormHelperText';
 
-
-
-
-
-
-
-
 export interface SelectChangeEventLike {
   target: { value: string };
 }
@@ -36,21 +29,6 @@ interface SelectProps {
   children?: React.ReactNode;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 export function Select({
   label,
   helper,
@@ -71,8 +49,6 @@ export function Select({
   const labelId = `${selectId}-label`;
   const helperId = helper || error ? `${selectId}-helper` : undefined;
 
-
-
   const items = React.Children.toArray(children).map((child) => {
     if (React.isValidElement(child) && child.type === 'option') {
       const props = child.props as {
@@ -88,9 +64,6 @@ export function Select({
     }
     return child;
   });
-
-
-
 
   const handlerProps = { name, onBlur, onChange } as unknown as React.ComponentProps<
     typeof MuiSelect
