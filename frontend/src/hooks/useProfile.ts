@@ -8,15 +8,6 @@ import type {
   ChangePasswordRequest,
 } from '../types/auth';
 
-
-
-
-
-
-
-
-
-
 export function useMyProfile() {
   const { isAuthenticated } = useAuth();
 
@@ -26,10 +17,6 @@ export function useMyProfile() {
     enabled: isAuthenticated,
   });
 }
-
-
-
-
 
 export function useUpdateAccount() {
   const queryClient = useQueryClient();
@@ -44,7 +31,6 @@ export function useUpdateAccount() {
   });
 }
 
-
 export function useUpdatePatientProfile() {
   const queryClient = useQueryClient();
 
@@ -56,7 +42,6 @@ export function useUpdatePatientProfile() {
   });
 }
 
-
 export function useUpdateDoctorProfile() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -66,7 +51,6 @@ export function useUpdateDoctorProfile() {
     },
   });
 }
-
 
 export function useChangePassword() {
   return useMutation({
