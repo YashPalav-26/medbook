@@ -44,15 +44,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
-
-
-
-
-
-
-
-
 @SpringBootTest
 @Transactional
 class MeProfileTest {
@@ -100,7 +91,6 @@ class MeProfileTest {
         specialty = specialtyRepository.save(
                 new Specialty("Profile Spec-" + System.nanoTime(), "test"));
 
-
         User admin = new User("me-admin-" + System.nanoTime() + "@medbook.test",
                 passwordEncoder.encode(PLAINTEXT_PASSWORD), "Ada", "Admin", "+919998880001");
         admin.addRole(adminRole);
@@ -112,7 +102,6 @@ class MeProfileTest {
                 .defaultRequest(get("/").header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
                 .build();
     }
-
 
     private String createTestToken(String subject, String... roles) {
         Instant now = Instant.now();
@@ -151,10 +140,6 @@ class MeProfileTest {
         doctor.setProfilePictureUrl("https://example.com/original.png");
         return doctorRepository.save(doctor);
     }
-
-
-
-
 
     @Test
     void authenticatedPatientReadsOwnProfile() throws Exception {
@@ -213,14 +198,6 @@ class MeProfileTest {
                 .andExpect(status().isUnauthorized());
     }
 
-
-
-
-
-
-
-
-
     private String patientProfileJson(String... overrides) {
         StringBuilder json = new StringBuilder();
         java.util.LinkedHashMap<String, String> fields = new java.util.LinkedHashMap<>();
@@ -278,7 +255,6 @@ class MeProfileTest {
                 .andExpect(jsonPath("$.patient.hasInsurance").value(true))
                 .andExpect(jsonPath("$.patient.allergies").value("Peanuts, latex"));
 
-
         Patient reloaded = patientRepository.findById(patient.getId()).orElseThrow();
         assertThat(reloaded.getCity()).isEqualTo("Mumbai");
         assertThat(reloaded.getEmergencyContactPhone()).isEqualTo("+91 98200 11222");
@@ -312,10 +288,6 @@ class MeProfileTest {
                 .andExpect(status().isForbidden());
     }
 
-
-
-
-
     @Test
     void doctorUpdatesOwnBioAndPicture() throws Exception {
         Doctor doctor = createDoctorWithProfile("me-doc3-" + System.nanoTime() + "@medbook.test");
@@ -345,8 +317,6 @@ class MeProfileTest {
         BigDecimal originalFee = doctor.getConsultationFee();
         String originalLicense = doctor.getMedicalLicenseNumber();
         Long originalSpecialtyId = doctor.getSpecialty().getId();
-
-
 
         mockMvc.perform(put("/api/v1/me/doctor-profile")
                         .header(HttpHeaders.AUTHORIZATION,
@@ -383,10 +353,6 @@ class MeProfileTest {
                 .andExpect(status().isForbidden());
     }
 
-
-
-
-
     @Test
     void patientProfileUpdateTouchesOnlyTheCallersOwnRow() throws Exception {
         Patient caller = createPatientWithProfile("me-pat5-" + System.nanoTime() + "@medbook.test");
@@ -398,8 +364,6 @@ class MeProfileTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(patientProfileJson("city", "CallerCity")))
                 .andExpect(status().isOk());
-
-
 
         assertThat(patientRepository.findById(other.getId()).orElseThrow().getCity())
                 .isNotEqualTo("CallerCity");
@@ -420,10 +384,6 @@ class MeProfileTest {
         assertThat(doctorRepository.findById(other.getId()).orElseThrow().getBio())
                 .isEqualTo("Original bio");
     }
-
-
-
-
 
     @Test
     void accountUpdateChangesNameAndPhone() throws Exception {
@@ -464,10 +424,6 @@ class MeProfileTest {
                 .andExpect(jsonPath("$.fieldErrors[0].field").value("phoneNumber"));
     }
 
-
-
-
-
     @Test
     void passwordChangeWithCorrectCurrentPasswordSucceeds() throws Exception {
         Patient patient = createPatientWithProfile("me-pat9-" + System.nanoTime() + "@medbook.test");
@@ -483,7 +439,6 @@ class MeProfileTest {
                                 }
                                 """.formatted(PLAINTEXT_PASSWORD, NEW_PASSWORD)))
                 .andExpect(status().isNoContent());
-
 
         User reloaded = userRepository.findById(userId).orElseThrow();
         assertThat(passwordEncoder.matches(NEW_PASSWORD, reloaded.getPasswordHash())).isTrue();
@@ -509,7 +464,6 @@ class MeProfileTest {
                                 }
                                 """.formatted(NEW_PASSWORD)))
                 .andExpect(status().isUnauthorized());
-
 
         User reloaded = userRepository.findById(patient.getUser().getId()).orElseThrow();
         assertThat(reloaded.getPasswordHash()).isEqualTo(originalHash);
