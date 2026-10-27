@@ -20,11 +20,6 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 
-
-
-
-
-
 const createSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Must be a valid email'),
   password: z.string().min(8, 'At least 8 characters').max(72, 'At most 72 characters'),
@@ -35,16 +30,6 @@ const createSchema = z.object({
 });
 
 type CreateFormData = z.infer<typeof createSchema>;
-
-
-
-
-
-
-
-
-
-
 
 export function AdminManagementPage() {
   const adminsQuery = useAdminAccounts();
