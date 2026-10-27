@@ -1,15 +1,5 @@
 package com.medbook.entity;
 
-
-
-
-
-
-
-
-
-
-
 public enum AppointmentStatus {
 
     SCHEDULED,
