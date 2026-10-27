@@ -1,18 +1,5 @@
 package com.medbook.service;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 public class NotificationNotFoundException extends RuntimeException {
 
     public NotificationNotFoundException(Long notificationId) {
