@@ -30,15 +30,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
-
-
-
-
-
-
-
-
 @SpringBootTest
 @Transactional
 class AuthControllerTest {
@@ -69,10 +60,6 @@ class AuthControllerTest {
                 .apply(springSecurity())
                 .build();
     }
-
-
-
-
 
     private static String registerJson(String email, String password) {
         return """
@@ -116,10 +103,6 @@ class AuthControllerTest {
         return JsonPath.read(result.getResponse().getContentAsString(), "$.token");
     }
 
-
-
-
-
     @Test
     void registerReturns201WithTokenUserAndPatientRole() throws Exception {
         MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
@@ -134,7 +117,6 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.user.roles[0]").value("ROLE_PATIENT"))
                 .andReturn();
 
-
         String body = result.getResponse().getContentAsString();
         assertThat(body).doesNotContain("password");
         assertThat(body).doesNotContain("is_locked");
@@ -147,11 +129,9 @@ class AuthControllerTest {
 
         User stored = userRepository.findByEmail("auth-hash@medbook.test").orElseThrow();
 
-
         assertThat(stored.getPasswordHash()).startsWith("$2");
         assertThat(stored.getPasswordHash()).isNotEqualTo("SecretPass1");
         assertThat(passwordEncoder.matches("SecretPass1", stored.getPasswordHash())).isTrue();
-
 
         Patient profile = patientRepository.findByUserId(stored.getId()).orElseThrow();
         assertThat(profile.isActive()).isTrue();
@@ -221,10 +201,6 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.fieldErrors[?(@.field == 'dateOfBirth')]").isNotEmpty());
     }
 
-
-
-
-
     @Test
     void loginReturns200WithTokenAndDecodableClaims() throws Exception {
         registerAndReturnToken("auth-login@medbook.test", "SecretPass1");
@@ -237,7 +213,6 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.user.email").value("auth-login@medbook.test"))
                 .andExpect(jsonPath("$.user.roles[0]").value("ROLE_PATIENT"))
                 .andReturn();
-
 
         String token = JsonPath.read(result.getResponse().getContentAsString(), "$.token");
         User stored = userRepository.findByEmail("auth-login@medbook.test").orElseThrow();
