@@ -9,11 +9,6 @@ import { CalendarPlus, CalendarDays, ArrowRight, Clock, Stethoscope, UserRound }
 import { formatDate, todayIso } from '../lib/dates';
 import { formatCurrency } from '../lib/format';
 
-
-
-
-
-
 export function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
