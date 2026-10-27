@@ -3,32 +3,10 @@ package com.medbook.security;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Component
 public class JwtProperties {
 
-
-
-
-
     private final String secret;
-
 
     private final long expirationMinutes;
 
