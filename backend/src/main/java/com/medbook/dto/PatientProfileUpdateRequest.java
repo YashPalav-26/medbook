@@ -4,34 +4,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record PatientProfileUpdateRequest(
 
         @NotNull(message = "addressLine1 is required (send an empty string to clear it)")
