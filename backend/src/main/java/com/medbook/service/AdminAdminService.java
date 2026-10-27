@@ -12,32 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Locale;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Service
 public class AdminAdminService {
 
@@ -53,20 +27,10 @@ public class AdminAdminService {
         this.passwordEncoder = passwordEncoder;
     }
 
-
-
-
-
     @Transactional(readOnly = true)
     public List<User> listAll() {
         return userRepository.findByRoles_NameOrderByIdAsc("ADMIN");
     }
-
-
-
-
-
-
 
     @Transactional
     public User create(AdminCreateRequest request) {
@@ -77,7 +41,6 @@ public class AdminAdminService {
 
         Role adminRole = roleRepository.findByName("ADMIN")
                 .orElseThrow(() -> new IllegalStateException("ADMIN role not seeded"));
-
 
         User user = new User(normalizedEmail, passwordEncoder.encode(request.password()),
                 request.firstName().trim(), request.lastName().trim(), request.phoneNumber().trim());
