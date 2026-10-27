@@ -11,31 +11,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @Entity
 @Table(
@@ -54,79 +32,30 @@ public class DoctorAvailability {
     @Column(name = "id")
     private Long id;
 
-
-
-
-
-
-
-
-
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "doctor_id", nullable = false)
     private Doctor doctor;
 
-
-
-
-
-
-
-
-
     @Column(name = "day_of_week", nullable = false)
     private byte dayOfWeek;
-
-
-
-
 
     @Column(name = "start_time", nullable = false)
     private LocalTime startTime;
 
-
-
-
-
     @Column(name = "end_time", nullable = false)
     private LocalTime endTime;
-
-
-
-
-
-
-
 
     @Column(name = "is_recurring", nullable = false)
     private boolean recurring = true;
 
-
-
-
-
     @Column(name = "effective_from")
     private LocalDate effectiveFrom;
-
-
-
-
-
 
     @Column(name = "effective_until")
     private LocalDate effectiveUntil;
 
-
-
-
-
-
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private java.time.LocalDateTime createdAt;
-
-
-
 
     public DoctorAvailability() {
     }
@@ -202,10 +131,6 @@ public class DoctorAvailability {
         return createdAt;
     }
 
-
-
-
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -224,10 +149,6 @@ public class DoctorAvailability {
     public int hashCode() {
         return id == null ? UUID.randomUUID().hashCode() : id.hashCode();
     }
-
-
-
-
 
     @Override
     public String toString() {
