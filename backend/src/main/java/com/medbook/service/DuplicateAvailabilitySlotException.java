@@ -1,11 +1,5 @@
 package com.medbook.service;
 
-
-
-
-
-
-
 public class DuplicateAvailabilitySlotException extends RuntimeException {
 
     public DuplicateAvailabilitySlotException() {
