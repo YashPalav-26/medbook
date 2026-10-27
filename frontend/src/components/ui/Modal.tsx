@@ -6,12 +6,6 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import { X } from 'lucide-react';
 
-
-
-
-
-
-
 export function Modal({
   title,
   description,
@@ -52,11 +46,6 @@ export function Modal({
     </Dialog>
   );
 }
-
-
-
-
-
 
 export function ConfirmDialog({
   title,
