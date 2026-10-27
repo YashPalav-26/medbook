@@ -7,11 +7,6 @@ import { NotificationBell } from './NotificationBell';
 import * as notificationApi from '../../api/notificationApi';
 import type { NotificationResponse } from '../../types/notification';
 
-
-
-
-
-
 vi.mock('../../api/notificationApi', () => ({
   getMyNotifications: vi.fn(),
   getUnreadNotificationCount: vi.fn(),
@@ -86,8 +81,6 @@ describe('NotificationBell — rendering', () => {
     mockedApi.getUnreadNotificationCount.mockResolvedValue(3);
     renderBell();
 
-
-
     const badge = await screen.findByTestId('unread-badge');
     await waitFor(() => expect(badge).toHaveTextContent('3'));
     expect(badge).not.toHaveClass('MuiBadge-invisible');
@@ -137,7 +130,6 @@ describe('NotificationBell — rendering', () => {
     renderBell();
 
     await user.click(screen.getByRole('button', { name: /notifications/i }));
-
 
     expect(await screen.findByText('Could not load notifications.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
