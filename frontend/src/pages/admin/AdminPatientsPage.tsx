@@ -15,15 +15,6 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 
-
-
-
-
-
-
-
-
-
 export function AdminPatientsPage() {
   const patientsQuery = useAdminPatients();
   const [search, setSearch] = useState('');
