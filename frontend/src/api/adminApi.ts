@@ -10,12 +10,6 @@ import type {
 } from '../types/appointment';
 import { api } from './client';
 
-
-
-
-
-
-
 export interface DoctorAdminResponse {
   id: number;
   email: string;
@@ -40,7 +34,6 @@ export interface AdminCreateRequest {
   lastName: string;
   phoneNumber: string;
 }
-
 
 export interface AdminAccountResponse {
   id: number;
@@ -104,25 +97,15 @@ export interface AvailabilityUpdateRequest {
   effectiveUntil?: string;
 }
 
-
-
-
-
-
 export async function listAdminAccounts(): Promise<AdminAccountResponse[]> {
   const response: AxiosResponse<AdminAccountResponse[]> = await api.get('/admin/admins');
   return response.data;
 }
 
-
 export async function createAdminAccount(payload: AdminCreateRequest): Promise<AdminAccountResponse> {
   const response: AxiosResponse<AdminAccountResponse> = await api.post('/admin/admins', payload);
   return response.data;
 }
-
-
-
-
 
 export async function listAdminSpecialties(): Promise<SpecialtyResponse[]> {
   const response: AxiosResponse<SpecialtyResponse[]> = await api.get('/admin/specialties');
@@ -144,10 +127,6 @@ export async function deactivateSpecialty(id: number): Promise<SpecialtyResponse
     await api.patch(`/admin/specialties/${id}/deactivate`);
   return response.data;
 }
-
-
-
-
 
 export async function listAdminDoctors(): Promise<DoctorAdminResponse[]> {
   const response: AxiosResponse<DoctorAdminResponse[]> = await api.get('/admin/doctors');
@@ -175,19 +154,10 @@ export async function deactivateDoctor(id: number): Promise<DoctorAdminResponse>
   return response.data;
 }
 
-
-
-
-
-
 export async function listAdminPatients(): Promise<PatientAdminResponse[]> {
   const response: AxiosResponse<PatientAdminResponse[]> = await api.get('/admin/patients');
   return response.data;
 }
-
-
-
-
 
 export async function listAdminAvailability(doctorId: number): Promise<DoctorAvailabilityResponse[]> {
   const response: AxiosResponse<DoctorAvailabilityResponse[]> =
@@ -219,11 +189,6 @@ export async function deactivateAvailability(id: number): Promise<DoctorAvailabi
   return response.data;
 }
 
-
-
-
-
-
 function appointmentParams(filters: AdminAppointmentFilters): Record<string, string | number> {
   const params: Record<string, string | number> = {};
   if (filters.date) params.date = filters.date;
@@ -233,10 +198,6 @@ function appointmentParams(filters: AdminAppointmentFilters): Record<string, str
   return params;
 }
 
-
-
-
-
 export async function listAdminAppointments(
   filters: AdminAppointmentFilters = {},
 ): Promise<AdminAppointmentResponse[]> {
@@ -245,23 +206,17 @@ export async function listAdminAppointments(
   return response.data;
 }
 
-
 export async function getAdminAppointment(id: number): Promise<AdminAppointmentDetailResponse> {
   const response: AxiosResponse<AdminAppointmentDetailResponse> =
     await api.get(`/admin/appointments/${id}`);
   return response.data;
 }
 
-
 export async function getAdminOverview(): Promise<AdminOverviewResponse> {
   const response: AxiosResponse<AdminOverviewResponse> =
     await api.get('/admin/appointments/overview');
   return response.data;
 }
-
-
-
-
 
 export async function cancelAppointmentAsAdmin(
   id: number,
