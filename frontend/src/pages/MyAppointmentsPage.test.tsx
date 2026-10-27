@@ -76,7 +76,6 @@ function renderPage() {
   );
 }
 
-
 function axiosError(status: number): AxiosError {
   const response: AxiosResponse = {
     status,
@@ -178,7 +177,6 @@ describe('MyAppointmentsPage', () => {
     renderPage();
 
     const link = await screen.findByRole('link', { name: /Appointment #1101/i });
-
 
     expect(link).toHaveAttribute('href', '/appointments/1101');
     expect(navigateMock).not.toHaveBeenCalled();
