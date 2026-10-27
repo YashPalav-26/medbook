@@ -15,28 +15,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Entity
 @Table(
         name = "patients",
@@ -49,35 +27,15 @@ public class Patient {
     @Column(name = "id")
     private Long id;
 
-
-
-
-
-
-
-
-
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-
-
-
-
     @Column(name = "date_of_birth", nullable = false)
     private LocalDate dateOfBirth;
 
-
-
-
-
     @Column(name = "address_line1", length = 255)
     private String addressLine1;
-
-
-
-
 
     @Column(name = "address_line2", length = 255)
     private String addressLine2;
@@ -94,73 +52,32 @@ public class Patient {
     @Column(name = "country", length = 50)
     private String country;
 
-
-
-
-
     @Column(name = "emergency_contact_name", length = 200)
     private String emergencyContactName;
-
-
-
-
 
     @Column(name = "emergency_contact_phone", length = 20)
     private String emergencyContactPhone;
 
-
-
-
-
     @Column(name = "has_insurance", nullable = false)
     private boolean hasInsurance = false;
-
-
-
-
 
     @Column(name = "insurance_provider", length = 100)
     private String insuranceProvider;
 
-
-
-
-
     @Column(name = "insurance_policy_number", length = 50)
     private String insurancePolicyNumber;
-
-
-
-
-
 
     @Column(name = "allergies", columnDefinition = "TEXT")
     private String allergies;
 
-
-
-
-
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
-
-
-
-
 
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-
-
-
-
-
     @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime updatedAt;
-
-
-
 
     public Patient() {
     }
@@ -302,10 +219,6 @@ public class Patient {
         return updatedAt;
     }
 
-
-
-
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -324,10 +237,6 @@ public class Patient {
     public int hashCode() {
         return id == null ? UUID.randomUUID().hashCode() : id.hashCode();
     }
-
-
-
-
 
     @Override
     public String toString() {
