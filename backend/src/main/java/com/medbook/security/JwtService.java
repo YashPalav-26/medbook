@@ -12,32 +12,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Service
 public class JwtService {
 
-
     public static final String ROLES_CLAIM = "roles";
-
 
     public static final String ISSUER = "medbook";
 
@@ -48,12 +26,6 @@ public class JwtService {
         this.jwtEncoder = jwtEncoder;
         this.expirationMinutes = properties.getExpirationMinutes();
     }
-
-
-
-
-
-
 
     public String generateToken(User user) {
         Instant now = Instant.now();
