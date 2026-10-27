@@ -12,20 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @RestController
 @RequestMapping("/api/v1/notifications")
 public class NotificationController {
@@ -36,24 +22,20 @@ public class NotificationController {
         this.notificationService = notificationService;
     }
 
-
     @GetMapping
     public ResponseEntity<List<NotificationResponse>> getCurrentUserNotifications() {
         return ResponseEntity.ok(notificationService.getCurrentUserNotifications());
     }
-
 
     @GetMapping("/unread-count")
     public ResponseEntity<Long> getUnreadCount() {
         return ResponseEntity.ok(notificationService.getCurrentUserUnreadCount());
     }
 
-
     @PatchMapping("/{id}/read")
     public ResponseEntity<NotificationResponse> markAsRead(@PathVariable Long id) {
         return ResponseEntity.ok(notificationService.markAsRead(id));
     }
-
 
     @PostMapping("/read-all")
     public ResponseEntity<Long> markAllAsRead() {
