@@ -8,25 +8,6 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record PatientBookingRequest(
 
         @NotNull(message = "doctorId is required")
