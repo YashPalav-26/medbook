@@ -1,11 +1,7 @@
 
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-
-
-
-
 const backendBaseUrl = 'http://localhost:8080';
 
 export default defineConfig({
@@ -31,8 +27,6 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-
-
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-mui': ['@mui/material', '@emotion/react', '@emotion/styled'],
