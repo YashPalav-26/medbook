@@ -11,27 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Locale;
 import java.util.Optional;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Service
 public class BootstrapAccountService {
-
 
     public static final String ROLE_ADMIN = "ADMIN";
 
@@ -47,23 +28,10 @@ public class BootstrapAccountService {
         this.passwordEncoder = passwordEncoder;
     }
 
-
     @Transactional(readOnly = true)
     public boolean adminExists() {
         return userRepository.existsByRoles_Name(ROLE_ADMIN);
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
     @Transactional
     public Optional<User> ensureUser(String email,
