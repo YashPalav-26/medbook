@@ -21,12 +21,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
-
-
-
-
-
 @SpringBootTest
 @Transactional
 class AppointmentStatusHistoryRepositoryTest {
@@ -55,9 +49,6 @@ class AppointmentStatusHistoryRepositoryTest {
     @Autowired
     private EntityManager entityManager;
 
-
-
-
     private User createTestDoctorUser(String email) {
         Role doctorRole = roleRepository.findByName("DOCTOR")
                 .orElseThrow(() -> new IllegalStateException("DOCTOR role not seeded"));
@@ -65,9 +56,6 @@ class AppointmentStatusHistoryRepositoryTest {
         user.addRole(doctorRole);
         return userRepository.save(user);
     }
-
-
-
 
     private User createTestPatientUser(String email) {
         Role patientRole = roleRepository.findByName("PATIENT")
@@ -77,17 +65,10 @@ class AppointmentStatusHistoryRepositoryTest {
         return userRepository.save(user);
     }
 
-
-
-
     private Specialty createTestSpecialty(String name) {
-
 
         return specialtyRepository.save(new Specialty(name + "-" + System.nanoTime(), "Test specialty"));
     }
-
-
-
 
     private Doctor createTestDoctor(String email, String specialtyName) {
         User user = createTestDoctorUser(email);
@@ -96,16 +77,10 @@ class AppointmentStatusHistoryRepositoryTest {
         return doctorRepository.save(doctor);
     }
 
-
-
-
     private Patient createTestPatient(String email) {
         User user = createTestPatientUser(email);
         return patientRepository.save(new Patient(user, java.time.LocalDate.of(1990, 1, 1)));
     }
-
-
-
 
     private Appointment createTestAppointment(Doctor doctor, Patient patient) {
         return appointmentRepository.save(new Appointment(
@@ -149,7 +124,6 @@ class AppointmentStatusHistoryRepositoryTest {
         Patient patient = createTestPatient("patient2@medbook.test");
         Appointment appointment = createTestAppointment(doctor, patient);
 
-
         statusHistoryRepository.save(new AppointmentStatusHistory(appointment, AppointmentStatus.SCHEDULED));
         statusHistoryRepository.save(new AppointmentStatusHistory(appointment, AppointmentStatus.CONFIRMED));
         statusHistoryRepository.save(new AppointmentStatusHistory(appointment, AppointmentStatus.COMPLETED));
@@ -164,7 +138,6 @@ class AppointmentStatusHistoryRepositoryTest {
         Doctor doctor = createTestDoctor("doctor3@medbook.test", "Neurology");
         Patient patient = createTestPatient("patient3@medbook.test");
         Appointment appointment = createTestAppointment(doctor, patient);
-
 
         statusHistoryRepository.save(new AppointmentStatusHistory(appointment, AppointmentStatus.SCHEDULED));
 
@@ -224,7 +197,6 @@ class AppointmentStatusHistoryRepositoryTest {
         Doctor doctor = createTestDoctor("doctor6@medbook.test", "Ophthalmology");
         Patient patient = createTestPatient("patient6@medbook.test");
         Appointment appointment = createTestAppointment(doctor, patient);
-
 
         User changedByUser = createTestDoctorUser("history-admin-" + System.nanoTime() + "@medbook.test");
 
@@ -286,10 +258,8 @@ class AppointmentStatusHistoryRepositoryTest {
         Appointment appointment1 = createTestAppointment(doctor, patient1);
         Appointment appointment2 = createTestAppointment(doctor, patient2);
 
-
         statusHistoryRepository.save(new AppointmentStatusHistory(appointment1, AppointmentStatus.SCHEDULED));
         statusHistoryRepository.save(new AppointmentStatusHistory(appointment1, AppointmentStatus.CONFIRMED));
-
 
         statusHistoryRepository.save(new AppointmentStatusHistory(appointment2, AppointmentStatus.SCHEDULED));
         statusHistoryRepository.save(new AppointmentStatusHistory(appointment2, AppointmentStatus.COMPLETED));
@@ -311,7 +281,6 @@ class AppointmentStatusHistoryRepositoryTest {
                 appointment, AppointmentStatus.SCHEDULED
         );
 
-
         AppointmentStatusHistory saved = statusHistoryRepository.save(history);
 
         var reloaded = statusHistoryRepository.findById(saved.getId()).orElseThrow();
@@ -324,7 +293,6 @@ class AppointmentStatusHistoryRepositoryTest {
         Doctor doctor = createTestDoctor("doctor11@medbook.test", "Endocrinology");
         Patient patient = createTestPatient("patient12@medbook.test");
         Appointment appointment = createTestAppointment(doctor, patient);
-
 
         statusHistoryRepository.save(new AppointmentStatusHistory(appointment, AppointmentStatus.SCHEDULED));
         statusHistoryRepository.save(new AppointmentStatusHistory(appointment, AppointmentStatus.CONFIRMED));
