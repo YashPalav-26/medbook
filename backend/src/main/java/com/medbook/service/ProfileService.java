@@ -23,29 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Service
 public class ProfileService {
 
@@ -67,32 +44,11 @@ public class ProfileService {
         this.passwordEncoder = passwordEncoder;
     }
 
-
-
-
-
-
-
-
-
-
-
     @Transactional(readOnly = true)
     public CurrentUserResponse getCurrentUserProfile() {
         User user = requireCurrentUser();
         return buildResponse(user);
     }
-
-
-
-
-
-
-
-
-
-
-
 
     @Transactional
     public CurrentUserResponse updateAccount(AccountUpdateRequest request) {
@@ -105,18 +61,6 @@ public class ProfileService {
 
         return buildResponse(saved);
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
     @Transactional
     public CurrentUserResponse updatePatientProfile(PatientProfileUpdateRequest request) {
@@ -141,18 +85,6 @@ public class ProfileService {
         return buildResponse(user, saved, null);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
     @Transactional
     public CurrentUserResponse updateDoctorProfile(DoctorProfileUpdateRequest request) {
         User user = requireCurrentUser();
@@ -165,21 +97,6 @@ public class ProfileService {
         return buildResponse(user, null, saved);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     @Transactional
     public void changePassword(ChangePasswordRequest request) {
         User user = requireCurrentUser();
@@ -191,12 +108,7 @@ public class ProfileService {
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
 
-
     }
-
-
-
-
 
     private User requireCurrentUser() {
         Long userId = currentUserProvider.requireCurrentUserId();
@@ -204,10 +116,6 @@ public class ProfileService {
                 .orElseThrow(() -> new InsufficientAuthenticationException(
                         "Authenticated account no longer exists"));
     }
-
-
-
-
 
     private CurrentUserResponse buildResponse(User user) {
         Patient patient = patientRepository.findByUserId(user.getId()).orElse(null);
