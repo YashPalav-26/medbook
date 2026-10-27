@@ -1,8 +1,6 @@
 package com.medbook.repository;
 
-import com.medbook.entity.Role;
 import com.medbook.entity.Specialty;
-import com.medbook.entity.User;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,12 +8,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
-
-
-
-
-
 
 @SpringBootTest
 @Transactional
@@ -27,20 +19,12 @@ class SpecialtyRepositoryTest {
     @Autowired
     private EntityManager entityManager;
 
-
-
-
-
-
-
-
     private String uniqueName(String prefix) {
         return prefix + "-" + System.nanoTime();
     }
 
     @Test
     void findAllExecutesAgainstRealSchema() {
-
 
         assertThat(specialtyRepository.findAll()).isNotNull();
     }
@@ -52,7 +36,6 @@ class SpecialtyRepositoryTest {
 
     @Test
     void savedSpecialtyIsRetrievableById() {
-
 
         String name = uniqueName("Cardiology");
         Specialty cardiology = new Specialty(name, "Heart and cardiovascular system specialist");
@@ -83,7 +66,6 @@ class SpecialtyRepositoryTest {
     @Test
     void findByNameIsCaseInsensitiveByDefault() {
 
-
         String name = uniqueName("Dermatology");
         Specialty dermatology = new Specialty(name, "Skin specialist");
         specialtyRepository.save(dermatology);
@@ -96,8 +78,6 @@ class SpecialtyRepositoryTest {
     @Test
     void findByNameIgnoreCaseExplicitlyHandlesCase() {
 
-
-
         String name = uniqueName("Neurology");
         Specialty neurology = new Specialty(name, "Nervous system specialist");
         specialtyRepository.save(neurology);
@@ -109,8 +89,6 @@ class SpecialtyRepositoryTest {
 
     @Test
     void savedSpecialtyIsAssignedTimestampByDatabaseDefault() {
-
-
 
         Specialty pediatrics = new Specialty(uniqueName("Pediatrics"), "Children's specialist");
 
