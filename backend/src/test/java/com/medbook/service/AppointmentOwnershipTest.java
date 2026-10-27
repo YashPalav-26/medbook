@@ -39,18 +39,6 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-
-
-
-
-
-
-
-
-
-
-
-
 @SpringBootTest
 @Transactional
 class AppointmentOwnershipTest {
@@ -102,7 +90,6 @@ class AppointmentOwnershipTest {
         doctorAUser = createUser("DOCTOR", "doc-a@medbook.test", "Doctor", "OwnerA", "+919900000003");
         doctorBUser = createUser("DOCTOR", "doc-b@medbook.test", "Doctor", "OwnerB", "+919900000004");
 
-
         adminUser = createUser("ADMIN", "admin-own@" + System.nanoTime() + "medbook.test", "Admin", "User", "+919900000005");
 
         patientA = patientRepository.save(new Patient(patientAUser, LocalDate.of(1990, 1, 1)));
@@ -121,10 +108,6 @@ class AppointmentOwnershipTest {
         SecurityContextHolder.clearContext();
     }
 
-
-
-
-
     private User createUser(String roleName, String email, String first, String last, String phone) {
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new IllegalStateException(roleName + " role not seeded"));
@@ -132,10 +115,6 @@ class AppointmentOwnershipTest {
         user.addRole(role);
         return userRepository.save(user);
     }
-
-
-
-
 
     private void loginAs(User user, String... roles) {
         Map<String, Object> claims = Map.of(
@@ -180,10 +159,6 @@ class AppointmentOwnershipTest {
         return appointmentService.createAppointment(
                 patient.getId(), doctor.getId(), date, start, end);
     }
-
-
-
-
 
     @Test
     void patientCanRetrieveOwnAppointment() {
@@ -235,15 +210,10 @@ class AppointmentOwnershipTest {
                 ownedByA.getId(), "Not my appointment"))
                 .isInstanceOf(AppointmentOwnershipException.class);
 
-
         Appointment reloaded = appointmentRepository.findById(ownedByA.getId()).orElseThrow();
         assertThat(reloaded.getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
         assertThat(statusHistoryRepository.findByAppointmentId(ownedByA.getId())).hasSize(1);
     }
-
-
-
-
 
     @Test
     void doctorCanRetrieveAppointmentsAssignedToThem() {
@@ -288,10 +258,6 @@ class AppointmentOwnershipTest {
         assertThat(mine).extracting(Appointment::getId).containsExactly(assignedToA.getId());
     }
 
-
-
-
-
     @Test
     void adminCanReadAnyAppointmentForSupport() {
         Appointment ownedByA = bookAppointment(patientA, doctorA);
@@ -324,10 +290,6 @@ class AppointmentOwnershipTest {
                 .hasMessage("Appointment listing is not available for this account role");
     }
 
-
-
-
-
     @Test
     void patientMeListingReturnsOnlyOwnAppointments() {
         Appointment ownedByA = bookAppointment(patientA, doctorA,
@@ -350,14 +312,9 @@ class AppointmentOwnershipTest {
                 .isInstanceOf(org.springframework.security.authentication.InsufficientAuthenticationException.class);
     }
 
-
-
-
-
     @Test
     void accessIsRejectedWhenTheTokenUserNoLongerExists() {
         Appointment ownedByA = bookAppointment(patientA, doctorA);
-
 
         Map<String, Object> claims = Map.of("sub", "999999999", "email", "ghost@medbook.test",
                 "roles", List.of("ROLE_PATIENT"));
@@ -382,10 +339,6 @@ class AppointmentOwnershipTest {
                 .isInstanceOf(org.springframework.security.authentication.InsufficientAuthenticationException.class);
     }
 
-
-
-
-
     @Test
     void creationHistoryRecordsTheAuthenticatedCaller() {
         loginAs(patientAUser, "PATIENT");
@@ -401,7 +354,6 @@ class AppointmentOwnershipTest {
     @Test
     void creationHistoryWithoutCallerLegitimatelyStaysNull() {
 
-
         Appointment created = bookAppointment(patientA, doctorA);
 
         List<AppointmentStatusHistory> history =
@@ -409,10 +361,6 @@ class AppointmentOwnershipTest {
         assertThat(history).hasSize(1);
         assertThat(history.get(0).getChangedByUser()).isNull();
     }
-
-
-
-
 
     @Test
     void noCrossUserLeakageAcrossReadListAndCancel() {
