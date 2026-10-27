@@ -15,24 +15,6 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Entity
 @Table(name = "notifications")
 public class Notification {
@@ -42,60 +24,28 @@ public class Notification {
     @Column(name = "id")
     private Long id;
 
-
-
-
-
-
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-
-
-
-
 
     @Column(name = "type", nullable = false, length = 50)
     @Enumerated(EnumType.STRING)
     private NotificationType type;
 
-
     @Column(name = "title", nullable = false, length = 100)
     private String title;
-
 
     @Column(name = "message", nullable = false, length = 500)
     private String message;
 
-
-
-
-
-
-
     @Column(name = "reference_id")
     private Long referenceId;
-
 
     @Column(name = "is_read", nullable = false)
     private boolean read = false;
 
-
-
-
-
-
-
-
-
-
-
-
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
-
 
     public Notification() {
     }
@@ -182,7 +132,6 @@ public class Notification {
     public int hashCode() {
         return id == null ? UUID.randomUUID().hashCode() : id.hashCode();
     }
-
 
     @Override
     public String toString() {
