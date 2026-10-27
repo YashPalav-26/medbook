@@ -9,25 +9,6 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record RegisterRequest(
 
         @NotBlank(message = "email is required")
