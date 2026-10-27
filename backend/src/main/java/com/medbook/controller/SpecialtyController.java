@@ -9,17 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-
-
-
-
-
-
-
-
-
-
-
 @RestController
 @RequestMapping("/api/v1")
 public class SpecialtyController {
@@ -29,11 +18,6 @@ public class SpecialtyController {
     public SpecialtyController(SpecialtyService specialtyService) {
         this.specialtyService = specialtyService;
     }
-
-
-
-
-
 
     @GetMapping("/specialties")
     public ResponseEntity<List<SpecialtyResponse>> listSpecialties() {
