@@ -9,18 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-
-
-
-
-
-
-
-
-
-
-
-
 @Service
 public class SpecialtyAdminService {
 
@@ -30,18 +18,10 @@ public class SpecialtyAdminService {
         this.specialtyRepository = specialtyRepository;
     }
 
-
-
-
     @Transactional(readOnly = true)
     public List<Specialty> listAll() {
         return specialtyRepository.findAllByOrderByNameAsc();
     }
-
-
-
-
-
 
     @Transactional
     public Specialty create(SpecialtyCreateRequest request) {
@@ -51,12 +31,6 @@ public class SpecialtyAdminService {
         Specialty specialty = new Specialty(request.name().trim(), request.description());
         return specialtyRepository.save(specialty);
     }
-
-
-
-
-
-
 
     @Transactional
     public Specialty update(Long id, SpecialtyUpdateRequest request) {
@@ -69,11 +43,6 @@ public class SpecialtyAdminService {
         specialty.setDescription(request.description());
         return specialtyRepository.save(specialty);
     }
-
-
-
-
-
 
     @Transactional
     public Specialty deactivate(Long id) {
