@@ -36,7 +36,6 @@ type BookingFormData = z.infer<typeof bookingSchema>;
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-
 function Stepper({ current }: { current: 1 | 2 | 3 }) {
   const steps = [
     { n: 1, label: 'Doctor' },
@@ -71,12 +70,6 @@ function Stepper({ current }: { current: 1 | 2 | 3 }) {
     </ol>
   );
 }
-
-
-
-
-
-
 
 export function BookAppointmentPage() {
   const navigate = useNavigate();
@@ -139,7 +132,6 @@ export function BookAppointmentPage() {
   };
 
   const apiError = createMutation.error ? toApiError(createMutation.error) : null;
-
 
   const step: 1 | 2 | 3 = !doctorId ? 1 : !startTime ? 2 : 3;
 
