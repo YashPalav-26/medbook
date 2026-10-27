@@ -1,24 +1,7 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const TOKEN_KEY = 'medbook.token';
 const USER_KEY = 'medbook.user';
-
 
 export interface StoredUser {
   id: number;
