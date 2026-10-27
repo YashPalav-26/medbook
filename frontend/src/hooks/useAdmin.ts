@@ -12,19 +12,6 @@ import type {
 import type { AdminAppointmentFilters } from '../types/appointment';
 import { useAuth } from './useAuth';
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 export function useAdminAccounts() {
   const { isAuthenticated } = useAuth();
 
@@ -34,7 +21,6 @@ export function useAdminAccounts() {
     enabled: isAuthenticated,
   });
 }
-
 
 export function useCreateAdminAccount() {
   const queryClient = useQueryClient();
@@ -46,10 +32,6 @@ export function useCreateAdminAccount() {
     },
   });
 }
-
-
-
-
 
 export function useAdminSpecialties() {
   const { isAuthenticated } = useAuth();
@@ -101,10 +83,6 @@ export function useDeactivateSpecialty() {
   });
 }
 
-
-
-
-
 export function useAdminDoctors() {
   const { isAuthenticated } = useAuth();
 
@@ -154,15 +132,6 @@ export function useDeactivateDoctor() {
   });
 }
 
-
-
-
-
-
-
-
-
-
 export function useAdminPatients() {
   const { isAuthenticated } = useAuth();
 
@@ -173,10 +142,6 @@ export function useAdminPatients() {
     staleTime: 5 * 60 * 1000,
   });
 }
-
-
-
-
 
 export function useAdminAvailability(doctorId: number | null) {
   const { isAuthenticated } = useAuth();
@@ -226,15 +191,6 @@ export function useDeactivateAvailability() {
   });
 }
 
-
-
-
-
-
-
-
-
-
 export function useAdminAppointments(filters: AdminAppointmentFilters = {}) {
   const { isAuthenticated } = useAuth();
 
@@ -244,7 +200,6 @@ export function useAdminAppointments(filters: AdminAppointmentFilters = {}) {
     enabled: isAuthenticated,
   });
 }
-
 
 export function useAdminAppointment(id: number | null) {
   const { isAuthenticated } = useAuth();
@@ -256,7 +211,6 @@ export function useAdminAppointment(id: number | null) {
   });
 }
 
-
 export function useAdminOverview() {
   const { isAuthenticated } = useAuth();
 
@@ -266,11 +220,6 @@ export function useAdminOverview() {
     enabled: isAuthenticated,
   });
 }
-
-
-
-
-
 
 export function useAdminCancelAppointment() {
   const queryClient = useQueryClient();
