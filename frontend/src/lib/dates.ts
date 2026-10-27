@@ -1,22 +1,9 @@
 import { format, parseISO, isValid } from 'date-fns';
 
-
-
-
-
-
-
-
-
-
-
-
-
 export function todayIso(): string {
   const now = new Date();
   return format(now, 'yyyy-MM-dd');
 }
-
 
 export function formatDate(iso: string): string {
   if (!iso) return iso;
@@ -24,7 +11,6 @@ export function formatDate(iso: string): string {
   if (!isValid(date)) return iso;
   return format(date, 'EEE, MMM d, yyyy');
 }
-
 
 export function formatDateTime(iso: string): string {
   if (!iso) return iso;
