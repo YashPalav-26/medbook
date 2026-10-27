@@ -13,7 +13,6 @@ import { pickFromSelect } from '../../test/mui';
 import { formatDate } from '../../lib/dates';
 import type { AdminAppointmentResponse, AdminAppointmentDetailResponse } from '../../types/appointment';
 
-
 vi.mock('../../api/adminApi', () => ({
   listAdminSpecialties: vi.fn(),
   createSpecialty: vi.fn(),
@@ -35,7 +34,6 @@ vi.mock('../../api/adminApi', () => ({
   cancelAppointmentAsAdmin: vi.fn(),
 }));
 
-
 vi.mock('../../hooks/useAuth', () => ({
   useAuth: () => ({
     isAuthenticated: true,
@@ -45,7 +43,6 @@ vi.mock('../../hooks/useAuth', () => ({
 }));
 
 const mockedApi = vi.mocked(adminApi);
-
 
 vi.mock('../../api/appointmentApi', () => ({
   getSpecialties: vi.fn(),
@@ -127,11 +124,6 @@ function renderWithRoutes(ui: React.ReactElement, initialPath: string) {
   );
 }
 
-
-
-
-
-
 function renderListThenNavigate(ui: React.ReactElement, listPath: string) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -148,7 +140,6 @@ function renderListThenNavigate(ui: React.ReactElement, listPath: string) {
     </QueryClientProvider>,
   );
 }
-
 
 function tableBody() {
   return screen.getByText('ID').closest('table')!.querySelector('tbody')!;
@@ -243,8 +234,6 @@ describe('AdminAppointmentsPage', () => {
     renderWithRoutes(<AdminAppointmentsPage />, '/admin/appointments');
     await screen.findByText('John Reed');
 
-
-
     fireEvent.change(screen.getByLabelText('Filter by date'), {
       target: { value: '2026-09-28' },
     });
@@ -260,7 +249,6 @@ describe('AdminAppointmentsPage', () => {
     const user = userEvent.setup();
     renderWithRoutes(<AdminAppointmentsPage />, '/admin/appointments');
     await screen.findByText('John Reed');
-
 
     await pickFromSelect(user, screen, 'Filter by status', 'CONFIRMED');
 
@@ -411,13 +399,9 @@ describe('AdminAppointmentDetailPage', () => {
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toBeInTheDocument();
 
-
     await user.click(screen.getByRole('button', { name: /confirm cancellation/i }));
     expect(await screen.findByText('Cancellation reason is required')).toBeInTheDocument();
     expect(mockedApi.cancelAppointmentAsAdmin).not.toHaveBeenCalled();
-
-
-
 
     fireEvent.change(screen.getByLabelText('Cancellation reason'), {
       target: { value: 'Patient contacted support' },
@@ -464,8 +448,6 @@ describe('AdminAppointmentDetailPage', () => {
 describe('AdminDashboardPage (real metrics)', () => {
   it('shows the real clinic overview numbers', async () => {
     renderWithRoutes(<AdminDashboardPage />, '/admin');
-
-
 
     expect(await screen.findByText('appointments booked')).toBeInTheDocument();
     expect(screen.getByText('appointments booked')).toBeInTheDocument();
@@ -524,8 +506,6 @@ describe('AdminAppointmentsPage — book for a patient (support path)', () => {
 
     await user.click(screen.getByRole('button', { name: /book for a patient/i }));
     const dialog = await screen.findByRole('dialog', { name: /book for a patient/i });
-
-
 
     await pickFromSelect(user, within(dialog), 'Patient', /John Reed \(john@medbook\.test\)/);
     await pickFromSelect(user, within(dialog), 'Specialty', 'Cardiology');
