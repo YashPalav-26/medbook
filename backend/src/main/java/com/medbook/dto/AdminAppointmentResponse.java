@@ -9,38 +9,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record AdminAppointmentResponse(
         Long id,
         Long patientId,
@@ -55,13 +23,6 @@ public record AdminAppointmentResponse(
         String cancellationReason,
         BigDecimal consultationFeeSnapshot
 ) {
-
-
-
-
-
-
-
 
     public static AdminAppointmentResponse from(Appointment appointment) {
         return new AdminAppointmentResponse(
@@ -79,7 +40,6 @@ public record AdminAppointmentResponse(
                 appointment.getConsultationFeeSnapshot()
         );
     }
-
 
     private static String displayName(User user) {
         return user.getFirstName() + " " + user.getLastName();
