@@ -1,12 +1,5 @@
 
 
-
-
-
-
-
-
-
 CREATE TABLE notifications (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT UNSIGNED NOT NULL,
