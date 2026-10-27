@@ -4,24 +4,6 @@ import com.medbook.entity.Patient;
 
 import java.time.LocalDate;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record PatientAdminResponse(
         Long id,
         String email,
@@ -32,7 +14,6 @@ public record PatientAdminResponse(
         boolean active,
         boolean userActive
 ) {
-
 
     public static PatientAdminResponse from(Patient patient) {
         return new PatientAdminResponse(
