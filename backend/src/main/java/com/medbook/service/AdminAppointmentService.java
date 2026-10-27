@@ -21,30 +21,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Service
 public class AdminAppointmentService {
 
@@ -66,20 +42,6 @@ public class AdminAppointmentService {
         this.notificationService = notificationService;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     @Transactional(readOnly = true)
     public List<AdminAppointmentResponse> listAppointments(LocalDate appointmentDate,
                                                            AppointmentStatus status,
@@ -92,17 +54,10 @@ public class AdminAppointmentService {
                 .toList();
     }
 
-
-
-
-
-
     @Transactional(readOnly = true)
     public AdminAppointmentDetailResponse getAppointmentDetail(Long appointmentId) {
         Appointment appointment = appointmentRepository.findByIdForAdmin(appointmentId)
                 .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
-
-
 
         List<AppointmentStatusHistoryResponse> history = statusHistoryRepository
                 .findByAppointmentIdOrderByChangedAtAsc(appointmentId)
@@ -112,11 +67,6 @@ public class AdminAppointmentService {
 
         return AdminAppointmentDetailResponse.from(appointment, history);
     }
-
-
-
-
-
 
     @Transactional(readOnly = true)
     public AdminOverviewResponse getOverview() {
@@ -142,31 +92,6 @@ public class AdminAppointmentService {
         );
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     @Transactional
     public AdminAppointmentResponse cancelAppointmentAsAdmin(Long appointmentId, String cancellationReason) {
         User admin = requireAdmin();
@@ -174,8 +99,6 @@ public class AdminAppointmentService {
         if (cancellationReason == null || cancellationReason.isBlank()) {
             throw new IllegalArgumentException("Cancellation reason is required");
         }
-
-
 
         Appointment appointment = appointmentRepository.findByIdForUpdate(appointmentId)
                 .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
@@ -195,10 +118,7 @@ public class AdminAppointmentService {
         appointment.setCancellationReason(cancellationReason);
         Appointment saved = appointmentRepository.save(appointment);
 
-
         recordStatusChange(saved, AppointmentStatus.CANCELLED, cancellationReason, admin);
-
-
 
         String actor = NotificationService.actorName(admin);
         notificationService.notifyPatient(saved, NotificationType.APPOINTMENT_CANCELLED, actor);
@@ -206,12 +126,6 @@ public class AdminAppointmentService {
 
         return AdminAppointmentResponse.from(saved);
     }
-
-
-
-
-
-
 
     private User requireAdmin() {
         Long adminId = currentUserProvider.requireCurrentUserId();
@@ -222,10 +136,6 @@ public class AdminAppointmentService {
         }
         return admin;
     }
-
-
-
-
 
     private void recordStatusChange(Appointment appointment, AppointmentStatus status, String notes, User changedBy) {
         AppointmentStatusHistory history = new AppointmentStatusHistory(appointment, status);
