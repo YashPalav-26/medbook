@@ -14,91 +14,18 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
-
-
-
-
-
-
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
-
-
-
-
-
-
-
-
     List<Appointment> findByDoctorId(Long doctorId);
-
-
-
-
-
-
-
-
 
     List<Appointment> findByPatientId(Long patientId);
 
-
-
-
-
-
-
-
-
     List<Appointment> findByStatus(AppointmentStatus status);
-
-
-
-
-
-
-
-
-
 
     List<Appointment> findByDoctorIdAndAppointmentDate(Long doctorId, LocalDate appointmentDate);
 
-
-
-
-
-
-
-
-
-
     List<Appointment> findByPatientIdAndAppointmentDate(Long patientId, LocalDate appointmentDate);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     @Query("SELECT a FROM Appointment a WHERE a.doctor.id = :doctorId " +
            "AND a.appointmentDate = :appointmentDate " +
@@ -113,51 +40,15 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("excludedStatus") AppointmentStatus excludedStatus
     );
 
-
-
-
-
-
-
-
-
-
-
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM Appointment a WHERE a.id = :id")
     Optional<Appointment> findByIdForUpdate(@Param("id") Long id);
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     @Query("SELECT a FROM Appointment a " +
            "JOIN FETCH a.patient p JOIN FETCH p.user " +
            "JOIN FETCH a.doctor d JOIN FETCH d.user " +
            "WHERE a.id = :id")
     Optional<Appointment> findByIdWithPatientAndDoctor(@Param("id") Long id);
-
-
-
-
-
-
-
-
-
-
-
-
 
     @Query("SELECT a FROM Appointment a " +
            "JOIN FETCH a.patient p JOIN FETCH p.user " +
@@ -166,14 +57,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     Optional<Appointment> findByIdAndPatientIdWithParticipants(
             @Param("id") Long id, @Param("patientId") Long patientId);
 
-
-
-
-
-
-
-
-
     @Query("SELECT a FROM Appointment a " +
            "JOIN FETCH a.patient p JOIN FETCH p.user " +
            "JOIN FETCH a.doctor d JOIN FETCH d.user " +
@@ -181,56 +64,17 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     Optional<Appointment> findByIdAndDoctorIdWithParticipants(
             @Param("id") Long id, @Param("doctorId") Long doctorId);
 
-
-
-
-
-
-
-
-
-
-
     @Query("SELECT a FROM Appointment a " +
            "JOIN FETCH a.patient p JOIN FETCH p.user " +
            "JOIN FETCH a.doctor d JOIN FETCH d.user " +
            "WHERE p.user.id = :userId ORDER BY a.appointmentDate DESC, a.startTime DESC")
     List<Appointment> findAllByPatientUserId(@Param("userId") Long userId);
 
-
-
-
-
-
-
     @Query("SELECT a FROM Appointment a " +
            "JOIN FETCH a.patient p JOIN FETCH p.user " +
            "JOIN FETCH a.doctor d JOIN FETCH d.user " +
            "WHERE d.user.id = :userId ORDER BY a.appointmentDate DESC, a.startTime DESC")
     List<Appointment> findAllByDoctorUserId(@Param("userId") Long userId);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     @Query("SELECT a FROM Appointment a " +
            "JOIN FETCH a.patient p JOIN FETCH p.user " +
@@ -246,42 +90,14 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             @Param("doctorId") Long doctorId,
             @Param("patientId") Long patientId);
 
-
-
-
-
-
-
-
-
-
-
     @Query("SELECT a FROM Appointment a " +
            "JOIN FETCH a.patient p JOIN FETCH p.user " +
            "JOIN FETCH a.doctor d JOIN FETCH d.user JOIN FETCH d.specialty " +
            "WHERE a.id = :id")
     Optional<Appointment> findByIdForAdmin(@Param("id") Long id);
 
-
-
-
-
-
-
-
-
-
-
     @Query("SELECT a.status AS status, COUNT(a) AS total FROM Appointment a GROUP BY a.status")
     List<AppointmentStatusCount> countGroupedByStatus();
-
-
-
-
-
-
-
-
 
     long countByAppointmentDate(LocalDate appointmentDate);
 }
