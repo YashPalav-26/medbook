@@ -24,35 +24,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 @ConditionalOnProperty(name = "medbook.demo.seed", havingValue = "true")
 public class DemoDataSeeder implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DemoDataSeeder.class);
-
-
 
     static final String ADMIN_EMAIL = "admin@medbook.test";
     static final String ADMIN_PASSWORD = "Admin@123";
@@ -137,7 +114,6 @@ public class DemoDataSeeder implements ApplicationRunner {
         return patientRepository.findByUserId(user.getId())
                 .orElseGet(() -> patientRepository.save(new Patient(user, LocalDate.of(1990, 1, 1))));
     }
-
 
     private void ensureAvailability(Doctor doctor) {
         if (!availabilityRepository.findByDoctorId(doctor.getId()).isEmpty()) {
