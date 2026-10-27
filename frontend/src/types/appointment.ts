@@ -1,13 +1,6 @@
 
 
-
-
-
 export type AppointmentStatus = 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
-
-
-
-
 
 export interface CreateAppointmentRequest {
   doctorId: number;
@@ -17,10 +10,6 @@ export interface CreateAppointmentRequest {
   reason?: string;
 }
 
-
-
-
-
 export interface AdminCreateAppointmentRequest {
   patientId: number;
   doctorId: number;
@@ -29,14 +18,12 @@ export interface AdminCreateAppointmentRequest {
   endTime: string;
 }
 
-
 export interface SpecialtyResponse {
   id: number;
   name: string;
   description: string | null;
   active: boolean;
 }
-
 
 export interface DoctorSummaryResponse {
   id: number;
@@ -49,7 +36,6 @@ export interface DoctorSummaryResponse {
   profilePictureUrl: string | null;
 }
 
-
 export interface DoctorAvailabilityResponse {
   id: number | null;
   dayOfWeek: number;
@@ -60,15 +46,9 @@ export interface DoctorAvailabilityResponse {
   effectiveUntil: string | null;
 }
 
-
 export interface CancelAppointmentRequest {
   cancellationReason: string;
 }
-
-
-
-
-
 
 export interface AppointmentResponse {
   id: number;
@@ -83,11 +63,6 @@ export interface AppointmentResponse {
   cancellationReason: string | null;
   consultationFeeSnapshot: number;
 }
-
-
-
-
-
 
 export interface AdminAppointmentResponse {
   id: number;
@@ -104,7 +79,6 @@ export interface AdminAppointmentResponse {
   consultationFeeSnapshot: number;
 }
 
-
 export interface AppointmentStatusHistoryResponse {
   id: number;
   status: AppointmentStatus;
@@ -113,16 +87,10 @@ export interface AppointmentStatusHistoryResponse {
   changedAt: string;
 }
 
-
 export interface AdminAppointmentDetailResponse {
   appointment: AdminAppointmentResponse;
   history: AppointmentStatusHistoryResponse[];
 }
-
-
-
-
-
 
 export interface PatientAdminResponse {
   id: number;
@@ -135,14 +103,12 @@ export interface PatientAdminResponse {
   userActive: boolean;
 }
 
-
 export interface AdminOverviewResponse {
   todayAppointments: number;
   today: string;
   statusCounts: Record<AppointmentStatus, number>;
   totalAppointments: number;
 }
-
 
 export interface AdminAppointmentFilters {
   date?: string;
