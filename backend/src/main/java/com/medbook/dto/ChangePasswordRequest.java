@@ -3,21 +3,6 @@ package com.medbook.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record ChangePasswordRequest(
 
         @NotBlank(message = "currentPassword is required")
