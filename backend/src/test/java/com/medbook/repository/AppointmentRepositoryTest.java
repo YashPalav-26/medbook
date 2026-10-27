@@ -21,12 +21,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
-
-
-
-
-
 @SpringBootTest
 @Transactional
 class AppointmentRepositoryTest {
@@ -55,9 +49,6 @@ class AppointmentRepositoryTest {
     @Autowired
     private EntityManager entityManager;
 
-
-
-
     private User createTestDoctorUser(String email) {
         Role doctorRole = roleRepository.findByName("DOCTOR")
                 .orElseThrow(() -> new IllegalStateException("DOCTOR role not seeded"));
@@ -65,9 +56,6 @@ class AppointmentRepositoryTest {
         user.addRole(doctorRole);
         return userRepository.save(user);
     }
-
-
-
 
     private User createTestPatientUser(String email) {
         Role patientRole = roleRepository.findByName("PATIENT")
@@ -77,17 +65,10 @@ class AppointmentRepositoryTest {
         return userRepository.save(user);
     }
 
-
-
-
     private Specialty createTestSpecialty(String name) {
-
 
         return specialtyRepository.save(new Specialty(name + "-" + System.nanoTime(), "Test specialty"));
     }
-
-
-
 
     private Doctor createTestDoctor(String email, String specialtyName) {
         User user = createTestDoctorUser(email);
@@ -96,9 +77,6 @@ class AppointmentRepositoryTest {
         return doctorRepository.save(doctor);
     }
 
-
-
-
     private Patient createTestPatient(String email) {
         User user = createTestPatientUser(email);
         return patientRepository.save(new Patient(user, java.time.LocalDate.of(1990, 1, 1)));
@@ -106,7 +84,6 @@ class AppointmentRepositoryTest {
 
     @Test
     void findAllExecutesAgainstRealSchema() {
-
 
         assertThat(appointmentRepository.findAll()).isNotNull();
     }
@@ -144,7 +121,6 @@ class AppointmentRepositoryTest {
         Doctor doctor = createTestDoctor("doctor2@medbook.test", "Dermatology");
         Patient patient = createTestPatient("patient2@medbook.test");
 
-
         appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 15),
@@ -152,14 +128,12 @@ class AppointmentRepositoryTest {
                 new BigDecimal("500.00")
         ));
 
-
         appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 16),
                 LocalTime.of(11, 0), LocalTime.of(12, 0),
                 new BigDecimal("500.00")
         ));
-
 
         Doctor otherDoctor = createTestDoctor("doctor3@medbook.test", "Neurology");
         Patient otherPatient = createTestPatient("patient3@medbook.test");
@@ -180,7 +154,6 @@ class AppointmentRepositoryTest {
         Doctor doctor = createTestDoctor("doctor4@medbook.test", "Pediatrics");
         Patient patient = createTestPatient("patient4@medbook.test");
 
-
         appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 15),
@@ -188,14 +161,12 @@ class AppointmentRepositoryTest {
                 new BigDecimal("400.00")
         ));
 
-
         appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 16),
                 LocalTime.of(10, 0), LocalTime.of(10, 30),
                 new BigDecimal("400.00")
         ));
-
 
         Patient otherPatient = createTestPatient("patient5@medbook.test");
         appointmentRepository.save(new Appointment(
@@ -215,14 +186,12 @@ class AppointmentRepositoryTest {
         Doctor doctor = createTestDoctor("doctor5@medbook.test", "Psychiatry");
         Patient patient = createTestPatient("patient6@medbook.test");
 
-
         Appointment scheduled = appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 15),
                 LocalTime.of(9, 0), LocalTime.of(10, 0),
                 new BigDecimal("500.00")
         ));
-
 
         Appointment confirmed = appointmentRepository.save(new Appointment(
                 patient, doctor,
@@ -232,7 +201,6 @@ class AppointmentRepositoryTest {
         ));
         confirmed.setStatus(AppointmentStatus.CONFIRMED);
         appointmentRepository.save(confirmed);
-
 
         Appointment cancelled = appointmentRepository.save(new Appointment(
                 patient, doctor,
@@ -247,8 +215,6 @@ class AppointmentRepositoryTest {
         List<Appointment> scheduledAppointments = appointmentRepository.findByStatus(AppointmentStatus.SCHEDULED);
         List<Appointment> confirmedAppointments = appointmentRepository.findByStatus(AppointmentStatus.CONFIRMED);
         List<Appointment> cancelledAppointments = appointmentRepository.findByStatus(AppointmentStatus.CANCELLED);
-
-
 
         assertThat(scheduledAppointments)
                 .extracting(Appointment::getId)
@@ -271,14 +237,12 @@ class AppointmentRepositoryTest {
         Doctor doctor = createTestDoctor("doctor6@medbook.test", "Ophthalmology");
         Patient patient = createTestPatient("patient7@medbook.test");
 
-
         appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 15),
                 LocalTime.of(9, 0), LocalTime.of(10, 0),
                 new BigDecimal("500.00")
         ));
-
 
         appointmentRepository.save(new Appointment(
                 patient, doctor,
@@ -303,14 +267,12 @@ class AppointmentRepositoryTest {
         Doctor doctor = createTestDoctor("doctor7@medbook.test", "Gastroenterology");
         Patient patient = createTestPatient("patient8@medbook.test");
 
-
         appointmentRepository.save(new Appointment(
                 patient, doctor,
                 LocalDate.of(2026, 10, 15),
                 LocalTime.of(9, 0), LocalTime.of(10, 0),
                 new BigDecimal("500.00")
         ));
-
 
         appointmentRepository.save(new Appointment(
                 patient, doctor,
@@ -363,7 +325,6 @@ class AppointmentRepositoryTest {
         entityManager.flush();
         entityManager.refresh(saved);
 
-
         AppointmentStatusHistory history = new AppointmentStatusHistory(
                 saved, AppointmentStatus.CONFIRMED
         );
@@ -372,7 +333,6 @@ class AppointmentRepositoryTest {
 
         entityManager.flush();
         entityManager.refresh(saved);
-
 
         Appointment reloaded = appointmentRepository.findById(saved.getId()).orElseThrow();
         List<AppointmentStatusHistory> historyList = reloaded.getStatusHistory();
@@ -398,11 +358,9 @@ class AppointmentRepositoryTest {
         entityManager.flush();
         entityManager.refresh(saved);
 
-
         entityManager.clear();
 
         Appointment reloaded = appointmentRepository.findById(saved.getId()).orElseThrow();
-
 
         Doctor loadedDoctor = reloaded.getDoctor();
 
@@ -429,7 +387,6 @@ class AppointmentRepositoryTest {
         entityManager.clear();
 
         Appointment reloaded = appointmentRepository.findById(saved.getId()).orElseThrow();
-
 
         Patient loadedPatient = reloaded.getPatient();
 
@@ -485,7 +442,6 @@ class AppointmentRepositoryTest {
         Patient patient1 = createTestPatient("patient15@medbook.test");
         Patient patient2 = createTestPatient("patient16@medbook.test");
 
-
         appointmentRepository.save(new Appointment(
                 patient1, doctor1,
                 LocalDate.of(2026, 10, 15),
@@ -498,7 +454,6 @@ class AppointmentRepositoryTest {
                 LocalTime.of(11, 0), LocalTime.of(12, 0),
                 new BigDecimal("500.00")
         ));
-
 
         appointmentRepository.save(new Appointment(
                 patient1, doctor2,
@@ -571,11 +526,9 @@ class AppointmentRepositoryTest {
         Appointment saved = appointmentRepository.save(appointment);
         Long appointmentId = saved.getId();
 
-
         statusHistoryRepository.save(new AppointmentStatusHistory(saved, AppointmentStatus.SCHEDULED));
         statusHistoryRepository.save(new AppointmentStatusHistory(saved, AppointmentStatus.CONFIRMED));
         statusHistoryRepository.save(new AppointmentStatusHistory(saved, AppointmentStatus.COMPLETED));
-
 
         List<AppointmentStatusHistory> history = statusHistoryRepository.findByAppointmentId(appointmentId);
 
@@ -597,7 +550,6 @@ class AppointmentRepositoryTest {
         Appointment saved = appointmentRepository.save(appointment);
         Long appointmentId = saved.getId();
 
-
         statusHistoryRepository.save(new AppointmentStatusHistory(saved, AppointmentStatus.SCHEDULED));
         AppointmentStatusHistory confirmed = new AppointmentStatusHistory(saved, AppointmentStatus.CONFIRMED);
         confirmed.setNotes("Confirmed by doctor");
@@ -606,7 +558,6 @@ class AppointmentRepositoryTest {
         AppointmentStatusHistory completed = new AppointmentStatusHistory(saved, AppointmentStatus.COMPLETED);
         completed.setNotes("Consultation done");
         statusHistoryRepository.save(completed);
-
 
         List<AppointmentStatusHistory> history = statusHistoryRepository.findByAppointmentIdOrderByChangedAtAsc(appointmentId);
 
