@@ -10,18 +10,6 @@ import { useNotifications, useUnreadNotificationCount, useMarkNotificationRead, 
 import { ErrorBox, Skeleton } from '../ui/Feedback';
 import type { NotificationType } from '../../types/notification';
 
-
-
-
-
-
-
-
-
-
-
-
-
 const TYPE_STYLES: Record<NotificationType, { icon: typeof Bell; classes: string }> = {
   APPOINTMENT_CREATED: { icon: CalendarPlus, classes: 'bg-info-100 text-info-700' },
   APPOINTMENT_CONFIRMED: { icon: CalendarCheck, classes: 'bg-brand-100 text-brand-700' },
@@ -37,7 +25,6 @@ const TYPE_LABELS: Record<NotificationType, string> = {
   APPOINTMENT_COMPLETED: 'Completed',
   APPOINTMENT_NO_SHOW: 'No-show',
 };
-
 
 function timeAgo(iso: string): string {
   const then = new Date(iso).getTime();
@@ -66,8 +53,6 @@ export function NotificationBell() {
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
 
-
-
   useEffect(() => {
     if (open) {
       panelRef.current?.focus();
@@ -76,7 +61,6 @@ export function NotificationBell() {
     }
     wasOpen.current = open;
   }, [open]);
-
 
   useEffect(() => {
     if (!open) return;
@@ -122,7 +106,6 @@ export function NotificationBell() {
           badgeContent={unreadCount > 99 ? '99+' : unreadCount}
           color="error"
           slotProps={
-
 
             { badge: { 'data-testid': 'unread-badge' } } as object
           }
