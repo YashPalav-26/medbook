@@ -2,17 +2,6 @@ import axios, { AxiosError } from 'axios';
 import type { ErrorResponse, FieldError } from '../types/auth';
 import { clearAuth, getStoredToken } from '../lib/storage';
 
-
-
-
-
-
-
-
-
-
-
-
 export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 export const api = axios.create({
@@ -47,21 +36,13 @@ function redirectToLogin(): void {
   window.location.assign('/login');
 }
 
-
 export interface ApiError {
   status?: number;
   message: string;
   fieldErrors: FieldError[];
 }
 
-
 export const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password';
-
-
-
-
-
-
 
 export function toApiError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
