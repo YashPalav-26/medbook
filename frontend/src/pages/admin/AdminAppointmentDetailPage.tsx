@@ -20,15 +20,6 @@ import {
   AlertCircle, History,
 } from 'lucide-react';
 
-
-
-
-
-
-
-
-
-
 const cancelSchema = z.object({
   cancellationReason: z
     .string()
@@ -36,7 +27,6 @@ const cancelSchema = z.object({
     .max(255, 'Reason must be at most 255 characters'),
 });
 type CancelFormData = z.infer<typeof cancelSchema>;
-
 
 function HistoryItem({
   status,
@@ -90,8 +80,6 @@ export function AdminAppointmentDetailPage() {
     resolver: zodResolver(cancelSchema),
     defaultValues: { cancellationReason: '' },
   });
-
-
 
   const onCancelSubmit = async (data: CancelFormData) => {
     if (!appointmentId) return;
