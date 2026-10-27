@@ -10,18 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
-
-
-
-
-
-
-
-
-
-
-
 @SpringBootTest
 @Transactional
 class UserRepositoryTest {
@@ -38,7 +26,6 @@ class UserRepositoryTest {
     @Test
     void findAllExecutesAgainstRealSchema() {
 
-
         assertThat(userRepository.findAll()).isNotNull();
     }
 
@@ -49,7 +36,6 @@ class UserRepositoryTest {
 
     @Test
     void savedUserIsRetrievableByEmail() {
-
 
         Role patient = roleRepository.findByName("PATIENT").orElseThrow();
 
@@ -72,9 +58,6 @@ class UserRepositoryTest {
 
     @Test
     void savedUserIsAssignedTimestampsByDatabaseDefaults() {
-
-
-
 
         User user = new User("timestamp.user@medbook.example", "hashed-not-real",
                 "Timestamp", "User", "+918888888888");
