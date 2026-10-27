@@ -27,7 +27,6 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
@@ -45,20 +44,6 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @SpringBootTest
 @Transactional
@@ -123,7 +108,6 @@ class DoctorPortalTest {
                 .build();
     }
 
-
     private String tokenFor(User user, String role) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -145,11 +129,6 @@ class DoctorPortalTest {
                 new BigDecimal("150.00")));
     }
 
-
-
-
-
-
     private Appointment createScheduledAppointment() {
         LocalDate date = LocalDate.now().plusDays(7);
 
@@ -160,10 +139,6 @@ class DoctorPortalTest {
 
         return appointment;
     }
-
-
-
-
 
     @Test
     void doctorConfirmsOwnScheduledAppointment() throws Exception {
@@ -208,10 +183,6 @@ class DoctorPortalTest {
                 .andExpect(jsonPath("$.status").value("NO_SHOW"));
     }
 
-
-
-
-
     @Test
     void wrongDoctorGets403() throws Exception {
         Appointment appointment = createScheduledAppointment();
@@ -238,7 +209,6 @@ class DoctorPortalTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + patientToken)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden());
-
 
         assertThat(appointmentRepository.findById(appointment.getId()).orElseThrow().getStatus())
                 .isEqualTo(AppointmentStatus.SCHEDULED);
@@ -273,10 +243,6 @@ class DoctorPortalTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
-
-
-
-
 
     @Test
     void doctorCannotCompleteScheduledAppointment() throws Exception {
@@ -352,14 +318,9 @@ class DoctorPortalTest {
                 .andExpect(status().isConflict());
     }
 
-
-
-
-
     @Test
     void everySuccessfulTransitionAppendsHistoryWithRealDoctor() throws Exception {
         Appointment appointment = createScheduledAppointment();
-
 
         mockMvc.perform(post("/api/v1/appointments/" + appointment.getId() + "/confirm")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -368,7 +329,6 @@ class DoctorPortalTest {
         mockMvc.perform(post("/api/v1/appointments/" + appointment.getId() + "/complete")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
-
 
         List<AppointmentStatusHistory> history = statusHistoryRepository.findByAppointmentId(appointment.getId())
                 .stream()
@@ -380,14 +340,9 @@ class DoctorPortalTest {
         assertThat(history.get(1).getStatus()).isEqualTo(AppointmentStatus.CONFIRMED);
         assertThat(history.get(2).getStatus()).isEqualTo(AppointmentStatus.COMPLETED);
 
-
-
         assertThat(history.get(1).getChangedByUser().getId()).isEqualTo(doctorA.getUser().getId());
         assertThat(history.get(2).getChangedByUser().getId()).isEqualTo(doctorA.getUser().getId());
         assertThat(history.get(0).getChangedByUser()).isNull();
-
-
-
 
         Appointment cancelled = createScheduledAppointment();
         cancelled.setStatus(AppointmentStatus.CANCELLED);
