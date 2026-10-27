@@ -6,10 +6,6 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   hover?: boolean;
 }
 
-
-
-
-
 export function Card({ children, className = '', hover = false, ...props }: CardProps) {
   return (
     <div
@@ -22,14 +18,6 @@ export function Card({ children, className = '', hover = false, ...props }: Card
     </div>
   );
 }
-
-
-
-
-
-
-
-
 
 export function LinkCard({
   to,
