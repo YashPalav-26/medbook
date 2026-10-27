@@ -10,13 +10,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
-
-
-
-
-
-
 @SpringBootTest
 @Transactional
 class RoleRepositoryTest {
@@ -52,7 +45,6 @@ class RoleRepositoryTest {
 
     @Test
     void entityIsMappedToExistingSchema() {
-
 
         Role admin = roleRepository.findByName("ADMIN").orElseThrow();
 
