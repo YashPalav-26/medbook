@@ -5,27 +5,6 @@ import com.medbook.entity.Specialty;
 
 import java.math.BigDecimal;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record DoctorSummaryResponse(
         Long id,
         String firstName,
@@ -36,7 +15,6 @@ public record DoctorSummaryResponse(
         BigDecimal consultationFee,
         String profilePictureUrl
 ) {
-
 
     public static DoctorSummaryResponse from(Doctor doctor) {
         return new DoctorSummaryResponse(
@@ -50,7 +28,6 @@ public record DoctorSummaryResponse(
                 doctor.getProfilePictureUrl()
         );
     }
-
 
     public static DoctorSummaryResponse from(Doctor doctor, Specialty specialty) {
         return new DoctorSummaryResponse(
