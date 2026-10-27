@@ -1,12 +1,5 @@
 package com.medbook.service;
 
-
-
-
-
-
-
-
 public class AccountLockedException extends RuntimeException {
 
     public AccountLockedException() {
