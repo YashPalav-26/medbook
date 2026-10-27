@@ -1,12 +1,5 @@
 package com.medbook.service;
 
-
-
-
-
-
-
-
 public class InvalidCredentialsException extends RuntimeException {
 
     public InvalidCredentialsException() {
