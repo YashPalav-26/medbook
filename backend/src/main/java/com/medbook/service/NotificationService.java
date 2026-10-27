@@ -6,7 +6,6 @@ import com.medbook.entity.Notification;
 import com.medbook.entity.NotificationType;
 import com.medbook.entity.User;
 import com.medbook.repository.NotificationRepository;
-import com.medbook.repository.UserRepository;
 import com.medbook.security.CurrentUserProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -14,69 +13,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Service
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
-    private final UserRepository userRepository;
     private final CurrentUserProvider currentUserProvider;
 
     public NotificationService(NotificationRepository notificationRepository,
-                               UserRepository userRepository,
                                CurrentUserProvider currentUserProvider) {
         this.notificationRepository = notificationRepository;
-        this.userRepository = userRepository;
         this.currentUserProvider = currentUserProvider;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     @Transactional(propagation = Propagation.MANDATORY)
     public Notification createAppointmentNotification(User recipient,
@@ -87,13 +34,6 @@ public class NotificationService {
         Notification notification = new Notification(recipient, type, title, message, referenceId);
         return notificationRepository.save(notification);
     }
-
-
-
-
-
-
-
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void notifyPatient(Appointment appointment, NotificationType type, String actorName) {
@@ -135,11 +75,6 @@ public class NotificationService {
         createAppointmentNotification(patientUser, type, title, message, appointment.getId());
     }
 
-
-
-
-
-
     @Transactional(propagation = Propagation.MANDATORY)
     public void notifyDoctor(Appointment appointment, NotificationType type, String actorName) {
         User doctorUser = appointment.getDoctor().getUser();
@@ -160,20 +95,9 @@ public class NotificationService {
         throw new IllegalArgumentException("Unsupported doctor notification type: " + type);
     }
 
-
-
-
-
     public static String actorName(User actor) {
         return actor == null ? "the clinic" : actor.getFirstName() + " " + actor.getLastName();
     }
-
-
-
-
-
-
-
 
     @Transactional(readOnly = true)
     public List<NotificationResponse> getCurrentUserNotifications() {
@@ -183,20 +107,11 @@ public class NotificationService {
                 .toList();
     }
 
-
-
-
     @Transactional(readOnly = true)
     public long getCurrentUserUnreadCount() {
         Long userId = currentUserProvider.requireCurrentUserId();
         return notificationRepository.countByUserIdAndReadFalse(userId);
     }
-
-
-
-
-
-
 
     @Transactional
     public NotificationResponse markAsRead(Long notificationId) {
@@ -208,15 +123,6 @@ public class NotificationService {
         notification.setRead(true);
         return NotificationResponse.from(notificationRepository.save(notification));
     }
-
-
-
-
-
-
-
-
-
 
     @Transactional
     public long markAllAsRead() {
