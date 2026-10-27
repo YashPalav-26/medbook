@@ -24,62 +24,19 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @Service
 public class AppointmentService {
 
-
-
-
-
     private static final int JAVA_SUNDAY = 7;
-
 
     private static final String ROLE_ADMIN = "ADMIN";
     private static final String ROLE_DOCTOR = "DOCTOR";
     private static final String ROLE_PATIENT = "PATIENT";
 
-
     private static final String ACCESS_DENIED_TO_APPOINTMENT =
             "You do not have access to this appointment";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     private static final Map<AppointmentStatus, Set<AppointmentStatus>> DOCTOR_TRANSITIONS = Map.of(
             AppointmentStatus.SCHEDULED, Set.of(AppointmentStatus.CONFIRMED),
@@ -94,12 +51,6 @@ public class AppointmentService {
     private final UserRepository userRepository;
     private final CurrentUserProvider currentUserProvider;
     private final NotificationService notificationService;
-
-
-
-
-
-
 
     private final EntityManager entityManager;
 
@@ -125,29 +76,6 @@ public class AppointmentService {
         this.entityManager = entityManager;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     @Transactional(readOnly = true)
     public Appointment getAppointment(Long appointmentId) {
         User caller = requireCurrentUser();
@@ -160,22 +88,6 @@ public class AppointmentService {
         }
         return appointment;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     @Transactional(readOnly = true)
     public List<Appointment> getCurrentUserAppointments() {
@@ -190,33 +102,6 @@ public class AppointmentService {
         throw new AppointmentOwnershipException(
                 "Appointment listing is not available for this account role");
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     @Transactional
     public Appointment createAppointmentForCurrentUser(com.medbook.dto.PatientBookingRequest request) {
@@ -241,20 +126,6 @@ public class AppointmentService {
                 request.reason());
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     @Transactional
     public Appointment createAppointmentForPatient(com.medbook.dto.CreateAppointmentRequest request) {
         User caller = requireCurrentUser();
@@ -272,13 +143,6 @@ public class AppointmentService {
                 null);
     }
 
-
-
-
-
-
-
-
     @Transactional
     public Appointment createAppointment(
             Long patientId,
@@ -290,37 +154,6 @@ public class AppointmentService {
         return createAppointment(patientId, doctorId, appointmentDate, startTime, endTime, null);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     @Transactional
     public Appointment createAppointment(
             Long patientId,
@@ -331,14 +164,12 @@ public class AppointmentService {
             String reason
     ) {
 
-
         Doctor doctor = doctorRepository.findByIdForUpdate(doctorId)
                 .orElseThrow(() -> new DoctorNotFoundException(doctorId));
 
         if (!doctor.isActive()) {
             throw new DoctorInactiveException(doctorId);
         }
-
 
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new PatientNotFoundException(patientId));
@@ -347,15 +178,11 @@ public class AppointmentService {
             throw new PatientInactiveException(patientId);
         }
 
-
         validateAppointmentWindow(appointmentDate, startTime, endTime);
-
 
         ensureDoctorIsAvailable(doctor, appointmentDate, startTime, endTime);
 
-
         ensureSlotIsFree(doctor, appointmentDate, startTime, endTime);
-
 
         Appointment appointment = new Appointment(
                 patient,
@@ -368,40 +195,13 @@ public class AppointmentService {
         appointment.setReason(reason);
         Appointment saved = appointmentRepository.save(appointment);
 
-
-
-
         recordStatusChange(saved, AppointmentStatus.SCHEDULED, "Appointment created",
                 currentUserProvider.currentUserId().flatMap(userRepository::findById).orElse(null));
 
-
-
         notificationService.notifyPatient(saved, NotificationType.APPOINTMENT_CREATED, null);
-
-
 
         return reloadWithParticipants(saved.getId());
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     @Transactional
     public Appointment cancelAppointmentForCurrentUser(Long appointmentId, String cancellationReason) {
@@ -416,28 +216,11 @@ public class AppointmentService {
         return cancelAppointment(appointment, caller, cancellationReason);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     @Transactional
     public Appointment cancelAppointment(Long appointmentId, String cancellationReason) {
         return cancelAppointment(appointmentRepository.findByIdForUpdate(appointmentId)
                 .orElseThrow(() -> new AppointmentNotFoundException(appointmentId)), null, cancellationReason);
     }
-
-
-
-
 
     private Appointment cancelAppointment(Appointment appointment, User caller, String cancellationReason) {
         if (cancellationReason == null || cancellationReason.isBlank()) {
@@ -461,12 +244,7 @@ public class AppointmentService {
         appointment.setCancellationReason(cancellationReason);
         Appointment saved = appointmentRepository.save(appointment);
 
-
-
         recordStatusChange(saved, AppointmentStatus.CANCELLED, cancellationReason, caller);
-
-
-
 
         if (caller != null
                 && appointment.getPatient().getUser().getId().equals(caller.getId())) {
@@ -480,29 +258,11 @@ public class AppointmentService {
         return reloadWithParticipants(saved.getId());
     }
 
-
-
-
-
-
-
-
-
-
     @Transactional
     public Appointment confirmAppointmentForCurrentUser(Long appointmentId) {
         return transitionAppointmentForCurrentUser(
                 appointmentId, AppointmentStatus.CONFIRMED, "Appointment confirmed by doctor");
     }
-
-
-
-
-
-
-
-
-
 
     @Transactional
     public Appointment completeAppointmentForCurrentUser(Long appointmentId) {
@@ -510,35 +270,11 @@ public class AppointmentService {
                 appointmentId, AppointmentStatus.COMPLETED, "Visit completed");
     }
 
-
-
-
-
-
-
-
-
-
     @Transactional
     public Appointment markNoShowForCurrentUser(Long appointmentId) {
         return transitionAppointmentForCurrentUser(
                 appointmentId, AppointmentStatus.NO_SHOW, "Patient marked as no-show by doctor");
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     private Appointment transitionAppointmentForCurrentUser(
             Long appointmentId, AppointmentStatus target, String notes) {
@@ -566,11 +302,7 @@ public class AppointmentService {
         applyDoctorTransition(appointment, target);
         Appointment saved = appointmentRepository.save(appointment);
 
-
-
         recordStatusChange(saved, target, notes, caller);
-
-
 
         notificationService.notifyPatient(saved, toNotificationType(target),
                 NotificationService.actorName(caller));
@@ -578,25 +310,12 @@ public class AppointmentService {
         return reloadWithParticipants(saved.getId());
     }
 
-
-
-
-
-
-
-
-
-
-
     private Appointment reloadWithParticipants(Long appointmentId) {
         entityManager.flush();
         entityManager.clear();
         return appointmentRepository.findByIdWithPatientAndDoctor(appointmentId)
                 .orElseThrow(() -> new AppointmentNotFoundException(appointmentId));
     }
-
-
-
 
     private static NotificationType toNotificationType(AppointmentStatus status) {
         return switch (status) {
@@ -608,10 +327,6 @@ public class AppointmentService {
         };
     }
 
-
-
-
-
     private void applyDoctorTransition(Appointment appointment, AppointmentStatus target) {
         appointment.setStatus(target);
         LocalDateTime now = LocalDateTime.now();
@@ -621,16 +336,6 @@ public class AppointmentService {
             appointment.setCompletedAt(now);
         }
     }
-
-
-
-
-
-
-
-
-
-
 
     private void validateAppointmentWindow(LocalDate appointmentDate, LocalTime startTime, LocalTime endTime) {
         if (appointmentDate == null || startTime == null || endTime == null) {
@@ -646,10 +351,6 @@ public class AppointmentService {
                     "Start time " + startTime + " must be before end time " + endTime);
         }
     }
-
-
-
-
 
     private void ensureDoctorIsAvailable(
             Doctor doctor,
@@ -668,23 +369,6 @@ public class AppointmentService {
             throw new DoctorUnavailableException(doctor.getId(), appointmentDate, startTime, endTime);
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     private boolean coversAppointment(
             DoctorAvailability slot,
@@ -711,10 +395,6 @@ public class AppointmentService {
         return oneOffDate != null && appointmentDate.equals(oneOffDate);
     }
 
-
-
-
-
     private void ensureSlotIsFree(
             Doctor doctor,
             LocalDate appointmentDate,
@@ -734,13 +414,6 @@ public class AppointmentService {
         }
     }
 
-
-
-
-
-
-
-
     private void recordStatusChange(Appointment appointment, AppointmentStatus status, String notes, User changedBy) {
         AppointmentStatusHistory history = new AppointmentStatusHistory(appointment, status);
         history.setNotes(notes);
@@ -748,31 +421,12 @@ public class AppointmentService {
         statusHistoryRepository.save(history);
     }
 
-
-
-
-
-
-
-
-
-
     private User requireCurrentUser() {
         Long callerId = currentUserProvider.requireCurrentUserId();
         return userRepository.findById(callerId)
                 .orElseThrow(() -> new AppointmentOwnershipException(
                         "Authenticated account no longer exists"));
     }
-
-
-
-
-
-
-
-
-
-
 
     private boolean canAccess(User caller, Appointment appointment) {
         if (caller.hasRole(ROLE_ADMIN)) {
@@ -787,24 +441,12 @@ public class AppointmentService {
         return false;
     }
 
-
-
-
-
-
-
-
-
     private boolean canCancel(User caller, Appointment appointment) {
         if (caller.hasRole(ROLE_ADMIN)) {
             return false;
         }
         return canAccess(caller, appointment);
     }
-
-
-
-
 
     private static byte toMysqlDayOfWeek(LocalDate date) {
         int javaDayOfWeek = date.getDayOfWeek().getValue();
