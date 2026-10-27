@@ -10,23 +10,10 @@ import type {
 } from '../types/appointment';
 import { api } from './client';
 
-
-
-
-
-
-
-
-
 export async function createAppointment(payload: CreateAppointmentRequest): Promise<AppointmentResponse> {
   const response: AxiosResponse<AppointmentResponse> = await api.post('/appointments', payload);
   return response.data;
 }
-
-
-
-
-
 
 export async function createAppointmentForPatient(
   payload: AdminCreateAppointmentRequest,
@@ -40,12 +27,6 @@ export async function getAppointment(id: number): Promise<AppointmentResponse> {
   return response.data;
 }
 
-
-
-
-
-
-
 export async function getMyAppointments(): Promise<AppointmentResponse[]> {
   const response: AxiosResponse<AppointmentResponse[]> = await api.get('/appointments/me');
   return response.data;
@@ -55,11 +36,6 @@ export async function cancelAppointment(id: number, payload: CancelAppointmentRe
   const response: AxiosResponse<AppointmentResponse> = await api.post(`/appointments/${id}/cancel`, payload);
   return response.data;
 }
-
-
-
-
-
 
 export async function confirmAppointment(id: number): Promise<AppointmentResponse> {
   const response: AxiosResponse<AppointmentResponse> = await api.post(`/appointments/${id}/confirm`);
@@ -76,19 +52,16 @@ export async function markAppointmentNoShow(id: number): Promise<AppointmentResp
   return response.data;
 }
 
-
 export async function getSpecialties(): Promise<SpecialtyResponse[]> {
   const response: AxiosResponse<SpecialtyResponse[]> = await api.get('/specialties');
   return response.data;
 }
-
 
 export async function getDoctors(specialtyId?: number): Promise<DoctorSummaryResponse[]> {
   const response: AxiosResponse<DoctorSummaryResponse[]> =
     await api.get('/doctors', { params: specialtyId ? { specialtyId } : undefined });
   return response.data;
 }
-
 
 export async function getDoctorAvailability(doctorId: number, date?: string): Promise<DoctorAvailabilityResponse[]> {
   const response: AxiosResponse<DoctorAvailabilityResponse[]> =
