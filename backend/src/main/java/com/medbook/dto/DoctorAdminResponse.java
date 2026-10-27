@@ -4,30 +4,6 @@ import com.medbook.entity.Doctor;
 
 import java.math.BigDecimal;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record DoctorAdminResponse(
         Long id,
         String email,
@@ -44,7 +20,6 @@ public record DoctorAdminResponse(
         boolean active,
         boolean userActive
 ) {
-
 
     public static DoctorAdminResponse from(Doctor doctor) {
         return new DoctorAdminResponse(
