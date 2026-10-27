@@ -21,22 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Entity
 @Table(name = "appointments")
 public class Appointment {
@@ -46,118 +30,53 @@ public class Appointment {
     @Column(name = "id")
     private Long id;
 
-
-
-
-
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
-
-
-
-
-
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "doctor_id", nullable = false)
     private Doctor doctor;
 
-
-
-
     @Column(name = "appointment_date", nullable = false)
     private LocalDate appointmentDate;
-
-
-
 
     @Column(name = "start_time", nullable = false)
     private LocalTime startTime;
 
-
-
-
     @Column(name = "end_time", nullable = false)
     private LocalTime endTime;
-
-
-
-
 
     @Column(name = "reason", length = 500)
     private String reason;
 
-
-
-
-
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
-
-
-
-
-
 
     @Column(name = "status", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private AppointmentStatus status = AppointmentStatus.SCHEDULED;
 
-
-
-
-
-
     @Column(name = "cancellation_reason", length = 255)
     private String cancellationReason;
-
-
-
-
-
 
     @Column(name = "consultation_fee_snapshot", nullable = false, precision = 10, scale = 2)
     private BigDecimal consultationFeeSnapshot;
 
-
-
-
-
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
-
-
-
 
     @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime updatedAt;
 
-
-
-
-
     @Column(name = "confirmed_at")
     private LocalDateTime confirmedAt;
-
-
-
-
 
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
-
-
-
-
-
     @OneToMany(mappedBy = "appointment", fetch = FetchType.LAZY)
     private List<AppointmentStatusHistory> statusHistory = new ArrayList<>();
-
-
-
 
     public Appointment() {
     }
