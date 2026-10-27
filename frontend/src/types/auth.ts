@@ -1,9 +1,5 @@
 
 
-
-
-
-
 export interface RegisterRequest {
   email: string;
   password: string;
@@ -14,12 +10,10 @@ export interface RegisterRequest {
   dateOfBirth: string;
 }
 
-
 export interface LoginRequest {
   email: string;
   password: string;
 }
-
 
 export interface AuthUser {
   id: number;
@@ -30,7 +24,6 @@ export interface AuthUser {
   roles: string[];
 }
 
-
 export interface AuthResponse {
   token: string;
 
@@ -39,12 +32,10 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
-
 export interface FieldError {
   field: string;
   message: string;
 }
-
 
 export interface ErrorResponse {
   timestamp: string;
@@ -55,13 +46,7 @@ export interface ErrorResponse {
   fieldErrors: FieldError[];
 }
 
-
 export type RegisterRequestField = keyof RegisterRequest;
-
-
-
-
-
 
 export interface CurrentUserResponse {
   id: number;
@@ -73,7 +58,6 @@ export interface CurrentUserResponse {
   patient: PatientProfileResponse | null;
   doctor: DoctorProfileResponse | null;
 }
-
 
 export interface PatientProfileResponse {
   patientId: number;
@@ -92,7 +76,6 @@ export interface PatientProfileResponse {
   allergies: string | null;
 }
 
-
 export interface DoctorProfileResponse {
   doctorId: number;
 
@@ -105,13 +88,11 @@ export interface DoctorProfileResponse {
   active: boolean;
 }
 
-
 export interface AccountUpdateRequest {
   firstName: string;
   lastName: string;
   phoneNumber: string;
 }
-
 
 export interface PatientProfileUpdateRequest {
   addressLine1: string;
@@ -128,12 +109,10 @@ export interface PatientProfileUpdateRequest {
   allergies: string;
 }
 
-
 export interface DoctorProfileUpdateRequest {
   bio: string;
   profilePictureUrl: string;
 }
-
 
 export interface ChangePasswordRequest {
   currentPassword: string;
