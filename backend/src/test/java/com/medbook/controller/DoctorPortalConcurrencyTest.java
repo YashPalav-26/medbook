@@ -5,7 +5,6 @@ import com.medbook.entity.AppointmentStatus;
 import com.medbook.entity.AppointmentStatusHistory;
 import com.medbook.entity.Doctor;
 import com.medbook.entity.Patient;
-import com.medbook.entity.Role;
 import com.medbook.entity.Specialty;
 import com.medbook.entity.User;
 import com.medbook.repository.AppointmentRepository;
@@ -48,19 +47,6 @@ import java.util.concurrent.Future;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @SpringBootTest
 class DoctorPortalConcurrencyTest {
@@ -168,7 +154,6 @@ class DoctorPortalConcurrencyTest {
         });
     }
 
-
     private String tokenFor(Long userId, String role) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -212,12 +197,10 @@ class DoctorPortalConcurrencyTest {
         int status2 = f2.get();
         pool.shutdown();
 
-
         assertThat(List.of(status1, status2)).containsExactlyInAnyOrder(200, 409);
 
         assertThat(appointmentRepository.findById(appointmentId).orElseThrow().getStatus())
                 .isEqualTo(AppointmentStatus.CONFIRMED);
-
 
         long confirmedRows = statusHistoryRepository.findByAppointmentId(appointmentId).stream()
                 .filter(h -> h.getStatus() == AppointmentStatus.CONFIRMED)
