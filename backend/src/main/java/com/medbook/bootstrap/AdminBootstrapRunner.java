@@ -11,41 +11,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class AdminBootstrapRunner implements ApplicationRunner {
