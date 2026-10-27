@@ -25,11 +25,6 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import { StatusBadge } from '../../components/admin/AdminUi';
 
-
-
-
-
-
 const DAYS = [
   { value: 0, label: 'Sunday' },
   { value: 1, label: 'Monday' },
@@ -41,7 +36,6 @@ const DAYS = [
 ];
 
 const dayLabel = (value: number) => DAYS.find((d) => d.value === value)?.label ?? String(value);
-
 
 function isClosed(window: DoctorAvailabilityResponse): boolean {
   if (window.effectiveUntil == null) return false;
@@ -68,12 +62,6 @@ const windowSchema = z.object({
 });
 
 type WindowFormData = z.infer<typeof windowSchema>;
-
-
-
-
-
-
 
 export function AvailabilityAdminPage() {
   const doctorsQuery = useAdminDoctors();
