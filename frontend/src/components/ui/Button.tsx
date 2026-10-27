@@ -23,7 +23,6 @@ interface ButtonProps
   children: React.ReactNode;
 }
 
-
 function applyVariant(variant: MedBookVariant, target: MuiButtonProps & Record<string, unknown>) {
   switch (variant) {
     case 'primary':
@@ -52,7 +51,6 @@ function applyVariant(variant: MedBookVariant, target: MuiButtonProps & Record<s
       break;
     case 'onBrand':
 
-
       target.variant = 'contained';
       target.color = 'info';
       break;
@@ -66,16 +64,6 @@ function applyVariant(variant: MedBookVariant, target: MuiButtonProps & Record<s
 function muiSizeOf(size: MedBookSize) {
   return size === 'sm' ? 'small' : size === 'lg' ? 'large' : 'medium';
 }
-
-
-
-
-
-
-
-
-
-
 
 export function Button({
   variant = 'primary',
@@ -98,14 +86,6 @@ interface ButtonLinkProps extends Omit<ButtonProps, 'type' | 'onClick'> {
 
   to: string;
 }
-
-
-
-
-
-
-
-
 
 export function ButtonLink({ to, variant = 'primary', size = 'md', className = '', children, ...props }: ButtonLinkProps) {
   const muiProps: MuiButtonProps & Record<string, unknown> = { ...props };
