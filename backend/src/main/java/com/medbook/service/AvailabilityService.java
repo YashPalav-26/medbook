@@ -10,21 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Service
 public class AvailabilityService {
 
@@ -36,15 +21,6 @@ public class AvailabilityService {
         this.doctorRepository = doctorRepository;
         this.availabilityRepository = availabilityRepository;
     }
-
-
-
-
-
-
-
-
-
 
     @Transactional(readOnly = true)
     public List<DoctorAvailabilityResponse> getDoctorAvailability(Long doctorId, LocalDate date) {
@@ -61,12 +37,6 @@ public class AvailabilityService {
                 .toList();
     }
 
-
-
-
-
-
-
     @Transactional(readOnly = true)
     public List<DoctorAvailabilityResponse> getDoctorAvailabilityForDate(Long doctorId, LocalDate date) {
         return getDoctorAvailability(doctorId, date);
@@ -76,11 +46,6 @@ public class AvailabilityService {
         doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new DoctorNotFoundException(doctorId));
     }
-
-
-
-
-
 
     private boolean isEffectiveOn(DoctorAvailability window, LocalDate date) {
         LocalDate from = window.getEffectiveFrom();
@@ -92,7 +57,6 @@ public class AvailabilityService {
             return false;
         }
         if (!window.isRecurring()) {
-
 
             return from != null && date.isEqual(from);
         }
