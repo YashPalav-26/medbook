@@ -8,19 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Service
 public class DoctorService {
 
@@ -29,15 +16,6 @@ public class DoctorService {
     public DoctorService(DoctorRepository doctorRepository) {
         this.doctorRepository = doctorRepository;
     }
-
-
-
-
-
-
-
-
-
 
     @Transactional(readOnly = true)
     public List<DoctorSummaryResponse> listActiveDoctors(Long specialtyId) {
