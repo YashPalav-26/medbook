@@ -1,13 +1,5 @@
 package com.medbook.service;
 
-
-
-
-
-
-
-
-
 public class DoctorInactiveException extends RuntimeException {
 
     public DoctorInactiveException(Long doctorId) {
