@@ -13,26 +13,6 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record DoctorCreateRequest(
 
         @NotBlank(message = "email is required")
