@@ -11,13 +11,6 @@ import {
   CalendarClock, Tags, CalendarSearch, UserRound, Menu, LogOut, Users,
 } from 'lucide-react';
 
-
-
-
-
-
-
-
 interface NavItem {
   to: string;
   label: string;
@@ -119,7 +112,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     </div>
   );
 }
-
 
 export function AppShell({ title, children }: { title?: string; children: ReactNode }) {
   const { user, logout } = useAuth();
