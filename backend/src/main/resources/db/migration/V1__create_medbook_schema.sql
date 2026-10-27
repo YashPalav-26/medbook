@@ -1,21 +1,10 @@
 
 
-
-
-
-
-
-
-
 CREATE TABLE roles (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
     description VARCHAR(255)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-
-
 
 CREATE TABLE users (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -35,10 +24,6 @@ CREATE TABLE users (
     INDEX idx_users_phone (phone_number)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
-
-
 CREATE TABLE user_roles (
     user_id BIGINT UNSIGNED NOT NULL,
     role_id BIGINT UNSIGNED NOT NULL,
@@ -49,10 +34,6 @@ CREATE TABLE user_roles (
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
-
-
 CREATE TABLE specialties (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
@@ -60,10 +41,6 @@ CREATE TABLE specialties (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-
-
 
 CREATE TABLE doctors (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -85,10 +62,6 @@ CREATE TABLE doctors (
     CHECK (consultation_fee >= 0),
     CHECK (years_experience BETWEEN 0 AND 80)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-
-
 
 CREATE TABLE patients (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -115,10 +88,6 @@ CREATE TABLE patients (
     CHECK (has_insurance = FALSE OR (insurance_provider IS NOT NULL AND insurance_policy_number IS NOT NULL))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
-
-
 CREATE TABLE doctor_availability (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     doctor_id BIGINT UNSIGNED NOT NULL,
@@ -138,10 +107,6 @@ CREATE TABLE doctor_availability (
     CHECK (start_time < end_time),
     CHECK (effective_from <= effective_until)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-
-
 
 CREATE TABLE appointments (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -173,10 +138,6 @@ CREATE TABLE appointments (
     CHECK (consultation_fee_snapshot >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
-
-
 CREATE TABLE appointment_status_history (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     appointment_id BIGINT UNSIGNED NOT NULL,
@@ -193,9 +154,6 @@ CREATE TABLE appointment_status_history (
 
     CHECK (status IN ('SCHEDULED','CONFIRMED','COMPLETED','CANCELLED','NO_SHOW'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
-
 
 INSERT INTO roles (id, name, description) VALUES
     (1, 'ADMIN', 'Administrator with full system access'),
