@@ -7,14 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-
-
-
-
-
-
-
-
 @Service
 public class PatientAdminService {
 
@@ -23,9 +15,6 @@ public class PatientAdminService {
     public PatientAdminService(PatientRepository patientRepository) {
         this.patientRepository = patientRepository;
     }
-
-
-
 
     @Transactional(readOnly = true)
     public List<Patient> listAll() {
