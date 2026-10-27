@@ -2,12 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import * as appointmentApi from '../api/appointmentApi';
 import { useAuth } from './useAuth';
 
-
-
-
-
-
-
 export function useMyAppointments() {
   const { isAuthenticated } = useAuth();
 
