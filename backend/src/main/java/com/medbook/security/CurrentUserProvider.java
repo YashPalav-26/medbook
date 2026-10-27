@@ -8,27 +8,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Component
 public class CurrentUserProvider {
-
-
-
-
-
 
     public Optional<Long> currentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -47,9 +28,6 @@ public class CurrentUserProvider {
         return Optional.empty();
     }
 
-
-
-
     public Optional<String> currentUserEmail() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication instanceof JwtAuthenticationToken jwtAuthentication) {
@@ -57,15 +35,6 @@ public class CurrentUserProvider {
         }
         return Optional.empty();
     }
-
-
-
-
-
-
-
-
-
 
     public Long requireCurrentUserId() {
         return currentUserId().orElseThrow(() ->
