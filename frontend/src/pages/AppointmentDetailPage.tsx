@@ -49,8 +49,6 @@ export function AppointmentDetailPage() {
   const { data: appointment, isLoading, error } = useAppointment(appointmentId);
   const cancelMutation = useCancelAppointment();
 
-
-
   const { user } = useAuth();
   const isDoctor = user?.roles?.includes('ROLE_DOCTOR') ?? false;
   const confirmMutation = useConfirmAppointment();
@@ -66,8 +64,6 @@ export function AppointmentDetailPage() {
   } = useForm<CancelFormData>({
     resolver: zodResolver(cancelSchema),
   });
-
-
 
   const onCancelSubmit = async (data: CancelFormData) => {
     if (!appointmentId) return;
