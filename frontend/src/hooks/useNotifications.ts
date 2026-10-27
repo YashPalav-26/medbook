@@ -2,19 +2,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as notificationApi from '../api/notificationApi';
 import { useAuth } from './useAuth';
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 export function useNotifications(open: boolean) {
   const { isAuthenticated } = useAuth();
 
@@ -26,7 +13,6 @@ export function useNotifications(open: boolean) {
     refetchOnWindowFocus: false,
   });
 }
-
 
 export function useUnreadNotificationCount() {
   const { isAuthenticated } = useAuth();
@@ -40,10 +26,6 @@ export function useUnreadNotificationCount() {
     refetchOnWindowFocus: false,
   });
 }
-
-
-
-
 
 export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
@@ -64,10 +46,6 @@ export function useMarkNotificationRead() {
 }
 
 type NotificationListItem = Awaited<ReturnType<typeof notificationApi.getMyNotifications>>[number];
-
-
-
-
 
 export function useMarkAllNotificationsRead() {
   const queryClient = useQueryClient();
