@@ -12,22 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalTime;
 import java.util.List;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @Service
 public class AvailabilityAdminService {
 
@@ -40,23 +24,11 @@ public class AvailabilityAdminService {
         this.doctorRepository = doctorRepository;
     }
 
-
-
-
-
-
     @Transactional(readOnly = true)
     public List<DoctorAvailability> listForDoctor(Long doctorId) {
         requireDoctor(doctorId);
         return availabilityRepository.findByDoctorIdOrderByDayOfWeekAscStartTimeAsc(doctorId);
     }
-
-
-
-
-
-
-
 
     @Transactional
     public DoctorAvailability create(Long doctorId, AvailabilityCreateRequest request) {
@@ -78,13 +50,6 @@ public class AvailabilityAdminService {
         return availabilityRepository.save(availability);
     }
 
-
-
-
-
-
-
-
     @Transactional
     public DoctorAvailability update(Long id, AvailabilityUpdateRequest request) {
         DoctorAvailability availability = requireAvailability(id);
@@ -105,21 +70,6 @@ public class AvailabilityAdminService {
         availability.setEffectiveUntil(request.effectiveUntil());
         return availabilityRepository.save(availability);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     @Transactional
     public DoctorAvailability close(Long id) {
