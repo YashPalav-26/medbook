@@ -47,29 +47,8 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @SpringBootTest
 @Transactional
@@ -109,12 +88,6 @@ class AppointmentControllerTest {
 
     private MockMvc mockMvc;
 
-
-
-
-
-
-
     private User adminUser;
 
     @BeforeEach
@@ -132,9 +105,6 @@ class AppointmentControllerTest {
                 .build();
     }
 
-
-
-
     private String createTestToken(String subject, String... roles) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -148,11 +118,6 @@ class AppointmentControllerTest {
         return jwtEncoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
                 .getTokenValue();
     }
-
-
-
-
-
 
     private static LocalDate futureDate() {
         return LocalDate.now().plusDays(7);
@@ -205,11 +170,6 @@ class AppointmentControllerTest {
                 """.formatted(patientId, doctorId, date, start, end);
     }
 
-
-
-
-
-
     private long postBookingAndReadId(String json) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -218,10 +178,6 @@ class AppointmentControllerTest {
                 .andReturn();
         return ((Number) JsonPath.read(result.getResponse().getContentAsString(), "$.id")).longValue();
     }
-
-
-
-
 
     @Test
     void createAppointmentReturns201WithLocationHeaderAndJsonBody() throws Exception {
@@ -248,25 +204,18 @@ class AppointmentControllerTest {
         String json = result.getResponse().getContentAsString();
         long appointmentId = ((Number) JsonPath.read(json, "$.id")).longValue();
 
-
         assertThat(result.getResponse().getHeader("Location"))
                 .isEqualTo("/api/v1/appointments/" + appointmentId);
-
 
         Object feeValue = JsonPath.read(json, "$.consultationFeeSnapshot");
         assertThat(feeValue).isInstanceOf(Number.class);
         assertThat(new BigDecimal(String.valueOf(feeValue))).isEqualByComparingTo(TEST_FEE);
-
 
         Appointment stored = appointmentRepository.findById(appointmentId).orElseThrow();
         assertThat(stored.getStatus()).isEqualTo(AppointmentStatus.SCHEDULED);
         assertThat(stored.getStartTime()).isEqualTo(LocalTime.of(10, 0));
         assertThat(statusHistoryRepository.findByAppointmentId(appointmentId)).hasSize(1);
     }
-
-
-
-
 
     @Test
     void createAppointmentReturns400WhenPatientIdIsMissing() throws Exception {
@@ -319,7 +268,6 @@ class AppointmentControllerTest {
         Doctor doctor = createTestDoctor("rest-400-doc@medbook.test", "Rest Gastroenterology");
         Patient patient = createTestPatient("rest-400-pat@medbook.test");
 
-
         mockMvc.perform(post("/api/v1/appointments/admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bookingJson(patient.getId(), doctor.getId(), futureDate(), "11:00", "10:00")))
@@ -340,10 +288,6 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value("Request body is missing or malformed"));
     }
-
-
-
-
 
     @Test
     void createAppointmentReturns404WhenDoctorDoesNotExist() throws Exception {
@@ -398,10 +342,6 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("Invalid value 'abc' for parameter 'id'"));
     }
-
-
-
-
 
     @Test
     void createAppointmentReturns409WhenDoctorIsInactive() throws Exception {
@@ -465,7 +405,6 @@ class AppointmentControllerTest {
         LocalDate date = futureDate();
         createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
 
-
         postBookingAndReadId(bookingJson(first.getId(), doctor.getId(), date, "10:00", "11:00"));
 
         mockMvc.perform(post("/api/v1/appointments/admin")
@@ -475,13 +414,8 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.message").value(containsString("already has an appointment overlapping")));
 
-
         assertThat(appointmentRepository.findByDoctorId(doctor.getId())).hasSize(1);
     }
-
-
-
-
 
     @Test
     void getAppointmentReturns200WithTheStoredAppointment() throws Exception {
@@ -515,8 +449,6 @@ class AppointmentControllerTest {
         long appointmentId = postBookingAndReadId(
                 bookingJson(patient.getId(), doctor.getId(), date, "10:00", "11:00"));
 
-
-
         String patientToken = createTestToken(String.valueOf(patient.getUser().getId()), "ROLE_PATIENT");
 
         mockMvc.perform(post("/api/v1/appointments/" + appointmentId + "/cancel")
@@ -530,12 +462,10 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.status").value("CANCELLED"))
                 .andExpect(jsonPath("$.cancellationReason").value("Patient asked to reschedule"));
 
-
         Appointment stored = appointmentRepository.findById(appointmentId).orElseThrow();
         assertThat(stored.getStatus()).isEqualTo(AppointmentStatus.CANCELLED);
         assertThat(stored.getCancellationReason()).isEqualTo("Patient asked to reschedule");
         assertThat(statusHistoryRepository.findByAppointmentId(appointmentId)).hasSize(2);
-
 
         mockMvc.perform(get("/api/v1/appointments/" + appointmentId))
                 .andExpect(status().isOk())
@@ -565,10 +495,6 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.fieldErrors[0].message")
                         .value("cancellationReason must be at most 255 characters"));
     }
-
-
-
-
 
     @Test
     void meEndpointReturnsOnlyTheCallingPatientsAppointments() throws Exception {
@@ -627,11 +553,6 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.status").value(401));
     }
 
-
-
-
-
-
     private static String selfBookingJson(Long doctorId, LocalDate date, String start, String end) {
         return """
                 {
@@ -665,7 +586,6 @@ class AppointmentControllerTest {
                 .andExpect(jsonPath("$.doctorId").value(doctor.getId().intValue()))
                 .andExpect(jsonPath("$.status").value("SCHEDULED"));
 
-
         List<Appointment> doctorsAppointments = appointmentRepository.findByDoctorId(doctor.getId());
         assertThat(doctorsAppointments).hasSize(1);
         assertThat(doctorsAppointments.get(0).getPatient().getId()).isEqualTo(patient.getId());
@@ -679,8 +599,6 @@ class AppointmentControllerTest {
         Patient victim = createTestPatient("rest-ignore-victim@medbook.test");
         LocalDate date = futureDate();
         createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
-
-
 
         String smuggled = """
                 {
@@ -708,7 +626,6 @@ class AppointmentControllerTest {
     void patientSelfBookingValidationFailuresReturn400() throws Exception {
         Patient patient = createTestPatient("rest-self-400-pat@medbook.test");
 
-
         mockMvc.perform(post("/api/v1/appointments")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(patient.getUser(), "ROLE_PATIENT"))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -716,7 +633,6 @@ class AppointmentControllerTest {
                                 .formatted(futureDate())))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors[0].field").value("doctorId"));
-
 
         mockMvc.perform(post("/api/v1/appointments")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(patient.getUser(), "ROLE_PATIENT"))
@@ -732,13 +648,11 @@ class AppointmentControllerTest {
         LocalDate date = futureDate();
         createRecurringAvailability(doctor, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
 
-
         mockMvc.perform(post("/api/v1/appointments")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenFor(doctor.getUser(), "ROLE_DOCTOR"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(selfBookingJson(doctor.getId(), date, "10:00", "11:00")))
                 .andExpect(status().isForbidden());
-
 
         mockMvc.perform(post("/api/v1/appointments")
                         .contentType(MediaType.APPLICATION_JSON)
