@@ -1,32 +1,9 @@
 package com.medbook.dto;
 
 import com.medbook.entity.Patient;
-import com.medbook.entity.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 public record CurrentUserResponse(
         Long id,
@@ -38,7 +15,6 @@ public record CurrentUserResponse(
         PatientProfileResponse patient,
         DoctorProfileResponse doctor
 ) {
-
 
     public record PatientProfileResponse(
             Long patientId,
@@ -75,7 +51,6 @@ public record CurrentUserResponse(
             );
         }
     }
-
 
     public record DoctorProfileResponse(
             Long doctorId,
