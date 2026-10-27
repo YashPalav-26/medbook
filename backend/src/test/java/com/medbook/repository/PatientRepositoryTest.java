@@ -13,12 +13,6 @@ import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
-
-
-
-
-
 @SpringBootTest
 @Transactional
 class PatientRepositoryTest {
@@ -35,9 +29,6 @@ class PatientRepositoryTest {
     @Autowired
     private EntityManager entityManager;
 
-
-
-
     private User createTestPatientUser(String email) {
         Role patientRole = roleRepository.findByName("PATIENT")
                 .orElseThrow(() -> new IllegalStateException("PATIENT role not seeded"));
@@ -50,7 +41,6 @@ class PatientRepositoryTest {
 
     @Test
     void findAllExecutesAgainstRealSchema() {
-
 
         assertThat(patientRepository.findAll()).isNotNull();
     }
@@ -110,8 +100,6 @@ class PatientRepositoryTest {
     @Test
     void patientRelationshipToUserIsNavigable() {
 
-
-
         User user = createTestPatientUser("patient5@medbook.test");
         Patient patient = new Patient(user, LocalDate.of(2000, 1, 1));
         Patient saved = patientRepository.save(patient);
@@ -120,7 +108,6 @@ class PatientRepositoryTest {
         entityManager.clear();
 
         Patient reloaded = patientRepository.findById(patientId).orElseThrow();
-
 
         User loadedUser = reloaded.getUser();
 
