@@ -5,21 +5,6 @@ import com.medbook.entity.DoctorAvailability;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public record DoctorAvailabilityResponse(
         Long id,
         int dayOfWeek,
@@ -29,7 +14,6 @@ public record DoctorAvailabilityResponse(
         LocalDate effectiveFrom,
         LocalDate effectiveUntil
 ) {
-
 
     public static DoctorAvailabilityResponse from(DoctorAvailability availability) {
         return new DoctorAvailabilityResponse(
