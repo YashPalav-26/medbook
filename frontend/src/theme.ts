@@ -1,16 +1,5 @@
 import { createTheme } from '@mui/material/styles';
 
-
-
-
-
-
-
-
-
-
-
-
 const brand = {
   50: '#effaf7',
   100: '#d7f2ec',
@@ -110,7 +99,6 @@ export const theme = createTheme({
         root: {
           borderRadius: 10,
 
-
           gap: 8,
           whiteSpace: 'nowrap',
           boxShadow: '0 1px 3px rgb(28 36 39 / 0.06)',
@@ -119,9 +107,6 @@ export const theme = createTheme({
         sizeMedium: { padding: '8px 16px', fontSize: '0.875rem' },
         sizeLarge: { padding: '10px 20px', fontSize: '1rem' },
       },
-
-
-
 
       variants: [
 
@@ -182,9 +167,6 @@ export const theme = createTheme({
             '&:active': { backgroundColor: '#991b1b' },
           },
         },
-
-
-
 
         {
           props: { variant: 'outlined', color: 'info' },
@@ -288,7 +270,6 @@ export const theme = createTheme({
     },
   },
 });
-
 
 export const statusColors = {
   SCHEDULED: '#38bdf8', // info
