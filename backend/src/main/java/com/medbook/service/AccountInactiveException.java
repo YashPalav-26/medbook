@@ -1,12 +1,5 @@
 package com.medbook.service;
 
-
-
-
-
-
-
-
 public class AccountInactiveException extends RuntimeException {
 
     public AccountInactiveException() {
