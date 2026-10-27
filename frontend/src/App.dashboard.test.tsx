@@ -3,14 +3,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 
-
-
-
-
-
-
-
-
 vi.mock('./hooks/useAuth', () => ({
   useAuth: () => ({
     user: { id: 42, email: 'me@medbook.test', firstName: 'Test', lastName: 'User', roles: ['ROLE_PATIENT'] },
@@ -55,7 +47,6 @@ describe('Dashboard navigation', () => {
     window.history.pushState({}, '', '/dashboard');
     renderApp();
 
-
     expect(screen.getByText(/Good to see you, Test/i)).toBeInTheDocument();
 
     expect(screen.getAllByText('Book Appointment').length).toBeGreaterThan(0);
@@ -65,7 +56,6 @@ describe('Dashboard navigation', () => {
   it('links My Appointments to the appointments list route', () => {
     window.history.pushState({}, '', '/dashboard');
     renderApp();
-
 
     const link = screen.getByRole('link', { name: 'My Appointments' });
     expect(link).toHaveAttribute('href', '/appointments/me');
