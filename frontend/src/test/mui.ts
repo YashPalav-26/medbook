@@ -3,35 +3,13 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect } from 'vitest';
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 type Scope = {
   getByLabelText: (text: string) => HTMLElement;
 };
 
-
 export async function waitForEnabled(el: HTMLElement): Promise<void> {
   await waitFor(() => expect(el.getAttribute('aria-disabled')).not.toBe('true'));
 }
-
-
-
-
-
-
-
-
 
 export async function pickFromSelect(
   user: ReturnType<typeof userEvent.setup>,
